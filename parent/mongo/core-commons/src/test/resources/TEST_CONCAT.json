@@ -1,0 +1,24 @@
+{
+  "$addFields": {
+    "itemSearch": {
+      "$map": {
+        "input": "$itemSearch",
+        "as": "u",
+        "in": {
+          "propAB": {
+            "$concat": [
+              "$$u.propA",
+              " ",
+              "$$u.propB"
+            ]
+          },
+          "propItemA": "$$u.propItemA",
+          "class": "$$u.class",
+          "propItemD": "$$u.propItemD",
+          "propItemC": "$$u.propItemC",
+          "propItemB": "$$u.propItemB"
+        }
+      }
+    }
+  }
+}

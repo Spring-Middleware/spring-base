@@ -1,0 +1,18 @@
+{
+  "$and": [
+    {
+      "itemSearch": {
+        "$elemMatch": {
+          "$and": [
+            {
+              "propItemA": "PROP_ITEM_A"
+            },
+            {
+              "propItemB": "PROP_ITEM_B"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

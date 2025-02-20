@@ -1,0 +1,17 @@
+{
+  "$and": [
+    {
+      "$and": [
+        {
+          "subSearch.propA": "PROP_A"
+        },
+        {
+          "subSearch.propB": "PROP_B"
+        }
+      ]
+    },
+    {
+      "key": "KEY"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "$and": [
+    {
+      "$and": [
+        {
+          "itemsSearch": {
+            "$elemMatch": {
+              "$and": [
+                {
+                  "propItemA": "PROP_ITEM_A1"
+                },
+                {
+                  "propItemB": "PROP_ITEM_B1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "itemsSearch": {
+            "$elemMatch": {
+              "$and": [
+                {
+                  "propItemA": "PROP_ITEM_A2"
+                },
+                {
+                  "propItemB": "PROP_ITEM_B2"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

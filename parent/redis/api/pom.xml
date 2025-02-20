@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.core</groupId>
+        <artifactId>redis</artifactId>
+        <version>${core.redis.version}</version>
+    </parent>
+
+    <groupId>com.core</groupId>
+    <artifactId>redis-api</artifactId>
+    <version>${core.redis.version}</version>
+    <name>redis-api</name>
+    <description>Core  Redis Api</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.core</groupId>
+            <artifactId>commons</artifactId>
+        </dependency>
+    </dependencies>
+
+
+</project>
