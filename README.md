@@ -1,7 +1,8 @@
 # Spring Base Framework
 
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.java.net/)
+[![Java](https://img.shields.io/badge/Java-17%20%2F%2021-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
+[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Modular-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## 📋 Table of Contents
@@ -27,17 +28,15 @@
 
 ## 🎯 Overview
 
-**Spring Base** is a modular framework designed to accelerate Spring Boot application development by providing reusable, production-ready components. It abstracts common patterns and provides powerful utilities for:
+**Spring Base** is a battle-tested, modular framework architected to standardize the development of high-performance Spring Boot microservices.
 
-- **Dynamic querying** (MongoDB, JPA/Hibernate)
-- **View transformation** (Model-to-DTO mapping with security)
-- **Redis operations** (transparent data structure management)
-- **Error recovery** (automatic retry mechanisms)
-- **JMS/RabbitMQ integration** (message-driven architectures)
-- **Request tracking** (distributed tracing)
-- **Cache management** (Redis-based caching)
+Born from production experience in high-traffic environments (e.g., Travel & Retail sectors), it solves recurring architectural challenges—distributed locking, complex search, data composition, and error recovery—allowing developers to focus on business logic while inheriting enterprise-grade reliability and consistency.
 
-The framework follows **modular architecture** principles, with each module separated into `api` (contracts) and `core` (implementations) to respect **Dependency Inversion Principle**.
+### 🛡️ Core Philosophy
+*   **Consistency by Default**: Enforces standardized patterns for Errors, Logging, and Data Access across all services.
+*   **Resilience First**: Distributed locking and stateful error recovery are first-class citizens, not afterthoughts.
+*   **Dependency Inversion**: Strict separation between API contracts and Core implementations modules to prevent tight coupling.
+*   **Developer Velocity**: Annotations like `@MongoSearchProperty`, `@ViewProperty`, and `@Join` eliminate 90% of the boilerplate code typically required for complex data fetching and mapping.
 
 ---
 
