@@ -1,6 +1,6 @@
 package com.middleware.util;
 
-import com.middleware.view.DataAdaptor;
+import io.github.spring.middleware.view.DataAdaptor;
 
 import java.util.Arrays;
 import java.util.List;

@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.middleware</groupId>
+        <groupId>io.github.spring-middleware</groupId>
         <artifactId>model</artifactId>
         <version>${core.model.version}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>model-core</artifactId>
     <version>${core.model.version}</version>
     <name>model-core</name>
@@ -46,7 +46,7 @@
             <artifactId>postgresql</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>model-api</artifactId>
             <version>${core.model.version}</version>
         </dependency>

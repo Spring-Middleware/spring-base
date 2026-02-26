@@ -1,7 +1,7 @@
 package com.middleware.util;
 
-import com.middleware.annotation.MappedClass;
-import com.middleware.annotation.MappedParam;
+import io.github.spring.middleware.annotation.MappedClass;
+import io.github.spring.middleware.annotation.MappedParam;
 import lombok.Data;
 
 import java.sql.Date;

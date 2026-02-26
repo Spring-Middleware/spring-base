@@ -5,12 +5,12 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>com.middleware.parent</groupId>
+        <groupId>io.github.spring-middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>redis</artifactId>
     <version>${core.redis.version}</version>
     <name>redis</name>

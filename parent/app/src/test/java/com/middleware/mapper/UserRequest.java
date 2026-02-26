@@ -1,6 +1,6 @@
 package com.middleware.mapper;
 
-import com.middleware.request.BaseRequest;
+import io.github.spring.middleware.request.BaseRequest;
 import lombok.Getter;
 import lombok.Setter;
 

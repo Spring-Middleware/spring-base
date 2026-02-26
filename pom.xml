@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.4</version>
+        <version>3.4.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>bom</artifactId>
     <version>${revision}</version>
     <name>bom</name>
@@ -31,7 +31,8 @@
 
     <properties>
         <revision>1.0.0</revision>
-        <spring.version>3.0.4</spring.version>
+        <java.verion>17</java.verion>
+        <spring.version>3.4.2</spring.version>
         <core.commons.version>1.1.0</core.commons.version>
         <core.view.version>1.0.0</core.view.version>
         <core.cache.version>1.0.0</core.cache.version>
@@ -46,77 +47,77 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>commons</artifactId>
                 <version>${core.commons.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>view-api</artifactId>
                 <version>${core.view.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>view-core</artifactId>
                 <version>${core.view.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>mongo-api</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>mongo-core</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>mongo-core-commons</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>mongo-core-react</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>jpa-api</artifactId>
                 <version>${core.jpa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>jpa-core</artifactId>
                 <version>${core.jpa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>api</artifactId>
                 <version>${core.api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>app</artifactId>
                 <version>${core.app.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>redis-api</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>redis-core</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>redis-core-react</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.middleware</groupId>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>cache</artifactId>
                 <version>${core.cache.version}</version>
             </dependency>
@@ -233,5 +234,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.middleware</groupId>
+        <groupId>io.github.spring-middleware</groupId>
         <artifactId>model</artifactId>
         <version>${core.model.version}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>model-api</artifactId>
     <version>${core.model.version}</version>
     <name>model-api</name>
@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>api</artifactId>
         </dependency>
         <dependency>
@@ -50,7 +50,7 @@
             <artifactId>spring-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>commons</artifactId>
         </dependency>
     </dependencies>

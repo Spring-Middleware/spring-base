@@ -1,5 +1,6 @@
 package com.middleware.mapper;
 
+import io.github.spring.middleware.mapper.ViewModelMapper;
 import org.junit.Test;
 
 import java.util.UUID;

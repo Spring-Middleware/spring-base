@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.middleware</groupId>
+        <groupId>io.github.spring-middleware</groupId>
         <artifactId>mongo</artifactId>
         <version>${core.mongo.version}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>mongo-api</artifactId>
     <version>${core.mongo.version}</version>
     <name>mongo-api</name>
@@ -18,11 +18,11 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>commons</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>api</artifactId>
         </dependency>
         <dependency>

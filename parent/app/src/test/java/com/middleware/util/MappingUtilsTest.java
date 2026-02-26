@@ -1,5 +1,6 @@
 package com.middleware.util;
 
+import io.github.spring.middleware.util.MappingUtils;
 import org.junit.Test;
 
 import java.sql.Date;

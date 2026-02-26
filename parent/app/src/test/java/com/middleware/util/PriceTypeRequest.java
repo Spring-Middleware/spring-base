@@ -1,6 +1,6 @@
 package com.middleware.util;
 
-import com.middleware.annotation.MappedParam;
+import io.github.spring.middleware.annotation.MappedParam;
 import lombok.Data;
 
 @Data

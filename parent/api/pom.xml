@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.middleware.parent</groupId>
+        <groupId>io.github.spring-middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>api</artifactId>
     <version>${core.api.version}</version>
     <name>api</name>
@@ -38,7 +38,7 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>view-api</artifactId>
         </dependency>
         <dependency>

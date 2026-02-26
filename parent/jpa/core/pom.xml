@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.middleware</groupId>
+        <groupId>io.github.spring-middleware</groupId>
         <artifactId>jpa</artifactId>
         <version>${core.jpa.version}</version>
     </parent>
 
-    <groupId>com.middleware</groupId>
+    <groupId>io.github.spring-middleware</groupId>
     <artifactId>jpa-core</artifactId>
     <version>${core.jpa.version}</version>
     <name>jpa-core</name>
@@ -46,12 +46,12 @@
             <artifactId>postgresql</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>jpa-api</artifactId>
             <version>${core.jpa.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.middleware</groupId>
+            <groupId>io.github.spring-middleware</groupId>
             <artifactId>model-core</artifactId>
             <version>${core.model.version}</version>
         </dependency>
