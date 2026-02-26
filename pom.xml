@@ -21,6 +21,37 @@
         <module>parent</module>
     </modules>
 
+    <url>https://github.com</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Fernando Guardiola Ruiz</name>
+            <email>fernandoguardiolaruiz@gmail.com</email>
+            <organization>Spring Middleware</organization>
+            <organizationUrl>https://github.com</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://://github.com</connection>
+        <developerConnection>scm:git:ssh://github.com:Spring-Middleware/spring-base.git</developerConnection>
+        <url>https://github.com/tree/main</url>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com</url>
+        </repository>
+    </distributionManagement>
+
     <pluginRepositories>
         <pluginRepository>
             <id>jboss-maven2-release-repository</id>
@@ -31,14 +62,15 @@
 
     <properties>
         <revision>1.0.0</revision>
-        <java.verion>17</java.verion>
-        <spring.version>3.4.2</spring.version>
+        <java.version>17</java.version>
+        <spring.boot.version>3.4.2</spring.boot.version>
         <core.commons.version>1.1.0</core.commons.version>
         <core.view.version>1.0.0</core.view.version>
         <core.cache.version>1.0.0</core.cache.version>
         <core.api.version>1.0.0</core.api.version>
         <core.app.version>1.3.0</core.app.version>
         <core.mongo.version>1.1.0</core.mongo.version>
+        <core.rabbitmq.version>1.0.0</core.rabbitmq.version>
         <core.jpa.version>1.1.0</core.jpa.version>
         <core.redis.version>1.0.0</core.redis.version>
         <core.model.version>1.0.0</core.model.version>
@@ -46,6 +78,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.4.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>commons</artifactId>
@@ -150,7 +189,7 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>${spring.version}</version>
+                    <version>io.github.spring-middleware</version>
                     <configuration>
                         <excludes>
                             <exclude>
@@ -201,6 +240,55 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <!-- Firma GPG -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.7</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Fuentes -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Javadoc -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
@@ -229,7 +317,9 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>1.4.1</version>
                 <configuration>
-                    <rules><dependencyConvergence/></rules>
+                    <rules>
+                        <dependencyConvergence/>
+                    </rules>
                 </configuration>
             </plugin>
         </plugins>

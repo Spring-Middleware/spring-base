@@ -1,6 +1,6 @@
 package io.github.spring.middleware.jms;
 
-import com.middleware.jms.core.destination.type.DestinationSuffix;
+import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationSuffix;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;

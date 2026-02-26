@@ -1,0 +1,71 @@
+{
+  "users": [
+    {
+      "name": "admin",
+      "password_hash": "1iv6sV4WtOQQ8jTMWvt91FwxYU7dtsuOo/oMYf6heTKKJV5u",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "bindings": [
+    {
+      "source": "amq.topic",
+      "destination": "information-es",
+      "destination_type": "queue",
+      "routing_key": "news.es",
+      "vhost": "/"
+    },
+    {
+      "source": "amq.topic",
+      "destination": "information-uk",
+      "destination_type": "queue",
+      "routing_key": "news.uk",
+      "vhost": "/"
+    },
+    {
+      "source": "amq.topic",
+      "destination": "news",
+      "destination_type": "queue",
+      "routing_key": "news.uk",
+      "vhost": "/"
+    },
+    {
+      "source": "amq.topic",
+      "destination": "news",
+      "destination_type": "queue",
+      "routing_key": "news.es",
+      "vhost": "/"
+    }
+  ],
+  "queues": [
+    {
+      "name": "information-es",
+      "durable": true,
+      "vhost": "/"
+    },
+    {
+      "name": "information-uk",
+      "durable": true,
+      "vhost": "/"
+    },
+    {
+      "name": "news",
+      "durable": true,
+      "vhost": "/"
+    }
+  ]
+}

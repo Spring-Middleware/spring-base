@@ -2,8 +2,8 @@ package io.github.spring.middleware.controller;
 
 import io.github.spring.middleware.jms.JmsConsumerResourceStatus;
 import io.github.spring.middleware.jms.rabbitmq.RabbitMQChecker;
-import com.middleware.jms.core.JmsResources;
-import com.middleware.jms.core.resource.consumer.JmsConsumerResource;
+import io.github.spring.middleware.rabbitmq.core.JmsResources;
+import io.github.spring.middleware.rabbitmq.core.resource.consumer.JmsConsumerResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.beans.factory.annotation.Autowired;

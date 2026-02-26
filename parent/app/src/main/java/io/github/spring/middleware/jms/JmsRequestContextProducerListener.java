@@ -3,9 +3,9 @@ package io.github.spring.middleware.jms;
 import io.github.spring.middleware.config.HttpHeaderNames;
 import io.github.spring.middleware.config.PropertyNames;
 import io.github.spring.middleware.filter.Context;
-import com.middleware.jms.annotations.JmsListener;
-import com.middleware.jms.annotations.listener.JmsAllProducers;
-import com.middleware.jms.core.resource.listener.JmsResourceListener;
+import io.github.spring.middleware.rabbitmq.annotations.JmsListener;
+import io.github.spring.middleware.rabbitmq.annotations.listener.JmsAllProducers;
+import io.github.spring.middleware.rabbitmq.core.resource.listener.JmsResourceListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;

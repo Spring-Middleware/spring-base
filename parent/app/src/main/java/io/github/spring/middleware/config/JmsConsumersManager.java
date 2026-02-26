@@ -1,6 +1,6 @@
 package io.github.spring.middleware.config;
 
-import com.middleware.jms.core.JmsResources;
+import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;

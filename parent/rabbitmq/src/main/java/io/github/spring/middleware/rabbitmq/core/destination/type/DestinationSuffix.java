@@ -1,0 +1,6 @@
+package io.github.spring.middleware.rabbitmq.core.destination.type;
+
+public interface DestinationSuffix {
+
+    String version();
+}

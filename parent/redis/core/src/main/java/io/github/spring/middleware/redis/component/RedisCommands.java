@@ -1,8 +1,10 @@
 package io.github.spring.middleware.redis.component;
 
 import org.apache.commons.lang3.tuple.Pair;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.params.SetParams;
 
@@ -112,7 +114,12 @@ public class RedisCommands {
         if (jedis != null) {
             return jedis.echo(s);
         } else {
-            return jedisCluster.echo(s);
+            // Obtenemos un nodo cualquiera para ejecutar el comando ECHO
+            // En Jedis 5.x, obtenemos la conexión y ejecutamos el comando directamente
+            try (Connection node = jedisCluster.getConnectionFromSlot(0)) {
+                node.sendCommand(Protocol.Command.ECHO, s);
+                return node.getBulkReply(); // ECHO devuelve un Bulk String
+            }
         }
     }
 

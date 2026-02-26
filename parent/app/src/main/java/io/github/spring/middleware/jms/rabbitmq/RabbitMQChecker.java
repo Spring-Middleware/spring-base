@@ -1,11 +1,11 @@
 package io.github.spring.middleware.jms.rabbitmq;
 
-import com.middleware.jms.annotations.JmsBinding;
-import com.middleware.jms.annotations.JmsDestination;
-import com.middleware.jms.annotations.JmsProducer;
-import com.middleware.jms.core.JmsResources;
-import com.middleware.jms.core.destination.type.DestinationSuffix;
-import com.middleware.jms.core.destination.type.DestinationType;
+import io.github.spring.middleware.rabbitmq.annotations.JmsBinding;
+import io.github.spring.middleware.rabbitmq.annotations.JmsDestination;
+import io.github.spring.middleware.rabbitmq.annotations.JmsProducer;
+import io.github.spring.middleware.rabbitmq.core.JmsResources;
+import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationSuffix;
+import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,9 +1,9 @@
 package io.github.spring.middleware.jms;
 
 import io.github.spring.middleware.error.api.ErrorRequest;
-import com.middleware.jms.annotations.JmsDestination;
-import com.middleware.jms.annotations.JmsProducer;
-import com.middleware.jms.core.resource.producer.JmsProducerResource;
+import io.github.spring.middleware.rabbitmq.annotations.JmsDestination;
+import io.github.spring.middleware.rabbitmq.annotations.JmsProducer;
+import io.github.spring.middleware.rabbitmq.core.resource.producer.JmsProducerResource;
 import org.springframework.stereotype.Component;
 
 @Component

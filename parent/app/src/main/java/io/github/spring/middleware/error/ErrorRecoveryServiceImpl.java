@@ -5,7 +5,7 @@ import io.github.spring.middleware.error.api.ErrorRecoveryAttemptRequest;
 import io.github.spring.middleware.error.api.ErrorRecoveryAttemptView;
 import io.github.spring.middleware.error.api.ErrorView;
 import io.github.spring.middleware.exception.ExceptionUtils;
-import com.middleware.jms.core.resource.JmsResource;
+import io.github.spring.middleware.rabbitmq.core.resource.JmsResource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;

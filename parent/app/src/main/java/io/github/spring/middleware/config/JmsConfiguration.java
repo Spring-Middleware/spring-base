@@ -1,11 +1,12 @@
 package io.github.spring.middleware.config;
 
 import io.github.spring.middleware.jms.JmsActiveProfile;
-import com.middleware.jms.JmsFactory;
-import com.middleware.jms.configuration.JmsConnectionConfiguration;
-import com.middleware.jms.configuration.JmsConnectionCredentials;
-import com.middleware.jms.configuration.JmsConnectionPoolConfiguration;
-import com.middleware.jms.core.JmsResources;
+
+import io.github.spring.middleware.rabbitmq.JmsFactory;
+import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionConfiguration;
+import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionCredentials;
+import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionPoolConfiguration;
+import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
