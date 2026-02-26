@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core.parent</groupId>
+        <groupId>com.middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>app</artifactId>
     <version>${core.app.version}</version>
     <name>app</name>
@@ -66,11 +66,11 @@
             <artifactId>aws-java-sdk-sts</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>commons</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>view-core</artifactId>
         </dependency>
         <dependency>

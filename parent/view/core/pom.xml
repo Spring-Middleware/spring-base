@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core</groupId>
+        <groupId>com.middleware</groupId>
         <artifactId>view</artifactId>
         <version>${core.view.version}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>view-core</artifactId>
     <version>${core.view.version}</version>
     <name>view-core</name>
@@ -18,12 +18,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>view-api</artifactId>
             <version>${core.view.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>commons</artifactId>
             <version>${core.commons.version}</version>
         </dependency>

@@ -1,6 +1,6 @@
 package com.common.view;
 
-import com.core.view.View;
+import com.middleware.view.View;
 
 import java.util.Collection;
 import java.util.function.Function;

@@ -5,13 +5,13 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core.parent</groupId>
+        <groupId>com.middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>cache</artifactId>
     <version>${core.cache.version}</version>
     <name>cache</name>
@@ -19,7 +19,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>commons</artifactId>
         </dependency>
         <dependency>

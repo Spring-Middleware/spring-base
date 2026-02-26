@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core</groupId>
+        <groupId>com.middleware</groupId>
         <artifactId>mongo</artifactId>
         <version>${core.mongo.version}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>mongo-core</artifactId>
     <version>${core.mongo.version}</version>
     <name>mongo-core</name>
@@ -26,12 +26,12 @@
             <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>mongo-api</artifactId>
             <version>${core.mongo.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>mongo-core-commons</artifactId>
             <version>${core.mongo.version}</version>
         </dependency>

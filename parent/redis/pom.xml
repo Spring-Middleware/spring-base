@@ -5,12 +5,12 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>com.core.parent</groupId>
+        <groupId>com.middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>redis</artifactId>
     <version>${core.redis.version}</version>
     <name>redis</name>

@@ -1,8 +1,8 @@
 package com.common.view;
 
-import com.core.view.View;
-import com.core.view.annotations.FillerProperty;
-import com.core.view.annotations.ViewProperty;
+import com.middleware.view.View;
+import com.middleware.view.annotations.FillerProperty;
+import com.middleware.view.annotations.ViewProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
 

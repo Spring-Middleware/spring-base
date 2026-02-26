@@ -11,7 +11,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>bom</artifactId>
     <version>${revision}</version>
     <name>bom</name>
@@ -46,77 +46,77 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>commons</artifactId>
                 <version>${core.commons.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>view-api</artifactId>
                 <version>${core.view.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>view-core</artifactId>
                 <version>${core.view.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>mongo-api</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>mongo-core</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>mongo-core-commons</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>mongo-core-react</artifactId>
                 <version>${core.mongo.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>jpa-api</artifactId>
                 <version>${core.jpa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>jpa-core</artifactId>
                 <version>${core.jpa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>api</artifactId>
                 <version>${core.api.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>app</artifactId>
                 <version>${core.app.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>redis-api</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>redis-core</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>redis-core-react</artifactId>
                 <version>${core.redis.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.core</groupId>
+                <groupId>com.middleware</groupId>
                 <artifactId>cache</artifactId>
                 <version>${core.cache.version}</version>
             </dependency>

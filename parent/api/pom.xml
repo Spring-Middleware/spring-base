@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core.parent</groupId>
+        <groupId>com.middleware.parent</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>api</artifactId>
     <version>${core.api.version}</version>
     <name>api</name>
@@ -38,7 +38,7 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>view-api</artifactId>
         </dependency>
         <dependency>

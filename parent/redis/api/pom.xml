@@ -5,12 +5,12 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.core</groupId>
+        <groupId>com.middleware</groupId>
         <artifactId>redis</artifactId>
         <version>${core.redis.version}</version>
     </parent>
 
-    <groupId>com.core</groupId>
+    <groupId>com.middleware</groupId>
     <artifactId>redis-api</artifactId>
     <version>${core.redis.version}</version>
     <name>redis-api</name>
@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.core</groupId>
+            <groupId>com.middleware</groupId>
             <artifactId>commons</artifactId>
         </dependency>
     </dependencies>

@@ -1,14 +1,14 @@
 package com.commons.mongo.react.repository;
 
-import com.core.data.Pagination;
-import com.core.mongo.components.CriteriaBuilderComponent;
-import com.core.mongo.components.QueryCreatorComponent;
-import com.core.mongo.components.SortBuilderComponent;
-import com.core.mongo.exception.MongoSearchException;
-import com.core.mongo.repository.MongoSearchReactiveRepository;
-import com.core.mongo.search.Coordinates;
-import com.core.mongo.search.GeoSearch;
-import com.core.mongo.search.MongoSearch;
+import com.middleware.data.Pagination;
+import com.middleware.mongo.components.CriteriaBuilderComponent;
+import com.middleware.mongo.components.QueryCreatorComponent;
+import com.middleware.mongo.components.SortBuilderComponent;
+import com.middleware.mongo.exception.MongoSearchException;
+import com.middleware.mongo.repository.MongoSearchReactiveRepository;
+import com.middleware.mongo.search.Coordinates;
+import com.middleware.mongo.search.GeoSearch;
+import com.middleware.mongo.search.MongoSearch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

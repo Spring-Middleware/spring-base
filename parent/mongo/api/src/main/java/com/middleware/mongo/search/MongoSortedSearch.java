@@ -1,0 +1,22 @@
+package com.middleware.mongo.search;
+
+import com.middleware.sort.SortCriteria;
+import com.middleware.sort.SortedSearch;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public abstract class MongoSortedSearch implements MongoSearch, SortedSearch {
+
+    private SortCriteria sortCriteria;
+
+    public MongoSortedSearch(SortCriteria sortCriteria) {
+
+        this.sortCriteria = sortCriteria;
+    }
+
+}
+
