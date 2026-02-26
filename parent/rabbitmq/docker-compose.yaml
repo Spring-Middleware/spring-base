@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI
+    volumes:
+      - ./src/test/resources/definitions.json:/etc/rabbitmq/definitions.json
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit load_definitions \"/etc/rabbitmq/definitions.json\""
+    restart: always

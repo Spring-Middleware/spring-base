@@ -27,7 +27,7 @@
 
 ---
 
-## 🎯 Overview
+## Overview
 
 **Spring Base** is a battle-tested, modular framework architected to standardize the development of high-performance Spring Boot microservices.
 
@@ -41,7 +41,7 @@ Born from production experience in high-traffic environments (e.g., Travel & Ret
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 spring-base/
@@ -77,9 +77,9 @@ spring-base/
 
 ---
 
-## 📦 Modules
+## Modules
 
-### 🔧 Commons
+### Commons
 
 **Location:** `parent/commons/`
 
@@ -110,7 +110,7 @@ ServiceException (parent)
 
 ---
 
-### 🎨 View System
+### View System
 
 **Location:** `parent/view/`
 
@@ -261,7 +261,7 @@ OrderView view = ViewResolver.resolveEntity(OrderView.class, order);
 
 ---
 
-### 🍃 MongoDB Integration
+### MongoDB Integration
 
 **Location:** `parent/mongo/`
 
@@ -358,7 +358,7 @@ Mono<Long> count(ProductSearch searchCriteria);
 
 ---
 
-### 🔴 Redis Integration
+### Redis Integration
 
 **Location:** `parent/redis/`
 
@@ -581,7 +581,7 @@ public void manageOrderItems() {
 
 ---
 
-### 🗄️ JPA Integration
+### JPA Integration
 
 **Location:** `parent/jpa/`
 
@@ -662,13 +662,11 @@ long count(OrderSearch searchCriteria);
 
 ---
 
-### 🐇 RabbitMQ Integration
+### RabbitMQ Integration
 
 **Location:** `parent/rabbitmq/`
 
 **Module README:** [parent/rabbitmq/README.md](parent/rabbitmq/README.md) (documentation included in the repository)
-
-**Reference (upstream):** https://github.com/fernandoguardiolaruiz/rabbitmq-java-queue/blob/master/README.md
 
 This module provides integration with RabbitMQ through a lightweight JMS-like abstraction to support event-driven and message queue patterns. It is intended to be used by other framework modules (for example, `app` or `commons`) for:
 
@@ -718,7 +716,7 @@ For detailed configuration, reconnection strategies, parallel consumption patter
 
 ---
 
-### 💾 Cache Module
+### Cache Module
 
 **Location:** `parent/cache/`
 
@@ -767,7 +765,7 @@ public class CacheController {
 
 ---
 
-### ⚙️ Application Core
+### Application Core
 
 **Location:** `parent/app/`
 
@@ -872,50 +870,7 @@ public class ErrorRegister {
 
 ---
 
-### 4. ViewModelMapper
-
-```java
-@Component
-public class ViewModelMapper<R, VM, M> {
-    
-    public M map(R request, Class<VM> viewModelClass, M model) {
-        // Maps request -> view model -> model
-        // Supports nested objects and collections
-    }
-}
-```
-
-#### 5. Refreshable Singleton Scope
-
-**Custom Spring scope** for beans that can be refreshed on demand.
-
-```java
-@Service
-@Scope("refreshable-singleton")
-public class ConfigService {
-    
-    @InitMethod
-    public void initialize() {
-        // Called on creation and refresh of the bean
-        loadConfiguration();
-    }
-}
-```
-
-#### 6. Management Controllers
-
-Operational endpoints to control application state at runtime.
-
-| Controller | Base Path | Description |
-|------------|-----------|-------------|
-| **JmsController** | `/jms` | Manage JMS consumers (start, stop, list). Useful to operate on specific consumers without restart. |
-| **BeanController** | `/bean` | Refresh beans annotated with `@Scope("refreshable-singleton")` via `/bean/refresh?name={beanName}`. |
-| **ErrorRecoveryController** | `/errorRecovery` | Manually trigger the error recovery process based on provided search criteria. |
-| **CommonsController** | N/A | Base controller providing standardized `@ExceptionHandler` responses for `NotFoundException`, `BadRequest`, etc. |
-
----
-
-## 🌐 API Module
+## API Module
 
 **Location:** `parent/api/`
 
@@ -947,7 +902,7 @@ public class CollectionBaseResponse<T> extends BaseResponse {
 
 ---
 
-## 📊 Model Module
+## Model Module
 
 **Location:** `parent/model/`
 
@@ -972,7 +927,7 @@ public class AuditInfo {
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
 ### ✅ **Dynamic Querying**
 - **MongoDB**: Annotation-driven aggregation pipelines with support for **Geospatial search**, computed fields (`$multiply`, etc.), and field concatenation.
@@ -1009,7 +964,7 @@ public class AuditInfo {
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -1064,7 +1019,7 @@ mvn clean install
 
 ---
 
-## 📖 Usage Examples
+## Usage Examples
 
 ### Example 1: MongoDB Dynamic Search
 
@@ -1276,7 +1231,7 @@ public class InventoryService {
 
 ---
 
-## 🎨 Design Patterns
+## Design Patterns
 
 ### Patterns Implemented:
 
@@ -1294,16 +1249,3 @@ public class InventoryService {
 | **Unit of Work** | Redis Units | Aggregate operations |
 | **Mutex** | Redis | Distributed locking |
 
----
-
-## 👤 Author
-
-**Fernando Guardiola Ruiz**  
-Software Architect | Backend Specialist
-
-- GitHub: [@fernandoguardiolaruiz](https://github.com/fernandoguardiolaruiz)
-- LinkedIn: [Fernando Guardiola](https://www.linkedin.com/in/fernando-guardiola-ruiz-3093868a/?originalSubdomain=es)
-
----
-
-**Built with ❤️ for the developer community**

@@ -89,27 +89,27 @@ The framework follows a clean, modular architecture:
 
 ## 🚀 Quick Start
 
-### 1. Add Dependency
+### 1. Add / Use the Module
 
-Add the JAR to your project (currently version 2.7):
+If you consume this project as a published external artifact, add the library coordinates provided by the release or by your organization's artifact repository (check the BOM or the published release notes for exact groupId:artifactId:version). The README intentionally does not hard-code coordinates here to avoid stale data — prefer the coordinates from the release or the parent BOM.
 
-```xml
-<dependency>
-    <groupId>com.middleware</groupId>
-    <artifactId>rabbitmq-java-queues</artifactId>
-    <version>2.7</version>
-</dependency>
-```
+If you are working inside the `spring-base` monorepo and build this module as part of the reactor (multi-module Maven build), you do NOT need to add an extra Maven dependency: the module is available directly on the build classpath when you run `mvn install` from the repository root.
+
+Important: using the library at runtime does NOT require Docker or Testcontainers. Docker is required only to run the automated integration tests (Testcontainers) or to run the local example RabbitMQ via docker-compose (see next step).
 
 ### 2. Start RabbitMQ (Docker)
+
+Optional — start RabbitMQ with Docker Compose for manual testing or local examples:
 
 ```bash
 docker-compose up -d
 ```
 
-This starts RabbitMQ with:
+This will expose:
 - AMQP port: `5672`
 - Management UI: `http://localhost:15672` (admin/admin)
+
+Important: The project's automated integration tests use Testcontainers. To run `mvn test` locally you must have a working Docker engine available (Testcontainers launches RabbitMQ containers on demand). If you cannot run Docker locally, you can still build the project (`mvn -DskipTests package`) but integration tests that require a broker will be skipped or will fail.
 
 ### 3. Create a Producer
 
