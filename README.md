@@ -14,6 +14,7 @@
   - [View System](#view-system)
   - [MongoDB Integration](#mongodb-integration)
   - [Redis Integration](#redis-integration)
+  - [RabbitMQ Integration](#rabbitmq-integration)
   - [JPA Integration](#jpa-integration)
   - [Cache Module](#cache-module)
   - [Application Core](#application-core)
@@ -59,6 +60,7 @@ spring-base/
 │   │   ├── api/               # Redis contracts
 │   │   ├── core/              # Synchronous implementation
 │   │   └── core-react/        # Reactive implementation
+│   ├── rabbitmq/              # RabbitMQ (JMS) integration
 │   ├── jpa/                    # JPA/Hibernate dynamic search
 │   │   ├── api/               # Search annotations
 │   │   └── core/              # HQL query builder
@@ -577,35 +579,6 @@ public void manageOrderItems() {
 }
 ```
 
-**3. Required Functions Helper:**
-
-You need to implement the translation functions. Typically encapsulated in a utility class:
-
-```java
-public class RedisFunctions {
-    // Defines how to convert Redis Hash Data (Map<String, String>) to Unit Objects
-    public static MappingUnitFunction<OrderKey, OrderItemKey, OrderItem> mappingUnitFunction() {
-        return (redisKeyMapValues) -> {
-            // logic to convert map values to Set<OrderItem>
-            return redisKeyMapValues.getValues().values().stream()
-                .map(json -> jsonConverter.toObject(json))
-                .collect(Collectors.toSet());
-        };
-    }
-    
-    // Defines how to convert Unit Objects to Redis Hash Data
-    public static MappingAttributeFunction<OrderKey, OrderItemKey, OrderItem> mappingAttributeFunction() {
-        return (key, units) -> {
-            final Map<String, String> map = units.stream()
-                .collect(Collectors.toMap(u -> u.getKey().getKey(), u -> jsonConverter.toString(u)));
-            return new RedisKeyMapValues<>(key, map);
-        };
-    }
-    
-    // ... implement mergerUnitFunction and redisUnitContainerCreationFunction
-}
-```
-
 ---
 
 ### 🗄️ JPA Integration
@@ -686,6 +659,62 @@ List<Order> search(OrderSearch searchCriteria);
 Page<Order> search(OrderSearch searchCriteria, Pageable pageable);
 long count(OrderSearch searchCriteria);
 ```
+
+---
+
+### 🐇 RabbitMQ Integration
+
+**Location:** `parent/rabbitmq/`
+
+**Module README:** [parent/rabbitmq/README.md](parent/rabbitmq/README.md) (documentation included in the repository)
+
+**Reference (upstream):** https://github.com/fernandoguardiolaruiz/rabbitmq-java-queue/blob/master/README.md
+
+This module provides integration with RabbitMQ through a lightweight JMS-like abstraction to support event-driven and message queue patterns. It is intended to be used by other framework modules (for example, `app` or `commons`) for:
+
+- Publishing business events (producers)
+- Consuming and processing messages (consumers)
+- Automatic error registration and forwarding to dead-letter queues (DLQs)
+- Operational management of consumers (via `JmsController`)
+
+Key components (summary):
+
+- `JmsProducerResource` / `JmsConsumerResource`: base classes for producers and consumers.
+- `JmsErrorProducer`: internal producer used by `ErrorRegister` to send error details to an error queue.
+- Annotations: `@JmsProducer`, `@JmsConsumer`, `@JmsDestination`, `@JmsBinding`, etc., to declare destinations and bindings.
+- `JmsController`: management endpoints to start/stop and list consumers at runtime.
+
+Quick example — Producer:
+
+```java
+@Component
+@JmsProducer
+@NotifyErrorHandler
+@JmsDestination(name = "event-queue", clazzSuffix = JmsActiveProfileSuffix.class)
+public class EventProducerResource extends JmsProducerResource<EventRequest> {
+    // Usage: send(event)
+}
+```
+
+Quick example — ErrorRegister usage:
+
+```java
+@Component
+public class ErrorRegister {
+
+    @Autowired
+    private JmsErrorProducer jmsErrorProducer;
+
+    public void registryError(Throwable exception, Map<String, String> data) {
+        this.jmsErrorProducer.send(ErrorRequest.builder()
+            .errorMessage(exception.getMessage())
+            .data(data)
+            .build());
+    }
+}
+```
+
+For detailed configuration, reconnection strategies, parallel consumption patterns and exchanges/queues definitions, see the module README (`parent/rabbitmq/README.md`) 
 
 ---
 
@@ -803,10 +832,10 @@ public class RequestTrackerFilter implements Filter {
 
 **Integration with `rabbitmq-java-queue`** for message-driven architecture.
 
-The framework leverages the separate **`rabbitmq-java-queue`** library to provide robust messaging capabilities. Within `spring-base`, this is primarily used for:
+The framework leverages the separate library **`rabbitmq-java-queue`** to provide robust messaging capabilities. Within `spring-base`, this is used primarily for:
 
-1.  **Error Reporting:** Automatically sending exceptions to an error queue via `ErrorRegister`.
-2.  **Event Propagation:** Publishing business events using producers like `EventProducerResource`.
+1.  **Error Reporting:** Automatic sending of exceptions to an error queue via `ErrorRegister`.
+2.  **Event Propagation:** Publishing of business events using producers like `EventProducerResource`.
 
 **Example 1: Event Producer**
 
@@ -816,11 +845,11 @@ The framework leverages the separate **`rabbitmq-java-queue`** library to provid
 @NotifyErrorHandler
 @JmsDestination(name = "event-queue", clazzSuffix = JmsActiveProfileSuffix.class)
 public class EventProducerResource extends JmsProducerResource<EventRequest> {
-    // Methods to publish events are inherited from JmsProducerResource (e.g., send(event))
+    // Methods to publish events inherited from JmsProducerResource (e.g., send(event))
 }
 ```
 
-**Example 2: Error Reporting (Internal)**
+**Example 2: Error Reporting (internal)**
 
 The `ErrorRegister` component uses an internal producer (`JmsErrorProducer`) to send error details to the configured error queue.
 
@@ -832,7 +861,7 @@ public class ErrorRegister {
     private JmsErrorProducer jmsErrorProducer;
 
     public void registryError(Throwable exception, Map<String, String> data) {
-        // Sends error details to the DLQ/Error Queue
+        // Sends error details to the error queue
         this.jmsErrorProducer.send(ErrorRequest.builder()
             .errorMessage(exception.getMessage())
             .data(data)
@@ -841,30 +870,9 @@ public class ErrorRegister {
 }
 ```
 
-#### 4. Exception Handling
+---
 
-**Centralized exception management:**
-
-```java
-@RestControllerAdvice
-public class ExceptionControllerHandler {
-    
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorMessage> handleBadRequest(BadRequestException ex) {
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(ErrorMessage.builder()
-                .code(ex.getCode())
-                .message(ex.getMessage())
-                .level(ErrorLevel.ERROR)
-                .build());
-    }
-}
-```
-
-#### 5. Mapping Utilities
-
-**Request-to-Model mapping with view-model pattern:**
+### 4. ViewModelMapper
 
 ```java
 @Component
@@ -877,7 +885,7 @@ public class ViewModelMapper<R, VM, M> {
 }
 ```
 
-#### 6. Refreshable Singleton Scope
+#### 5. Refreshable Singleton Scope
 
 **Custom Spring scope** for beans that can be refreshed on demand.
 
@@ -888,26 +896,26 @@ public class ConfigService {
     
     @InitMethod
     public void initialize() {
-        // Called on bean creation and refresh
+        // Called on creation and refresh of the bean
         loadConfiguration();
     }
 }
 ```
 
-#### 7. Management Controllers
+#### 6. Management Controllers
 
-Operational endpoints for controlling application state at runtime.
+Operational endpoints to control application state at runtime.
 
 | Controller | Base Path | Description |
 |------------|-----------|-------------|
-| **JmsController** | `/jms` | Manage JMS consumers (start, stop, list). Useful for operating on specific consumers without restart. |
+| **JmsController** | `/jms` | Manage JMS consumers (start, stop, list). Useful to operate on specific consumers without restart. |
 | **BeanController** | `/bean` | Refresh beans annotated with `@Scope("refreshable-singleton")` via `/bean/refresh?name={beanName}`. |
 | **ErrorRecoveryController** | `/errorRecovery` | Manually trigger the error recovery process based on provided search criteria. |
 | **CommonsController** | N/A | Base controller providing standardized `@ExceptionHandler` responses for `NotFoundException`, `BadRequest`, etc. |
 
 ---
 
-### 🌐 API Module
+## 🌐 API Module
 
 **Location:** `parent/api/`
 
@@ -939,7 +947,7 @@ public class CollectionBaseResponse<T> extends BaseResponse {
 
 ---
 
-### 📊 Model Module
+## 📊 Model Module
 
 **Location:** `parent/model/`
 
