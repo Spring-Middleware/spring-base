@@ -2,6 +2,7 @@
 
 [![Java](https://img.shields.io/badge/Java-17%20%2F%2021-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://search.maven.org/artifact/io.github.spring-middleware/bom)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Modular-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 

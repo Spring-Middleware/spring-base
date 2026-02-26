@@ -12,6 +12,7 @@
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>rabbitmq</artifactId>
     <version>${core.rabbitmq.version}</version>
+    <name>Rabbit MQ Integration</name>
     <packaging>jar</packaging>
 
     <pluginRepositories>

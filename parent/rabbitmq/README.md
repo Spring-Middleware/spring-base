@@ -2,6 +2,7 @@
 
 [![Java](https://img.shields.io/badge/Java-8+-orange.svg)](https://www.oracle.com/java/)
 [![Maven](https://img.shields.io/badge/Maven-3.x-blue.svg)](https://maven.apache.org/)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://search.maven.org/artifact/io.github.spring-middleware/bom)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12+-orange.svg)](https://www.rabbitmq.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 

@@ -35,17 +35,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://://github.com</connection>
-        <developerConnection>scm:git:ssh://github.com:Spring-Middleware/spring-base.git</developerConnection>
-        <url>https://github.com/tree/main</url>
+        <connection>scm:git:https://github.com/Spring-Middleware/spring-base.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:Spring-Middleware/spring-base.git</developerConnection>
+        <url>https://github.com/Spring-Middleware/spring-base</url>
     </scm>
-
-    <distributionManagement>
-        <repository>
-            <id>central</id>
-            <url>https://central.sonatype.com</url>
-        </repository>
-    </distributionManagement>
 
     <properties>
         <revision>1.0.0</revision>
