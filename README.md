@@ -1020,6 +1020,52 @@ mvn clean install
 
 ---
 
+### Published artifacts and installation
+
+This project publishes a BOM to Maven Central which makes it easy to align versions across modules.
+
+1) Import the BOM in your project's `pom.xml` (dependency management):
+
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.spring-middleware</groupId>
+      <artifactId>bom</artifactId>
+      <version>REPLACE_WITH_BOM_VERSION</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+2) Add module dependencies (versions will be managed by the BOM):
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>io.github.spring-middleware</groupId>
+    <artifactId>rabbitmq</artifactId>
+    <!-- version managed by the BOM -->
+  </dependency>
+</dependencies>
+```
+
+3) If you prefer to depend directly on a single artifact without importing the BOM, add the explicit coordinates and version:
+
+```xml
+<dependency>
+  <groupId>io.github.spring-middleware</groupId>
+  <artifactId>rabbitmq</artifactId>
+  <version>REPLACE_WITH_VERSION</version>
+</dependency>
+```
+
+You can find the latest published versions on Maven Central: https://search.maven.org/artifact/io.github.spring-middleware/bom
+
+---
+
 ## Usage Examples
 
 ### Example 1: MongoDB Dynamic Search

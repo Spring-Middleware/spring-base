@@ -21,6 +21,7 @@ A lightweight, annotation-driven JMS framework for RabbitMQ that enables seamles
 - [Testing](#-testing)
 - [Project Structure](#-project-structure)
 - [Contributing](#-contributing)
+- [Published artifacts and installation](#-published-artifacts-and-installation)
 
 ## ✨ Features
 
@@ -666,3 +667,57 @@ For issues, questions, or contributions, please open an issue in the repository.
 **Version:** 2.7  
 **Java Version:** 8+  
 **Last Updated:** January 2026
+
+## Published artifacts and installation
+
+This module is published to Maven Central under the `io.github.spring-middleware` group. You can consume it in two ways:
+
+1) Preferred: import the project's BOM to manage versions centrally (recommended):
+
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.spring-middleware</groupId>
+      <artifactId>bom</artifactId>
+      <version>REPLACE_WITH_BOM_VERSION</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+Then add the module dependency without a version (the BOM will provide it):
+
+```xml
+<dependency>
+  <groupId>io.github.spring-middleware</groupId>
+  <artifactId>rabbitmq-java-queues</artifactId>
+  <!-- version managed by the BOM -->
+</dependency>
+```
+
+2) Direct dependency (single artifact):
+
+Maven:
+
+```xml
+<dependency>
+  <groupId>io.github.spring-middleware</groupId>
+  <artifactId>rabbitmq-java-queues</artifactId>
+  <version>REPLACE_WITH_VERSION</version>
+</dependency>
+```
+
+Gradle (Groovy DSL):
+
+```groovy
+implementation 'io.github.spring-middleware:rabbitmq-java-queues:REPLACE_WITH_VERSION'
+```
+
+Notes:
+- If you are developing inside the `spring-base` monorepo and build this module locally as part of the reactor, you do not need to add the dependency — the module will be on the build classpath.
+- Docker / Testcontainers are required only to run the module's integration tests locally (or to start a local RabbitMQ via `docker-compose` for manual testing); they are not required to depend on or run the library in production.
+
+See the published BOM and artifact versions on Maven Central: https://search.maven.org/artifact/io.github.spring-middleware/bom
