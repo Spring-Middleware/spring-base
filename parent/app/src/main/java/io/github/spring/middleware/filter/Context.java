@@ -22,4 +22,9 @@ public class Context {
 
         contextThreadLocal.get().put(key, object);
     }
+
+    public static Map<String, Object> get() {
+
+        return contextThreadLocal.get();
+    }
 }

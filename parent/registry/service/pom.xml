@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.spring-middleware</groupId>
+        <artifactId>registry</artifactId>
+        <version>${core.registry.version}</version>
+    </parent>
+
+    <groupId>io.github.spring-middleware</groupId>
+    <artifactId>registry-service</artifactId>
+    <version>${core.registry.version}</version>
+    <name>registry-service</name>
+    <description>Service Registry</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.spring-middleware</groupId>
+            <artifactId>app</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>4.2.0</version> <!-- o la versión más reciente -->
+        </dependency>
+        <dependency>
+            <groupId>io.github.spring-middleware</groupId>
+            <artifactId>registry-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+    </dependencies>
+
+
+</project>

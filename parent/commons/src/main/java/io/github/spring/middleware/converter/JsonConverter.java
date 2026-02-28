@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.MediaType;
 
 import java.io.ByteArrayOutputStream;
 import java.text.DateFormat;

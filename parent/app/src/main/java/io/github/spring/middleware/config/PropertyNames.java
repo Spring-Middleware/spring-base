@@ -8,4 +8,7 @@ public class PropertyNames {
 
     public static String CONTENT_LANGUAGE = "CONTENT_LANGUAGE";
 
+    public static String HEADERS = "HEADERS";
+
+
 }

@@ -1,0 +1,21 @@
+version: '3.8'
+
+networks:
+  middleware-net:
+    driver: bridge
+
+services:
+  registry:
+    build:
+      context: ./parent/registry/boot
+      dockerfile: Dockerfile
+    container_name: registry
+    hostname: registry
+    networks:
+      - middleware-net
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    restart: unless-stopped
+

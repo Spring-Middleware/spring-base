@@ -1,0 +1,27 @@
+server:
+  port: 8050
+  servlet:
+    context-path: /registry
+
+middleware:
+  client:
+    proxy:
+      registryEndpoint: localhost:8050/registry
+      maxRetries: 3
+      waitBetweenRetries: 1000
+
+  resourceRegister:
+    clusterName: registry
+
+  publicServer:
+    host: localhost
+    port: 8070
+
+redisson:
+  address: redis://localhost:6379
+  database: 0
+
+logging:
+  level:
+    io.github.spring.middleware: DEBUG
+    root: ERROR

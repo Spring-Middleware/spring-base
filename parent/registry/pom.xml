@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>io.github.spring-middleware</groupId>
+        <artifactId>parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <groupId>io.github.spring-middleware</groupId>
+    <artifactId>registry</artifactId>
+    <version>${core.registry.version}</version>
+    <name>registry</name>
+    <description>Service Registry</description>
+
+    <modules>
+        <module>model</module>
+        <module>service</module>
+        <module>boot</module>
+    </modules>
+
+</project>
