@@ -1,6 +1,7 @@
 package io.github.spring.middleware.registry.model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,6 +10,7 @@ public class RegistryEntry implements Serializable {
     private String clusterEndpoint;
     private Set<String> nodeEndpoints;
     private String publicEndpoint;
+    private LocalDateTime dateTime;
 
     public RegistryEntry() {
     }
@@ -48,5 +50,13 @@ public class RegistryEntry implements Serializable {
 
     public void removeNodeEndpoint(String nodeEndpoint) {
         this.nodeEndpoints.removeIf(name -> name.startsWith(nodeEndpoint));
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public LocalDateTime getDateTime() {
+        return this.dateTime;
     }
 }

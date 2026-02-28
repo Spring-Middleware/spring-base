@@ -183,7 +183,7 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>io.github.spring-middleware</version>
+                    <version>${spring.boot.version}</version>
                     <configuration>
                         <excludes>
                             <exclude>
@@ -191,6 +191,14 @@
                                 <artifactId>lombok</artifactId>
                             </exclude>
                         </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <outputDirectory>${project.build.directory}/dependency</outputDirectory>
                     </configuration>
                 </plugin>
                 <plugin>

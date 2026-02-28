@@ -15,6 +15,11 @@
     <name>Rabbit MQ Integration</name>
     <packaging>jar</packaging>
 
+    <!-- Property to allow skipping tests in this module specifically -->
+    <properties>
+        <skip.rabbitmq.tests>false</skip.rabbitmq.tests>
+    </properties>
+
     <pluginRepositories>
         <pluginRepository>
             <id>jboss-maven2-release-repository</id>
@@ -115,6 +120,24 @@
 
     <build>
         <plugins>
+            <!-- Configure surefire/failsafe to respect module-specific skip property -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <skipTests>${skip.rabbitmq.tests}</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <skipITs>${skip.rabbitmq.tests}</skipITs>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

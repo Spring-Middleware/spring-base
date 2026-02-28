@@ -13,6 +13,7 @@ import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 
@@ -62,6 +63,7 @@ public class RegistryServiceImpl implements RegistryService {
         registryEntry.addNodeEndpoint(nodeEndpoint);
         registryEntry.setClusterEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);
+        registryEntry.setDateTime(LocalDateTime.now());
         registryEntryMap.put(name, registryEntry);
         log.info("Registerd resource " + name + ":  cluster=" + clusterEndpoint + " node=" + nodeEndpoint);
     }

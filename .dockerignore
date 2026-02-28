@@ -1,0 +1,20 @@
+# ignore build outputs and local maven repo
+target/
+**/target/
+# allow registry-boot jar to be included when building locally
+!parent/registry/boot/target/*.jar
+!parent/registry/boot/target/dependency/**
+.mvn/
+.m2/
+# git
+.git
+.gitignore
+# IDE files
+*.iml
+.idea/
+.vscode/
+# logs
+*.log
+tools/logs/
+# other
+node_modules/

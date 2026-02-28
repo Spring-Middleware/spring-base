@@ -7,8 +7,8 @@ networks:
 services:
   registry:
     build:
-      context: ./parent/registry/boot
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: parent/registry/boot/Dockerfile
     container_name: registry
     hostname: registry
     networks:
@@ -16,6 +16,32 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_PROFILES_ACTIVE=DOCKER
+      - REGISTRY_ENDPOINT=http://registry:8080/registry
+      - REDIS_ADDRESS=redis://redis:6379
+      - PUBLIC_SERVER_HOST=registry
+      - PUBLIC_SERVER_PORT=8080
+      - SERVER_PORT=8080
+      - SERVER_CONTEXT_PATH=/registry
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080${SERVER_CONTEXT_PATH:-/registry}/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - middleware-net
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped

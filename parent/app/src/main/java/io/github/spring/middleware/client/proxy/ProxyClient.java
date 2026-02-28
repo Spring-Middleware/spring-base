@@ -88,7 +88,7 @@ public class ProxyClient<T> implements ClientConfigurable {
                 MethodParamExtractor.ExtractedParams extractedParams = MethodParamExtractor.extract(method, args);
                 String queryPath = ResourceMetadaURLResolver.resolvePath(extractedParams.getPath(), extractedParams.getPathVariables(), extractedParams.getRequestParams());
                 if (registryEntry != null && registryEntry.getClusterEndpoint() != null) {
-                    String url = "http://" + registryEntry.getClusterEndpoint() + queryPath;
+                    String url = registryEntry.getClusterEndpoint() + queryPath;
 
                     // Ensure WebClient is initialized
                     if (webClient == null) {
