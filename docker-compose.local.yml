@@ -9,10 +9,18 @@ services:
     hostname: registry
     ports:
       - "8080:8080"
+      - "5005:5005"
     environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=LOCAL
       - REGISTRY_ENDPOINT=http://registry:8080/registry
       - REDIS_ADDRESS=redis://redis:6379
+      - GRAPHQL_ENABLED=false
+      - REGISTRY_CONSISTENCY_SCHEDULER_ENABLED=false
+    networks:
+      middleware-net:
+        aliases:
+          - registry
     depends_on:
       - redis
 
@@ -21,4 +29,11 @@ services:
     container_name: redis_local
     ports:
       - "6379:6379"
+    networks:
+      middleware-net:
+        aliases:
+          - redis
 
+networks:
+  middleware-net:
+    driver: bridge

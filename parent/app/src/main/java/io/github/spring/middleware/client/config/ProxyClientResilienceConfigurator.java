@@ -20,10 +20,14 @@ public class ProxyClientResilienceConfigurator {
     private final RegistryClient registryClient;
     private final Executor taskExecutor;
     private final ProxyClientConfigurationProperties proxyClientConfigurationProperties;
+    private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
 
-    public ProxyClientResilienceConfigurator(RegistryClient registryClient, ProxyClientConfigurationProperties proxyClientConfigurationProperties) {
+    public ProxyClientResilienceConfigurator(RegistryClient registryClient,
+                                             ProxyClientConfigurationProperties proxyClientConfigurationProperties,
+                                             ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties) {
         this.proxyClientConfigurationProperties = proxyClientConfigurationProperties;
         this.registryClient = registryClient;
+        this.taskConfigProperties = taskConfigProperties;
         this.taskExecutor = Executors.newCachedThreadPool();
     }
 
@@ -45,7 +49,7 @@ public class ProxyClientResilienceConfigurator {
         configurationTasks.clear();
         for (ProxyClient<?> proxyClient : proxyClients) {
             if (!proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf())) {
-                ProxyClientConfigurationTask task = new ProxyClientConfigurationTask(proxyClient, registryClient, proxyClientConfigurationProperties);
+                ProxyClientConfigurationTask task = new ProxyClientConfigurationTask(proxyClient, registryClient, proxyClientConfigurationProperties, taskConfigProperties);
                 configurationTasks.add(task);
                 runAsyncTask(task);
             }

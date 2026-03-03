@@ -1,7 +1,7 @@
 package io.github.spring.middleware.registry.controller;
 
 
-import io.github.spring.middleware.annotations.Register;
+import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @AllArgsConstructor
@@ -33,7 +34,7 @@ public class RegistryController {
     }
 
     @PostMapping("/schema")
-    public void registryGraphQLSchemaLocation(@NotNull SchemaRegisterParameters schemaRegisterParameters) {
+    public void registerGraphQLSchemaLocation(@NotNull @RequestBody SchemaRegisterParameters schemaRegisterParameters) {
         schemaRegistryService.registerSchemaLocation(schemaRegisterParameters);
     }
 
@@ -42,8 +43,9 @@ public class RegistryController {
         schemaRegistryService.removeSchemaLocation(namespace);
     }
 
-    @GetMapping
-    public RegistryEntry getRegistryEntry(@RequestParam("resource") String resource) {
+    @GetMapping("/resources/{resource}")
+    public RegistryEntry getRegistryEntry(@PathVariable("resource") String resource) {
+        log.info("Received getRegistryEntry request for resource: {}", resource);
         return registryService.getRegistryEnry(resource);
     }
 
@@ -60,6 +62,16 @@ public class RegistryController {
     @GetMapping("/schema/{namespace}")
     public SchemaLocation getSchemaLocation(@PathVariable("namespace") @NotNull String namespace) {
         return schemaRegistryService.getSchemaLocation(namespace);
+    }
+
+    /**
+     * Simple liveness endpoint used by health checks and docker-compose checks.
+     * Returns a minimal JSON body so it's easy to assert UP from scripts.
+     */
+    @GetMapping("/isAlive")
+    public Map<String, String> isAlive() {
+        log.debug("isAlive called");
+        return Map.of("status", "UP");
     }
 
 }

@@ -20,14 +20,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.internal.util.collections.Sets;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.nio.charset.Charset;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 public class CriteriaBuilderComponentTest<S extends MongoSearch> {
@@ -45,6 +45,7 @@ public class CriteriaBuilderComponentTest<S extends MongoSearch> {
 
     @InjectMocks
     private CriteriaBuilderComponent criteriaBuilderComponent = new CriteriaBuilderComponent();
+
 
     @Before
     public void setUp() {
@@ -64,6 +65,7 @@ public class CriteriaBuilderComponentTest<S extends MongoSearch> {
                 return null;
             }).when(searchClassProcessor)
                     .processAnnotation(any(MongoAnnotationProcessorParameters.class));
+
 
             doCallRealMethod().when(searchPropertiesProcessor)
                     .processAnnotation(any(MongoAnnotationProcessorParameters.class));

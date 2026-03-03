@@ -1,6 +1,7 @@
 package io.github.spring.middleware.client.proxy;
 
 import io.github.spring.middleware.client.error.ErrorResponse;
+import io.github.spring.middleware.error.RemoteError;
 import io.github.spring.middleware.exception.ExceptionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class RemoteServerException extends RuntimeException {
+public class RemoteServerException extends RuntimeException implements RemoteError {
 
     private final int httpStatusCode;
     private ErrorResponse errorResponse;
@@ -51,6 +52,11 @@ public class RemoteServerException extends RuntimeException {
         return Optional.ofNullable((String) this.extensions.get("request-id")).orElse(StringUtils.EMPTY);
     }
 
+    @Override
+    public Object getPayload() {
+        return errorResponse;
+    }
+
     public String getErrorCode() {
 
         return this.errorCode;
@@ -75,5 +81,15 @@ public class RemoteServerException extends RuntimeException {
     public void setErrorResponse(ErrorResponse errorResponse) {
 
         this.errorResponse = errorResponse;
+    }
+
+    @Override
+    public String getCode() {
+        return "";
+    }
+
+    @Override
+    public String getOrigin() {
+        return "";
     }
 }

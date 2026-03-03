@@ -3,7 +3,7 @@ package io.github.spring.middleware.client.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.spring.middleware.annotations.NoCacheSession;
+import io.github.spring.middleware.annotation.NoCacheSession;
 import io.github.spring.middleware.client.config.ProxyClientConfigurationProperties;
 import io.github.spring.middleware.client.params.MethodParamExtractor;
 import io.github.spring.middleware.filter.Context;
@@ -84,6 +84,15 @@ public class ProxyClient<T> implements ClientConfigurable {
 
             @Override
             public T invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+                if (method.getDeclaringClass() == Object.class) {
+                    return (T) switch (method.getName()) {
+                        case "hashCode" -> System.identityHashCode(proxy);
+                        case "equals" -> proxy == args[0];
+                        case "toString" -> "ProxyClient(" + interf.getSimpleName() + ")";
+                        default -> method.invoke(this, args);
+                    };
+                }
 
                 MethodParamExtractor.ExtractedParams extractedParams = MethodParamExtractor.extract(method, args);
                 String queryPath = ResourceMetadaURLResolver.resolvePath(extractedParams.getPath(), extractedParams.getPathVariables(), extractedParams.getRequestParams());

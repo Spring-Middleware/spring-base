@@ -1,6 +1,6 @@
 package io.github.spring.middleware.client;
 
-import io.github.spring.middleware.annotations.MiddlewareClient;
+import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -10,21 +10,22 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-@MiddlewareClient(timeout = 30000)
+@MiddlewareContract(timeout = 30000)
 public interface RegistryClient {
 
     @PostMapping("/resource")
     void registerResource(@RequestBody @NotNull ResourceRegisterParameters resourceRegisterParameters);
 
     @PostMapping("/schema")
-    void registryGraphQLSchemaLocation(@RequestBody @NotNull SchemaRegisterParameters schemaRegisterParameters);
+    void registerGraphQLSchemaLocation(@RequestBody @NotNull SchemaRegisterParameters schemaRegisterParameters);
 
     @DeleteMapping("/schema/{namespace}")
     void deleteGraphQLSchemaLocation(@PathVariable("namespace") String namespace);
 
-    @GetMapping
-    RegistryEntry getRegistryEntry(@RequestParam("resource") String resource);
+    @GetMapping("/resources/{resource}")
+    RegistryEntry getRegistryEntry(@PathVariable("resource") String resource);
 
     @GetMapping("/map")
     RegistryMap getRegistryMap();
@@ -34,4 +35,7 @@ public interface RegistryClient {
 
     @GetMapping("/schema/{namespace}")
     SchemaLocation getSchemaLocation(@PathVariable("namespace") @NotNull String namespace);
+
+    @GetMapping("/isAlive")
+    Map<String, String> isAlive();
 }

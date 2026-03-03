@@ -1,8 +1,6 @@
 package io.github.spring.middleware.client.proxy;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.spring.middleware.client.config.ProxyClientConfigurationProperties;
 import io.github.spring.middleware.client.error.ErrorResponse;
 import io.github.spring.middleware.config.PropertyNames;
@@ -94,7 +92,10 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             return null;
         } catch (Exception ex) {
             logger.warn("Error connecting to {}: {}", url, ex.getMessage(), ex);
-            throw new ProxyClientException("Error connecting to " + url, ex);
+            ProxyClientException pce = new ProxyClientException("Error connecting to " + url, ex);
+            pce.addExtension("remote.url", url);
+            pce.addExtension("remote.method", method.getName());
+            throw pce;
         }
     }
 

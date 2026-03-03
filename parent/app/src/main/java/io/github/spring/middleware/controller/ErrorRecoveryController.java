@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping(ErrorRecoveryController.BASE_MAPPING)
 @OpenAPIDefinition(info = @Info(title = "Error Recovery Controller"))
-public class ErrorRecoveryController extends CommonsController {
+public class ErrorRecoveryController extends CommonsExceptionHandler {
 
     public static final String BASE_MAPPING = "/errorRecovery";
 

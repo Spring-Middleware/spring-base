@@ -6,6 +6,7 @@ import io.github.spring.middleware.mongo.search.MongoSearch;
 import io.github.spring.middleware.mongo.utils.MethodInvoker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 public class MongoSearchClassProcessor<S extends MongoSearch> implements MongoAnnotationProcessor<MongoAnnotationProcessorParameters<MongoSearchClass, S>> {
 
     @Autowired
-    private CriteriaBuilderComponent builderComponent;
+    private ObjectProvider<CriteriaBuilderComponent> builderComponentProvider;
 
     @Override
     public void processAnnotation(
@@ -78,6 +79,7 @@ public class MongoSearchClassProcessor<S extends MongoSearch> implements MongoAn
         String pathNext = StringUtils.isEmpty(propertyValue) ? "" :
                 path + propertyValue + ".";
 
+        CriteriaBuilderComponent builderComponent = builderComponentProvider.getObject();
         Criteria subCriteria = builderComponent.buildCriteria(subSearch, new Criteria(),
                 mongoSubSearchAnnotation.isCollection() ? "" : pathNext);
         if (mongoSubSearchAnnotation.isCollection()) {

@@ -1,5 +1,6 @@
 package io.github.spring.middleware.annotations;
 
+
 import io.github.spring.middleware.client.registar.MiddlewareClientRegistrar;
 import org.springframework.context.annotation.Import;
 

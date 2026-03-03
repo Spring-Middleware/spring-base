@@ -16,6 +16,11 @@ middleware:
   publicServer:
     host: localhost
     port: 8070
+  registryConsistencyScheduler:
+    enabled: false
+
+
+
 
 redisson:
   address: redis://localhost:6379

@@ -75,7 +75,9 @@ public class RegistryServiceImpl implements RegistryService {
 
     @Override
     public RegistryEntry getRegistryEnry(String name) {
-        return this.registryEntryMap.get(name);
+        final RegistryEntry registryEntry = this.registryEntryMap.get(name);
+        log.debug("getRegistryEnry for name {}: {}", name, registryEntry);
+        return registryEntry;
     }
 
     @Override

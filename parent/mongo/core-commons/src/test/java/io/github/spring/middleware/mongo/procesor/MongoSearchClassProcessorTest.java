@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +25,10 @@ public class MongoSearchClassProcessorTest {
     @Mock
     private CriteriaBuilderComponent criteriaBuilderComponent;
 
+    @Mock
+    private ObjectProvider<CriteriaBuilderComponent> criteriaBuilderComponentObjectProvider;
+
+
     private CriteriaBuilderComponentTest criteriaBuilderComponentTest;
 
     public void setUp(CriteriaBuilderComponentTest criteriaBuilderComponentTest) {
@@ -31,6 +36,7 @@ public class MongoSearchClassProcessorTest {
         try {
             MockitoAnnotations.initMocks(this);
             this.criteriaBuilderComponentTest = criteriaBuilderComponentTest;
+            when(criteriaBuilderComponentObjectProvider.getObject()).thenReturn(criteriaBuilderComponent);
             when(criteriaBuilderComponent.buildCriteria(any(MongoSearch.class), any(Criteria.class), anyString()))
                     .thenAnswer(invocationOnMock -> {
                         return criteriaBuilderComponentTest

@@ -1,6 +1,6 @@
 package io.github.spring.middleware;
 
-import io.github.spring.middleware.annotations.MiddlewareClient;
+import io.github.spring.middleware.annotation.MiddlewareContract;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -13,7 +13,7 @@ public class RegistryClientScanTest {
     @Test
     public void shouldFindRegistryClientAnnotatedWithMiddlewareClient() {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(MiddlewareClient.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(MiddlewareContract.class));
         scanner.setResourceLoader(new DefaultResourceLoader());
 
         var components = scanner.findCandidateComponents("io.github.spring.middleware.client");

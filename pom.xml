@@ -68,6 +68,7 @@
         <core.redis.version>1.0.0</core.redis.version>
         <core.model.version>1.0.0</core.model.version>
         <core.registry.version>1.0.0</core.registry.version>
+        <core.graphql.version>1.0.0</core.graphql.version>
     </properties>
 
     <dependencyManagement>
@@ -153,6 +154,26 @@
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>cache</artifactId>
                 <version>${core.cache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>registry-model</artifactId>
+                <version>${core.registry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>registry-service</artifactId>
+                <version>${core.registry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>registry-boot</artifactId>
+                <version>${core.registry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>graphql</artifactId>
+                <version>${core.graphql.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

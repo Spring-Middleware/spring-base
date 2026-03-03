@@ -1,8 +1,9 @@
-package io.github.spring.middleware.register;
+package io.github.spring.middleware.register.resource;
 
-import io.github.spring.middleware.annotations.Register;
+import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.core.Ordered;
@@ -46,7 +47,7 @@ public class ResourceAutoRegistrar implements ApplicationListener<ApplicationRea
         // Scan beans annotated with @Register
         Set<Class<?>> resourceClasses = event.getApplicationContext().getBeansWithAnnotation(Register.class)
                 .values().stream()
-                .map(Object::getClass)
+                .map(bean -> AopUtils.getTargetClass(bean))
                 .collect(Collectors.toSet());
 
         if (!resourceClasses.isEmpty()) {

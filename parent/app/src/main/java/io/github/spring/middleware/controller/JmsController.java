@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(JmsController.BASE_MAPPING)
 @OpenAPIDefinition(info = @Info(title = "JMS Controller"))
-public class JmsController extends CommonsController {
+public class JmsController extends CommonsExceptionHandler {
 
     public static final String BASE_MAPPING = "/jms";
 

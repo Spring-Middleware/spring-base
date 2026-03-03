@@ -1,4 +1,4 @@
-package io.github.spring.middleware.annotations;
+package io.github.spring.middleware.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RegisterSchema {
+public @interface Register {
 
+    String name() default "";
 }

@@ -1,4 +1,4 @@
-package io.github.spring.middleware.annotations;
+package io.github.spring.middleware.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

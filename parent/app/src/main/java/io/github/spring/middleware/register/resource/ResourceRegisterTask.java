@@ -1,6 +1,6 @@
-package io.github.spring.middleware.register;
+package io.github.spring.middleware.register.resource;
 
-import io.github.spring.middleware.annotations.Register;
+import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.params.ResourceRegisterParameters;

@@ -5,7 +5,7 @@ import io.github.spring.middleware.cache.data.RedisCacheConfigurationParameters;
 import io.github.spring.middleware.cache.filter.CacheConfigurationFilter;
 import io.github.spring.middleware.cache.filter.CacheInformationStadisticsFilter;
 import io.github.spring.middleware.cache.service.CacheService;
-import io.github.spring.middleware.controller.CommonsController;
+import io.github.spring.middleware.controller.CommonsExceptionHandler;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import jakarta.websocket.server.PathParam;
@@ -20,7 +20,7 @@ import java.util.Collection;
 @RestController
 @RequestMapping(CacheController.BASE_MAPPING)
 @OpenAPIDefinition(info = @Info(title = "Cache Controller"))
-public class CacheController extends CommonsController {
+public class CacheController extends CommonsExceptionHandler {
 
     public static final String BASE_MAPPING = "/cache";
 

@@ -1,4 +1,4 @@
-package io.github.spring.middleware.annotations;
+package io.github.spring.middleware.graphql.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,5 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MiddlewareClient {
-    String value() default "";
-
-    int timeout() default 30000; // default timeout in milliseconds
+public @interface GraphQLService {
 }

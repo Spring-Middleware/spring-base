@@ -7,7 +7,7 @@ middleware:
   client:
     proxy:
       # When running in Docker compose the registry service is reachable at hostname `registry` on port 8080
-      registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8050/registry}
+      registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8080/registry}
       maxRetries: ${PROXY_MAX_RETRIES:3}
       waitBetweenRetries: ${PROXY_WAIT_BETWEEN_RETRIES:1000}
 
@@ -18,6 +18,12 @@ middleware:
     # In Docker the public hostname will be the service name `registry` (or set via env)
     host: ${PUBLIC_SERVER_HOST:localhost}
     port: ${PUBLIC_SERVER_PORT:8070}
+
+  graphql:
+    enabled: ${GRAPHQL_ENABLED:false}
+
+  registryConsistencyScheduler:
+    enabled: ${REGISTRY_CONSISTENCY_SCHEDULER_ENABLED:false}
 
 redisson:
   # In Docker compose Redis service should be named `redis`
