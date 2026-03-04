@@ -1,9 +1,9 @@
 package io.github.spring.middleware.register.graphql;
 
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.params.SchemaRegisterParameters;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -18,13 +18,14 @@ public class GraphQLSchemaRegister {
 
     private final RegistryClient registryClient;
     private final GraphQLRegisterProperties props;
-    private final int port;
+    private final ServerPortProvider serverPortProvider;
 
-    public GraphQLSchemaRegister(@Value("${server.port}") int port, RegistryClient registryClient,
-                                 GraphQLRegisterProperties props) {
+    public GraphQLSchemaRegister(final RegistryClient registryClient,
+                                 final ServerPortProvider serverPortProvider,
+                                 final GraphQLRegisterProperties props) {
         this.registryClient = registryClient;
         this.props = props;
-        this.port = port;
+        this.serverPortProvider = serverPortProvider;
     }
 
     public void register(Set<Class<?>> endpoints) {
@@ -54,7 +55,7 @@ public class GraphQLSchemaRegister {
             registryClient.registerGraphQLSchemaLocation(params);
 
             log.info("Schema {} bound to {}:{}{}",
-                    props.getNamespace(), props.getClusterName(), this.port, path);
+                    props.getNamespace(), props.getClusterName(), this.serverPortProvider.getPort(), path);
 
         } catch (Exception ex) {
             log.error("Error registering GraphQL endpoint for {}", beanClass.getName(), ex);
@@ -73,8 +74,8 @@ public class GraphQLSchemaRegister {
     private SchemaRegisterParameters buildParameters(String path) throws Exception {
         SchemaRegisterParameters p = new SchemaRegisterParameters();
         p.setNamespace(props.getNamespace());
-        p.setLocation(props.getClusterName() + ":" + this.port);
-        p.setNodeLocation(InetAddress.getLocalHost().getHostAddress() + ":" + this.port);
+        p.setLocation(STR."\{props.getClusterName()}:\{this.serverPortProvider.getPort()}");
+        p.setNodeLocation(STR."\{InetAddress.getLocalHost().getHostAddress()}:\{this.serverPortProvider.getPort()}");
         p.setPathApi(path);
         return p;
     }

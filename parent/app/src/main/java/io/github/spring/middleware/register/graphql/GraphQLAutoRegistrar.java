@@ -10,6 +10,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Component
@@ -19,21 +20,42 @@ public class GraphQLAutoRegistrar implements ApplicationListener<ApplicationRead
 
     private final GraphQLSchemaRegister graphQLSchemaRegister;
 
+    private volatile Set<Class<?>> schemasToRegister = Set.of();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
     public GraphQLAutoRegistrar(GraphQLSchemaRegister graphQLSchemaRegister) {
         this.graphQLSchemaRegister = graphQLSchemaRegister;
     }
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (event.getApplicationContext().getParent() != null) return;
+        if (!initialized.compareAndSet(false, true)) return;
 
-        // Scan beans annotated with @Register
-        Set<Class<?>> resourceClasses = event.getApplicationContext().getBeansWithAnnotation(GraphQLEndpoint.class)
+        this.schemasToRegister = event.getApplicationContext()
+                .getBeansWithAnnotation(GraphQLEndpoint.class)
                 .values().stream()
-                .map(bean -> AopUtils.getTargetClass(bean))
-                .collect(Collectors.toSet());
+                .map(AopUtils::getTargetClass)
+                .collect(Collectors.toUnmodifiableSet());
 
-        graphQLSchemaRegister.register(resourceClasses);
+        if (schemasToRegister.isEmpty()) {
+            log.info("No GraphQL schemas annotated with @GraphQLEndpoint were found to register");
+            return;
+        }
 
+        log.info("Discovered {} GraphQL schema endpoints: {}",
+                schemasToRegister.size(),
+                schemasToRegister.stream().map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));
 
+        graphQLSchemaRegister.register(schemasToRegister);
+    }
+
+    public void reRegister() {
+        if (schemasToRegister.isEmpty()) return;
+        graphQLSchemaRegister.register(schemasToRegister);
+    }
+
+    public Set<Class<?>> getSchemasToRegister() {
+        return schemasToRegister;
     }
 }

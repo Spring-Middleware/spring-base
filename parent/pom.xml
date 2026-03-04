@@ -43,6 +43,7 @@
     <properties>
         <revision>1.0.0</revision>
         <java.version>21</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
         <spring.boot.version>3.4.2</spring.boot.version>
         <spring.shell.version>3.4.0</spring.shell.version> <!-- Actualizado -->
         <springdoc.openapi.version>2.8.4</springdoc.openapi.version> <!-- Actualizado para SB 3.4 -->
@@ -54,6 +55,8 @@
         <modelmapper.version>3.2.2</modelmapper.version> <!-- Versión 3.x para mejor soporte Java 17 -->
         <redis.clients.version>5.2.0</redis.clients.version> <!-- Jedis 5.x es el estándar ahora -->
         <java.queues>2.7</java.queues>
+        <!-- JVM args used to enable preview features during compile/test/javadoc -->
+        <enable.preview.args>--enable-preview</enable.preview.args>
     </properties>
 
     <modules>
@@ -357,6 +360,53 @@
     </dependencyManagement>
 
     <build>
+        <!-- Central pluginManagement to enable Java 21 + preview across modules -->
+        <pluginManagement>
+            <plugins>
+                <!-- Compiler: set release and enable preview -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                        <compilerArgs>
+                            <arg>${enable.preview.args}</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!-- Surefire: pass enable-preview argument to test JVMs -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.1.2</version>
+                    <configuration>
+                        <!-- Pass enable-preview to test JVMs -->
+                        <argLine>${enable.preview.args}</argLine>
+                        <forkCount>1C</forkCount>
+                        <reuseForks>true</reuseForks>
+                    </configuration>
+                </plugin>
+
+                <!-- Failsafe: same as surefire -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.1.2</version>
+                    <configuration>
+                        <argLine>${enable.preview.args}</argLine>
+                        <forkCount>1C</forkCount>
+                        <reuseForks>true</reuseForks>
+                    </configuration>
+                </plugin>
+
+                <!-- Javadoc configuration omitted here (some environments validate plugin schemas).
+                     If needed run: mvn javadoc:javadoc -Dadditionalparam="${enable.preview.args}" -->
+
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -382,6 +432,16 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Ensure javadoc runs with preview features enabled (string templates, etc.) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
             </plugin>
         </plugins>
     </build>

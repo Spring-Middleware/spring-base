@@ -2,11 +2,14 @@ package io.github.spring.middleware.controller;
 
 import io.github.spring.middleware.jms.JmsConsumerResourceStatus;
 import io.github.spring.middleware.jms.rabbitmq.RabbitMQChecker;
+import io.github.spring.middleware.jms.rabbitmq.RabbitMQClient;
 import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import io.github.spring.middleware.rabbitmq.core.resource.consumer.JmsConsumerResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(JmsController.BASE_MAPPING)
 @OpenAPIDefinition(info = @Info(title = "JMS Controller"))
+@ConditionalOnProperty(name = "jms.rabbitmq.baseUrl")
 public class JmsController extends CommonsExceptionHandler {
 
     public static final String BASE_MAPPING = "/jms";

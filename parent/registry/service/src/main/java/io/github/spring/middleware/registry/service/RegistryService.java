@@ -11,4 +11,8 @@ public interface RegistryService {
     RegistryEntry getRegistryEnry(String name);
 
     RegistryMap getRegistryMap();
+
+    boolean existsClusterHost(String hostPort);
+
+    void removeRegistryEntryNodeEndpoint(String clusterEndpoint, String nodeEndpoint);
 }

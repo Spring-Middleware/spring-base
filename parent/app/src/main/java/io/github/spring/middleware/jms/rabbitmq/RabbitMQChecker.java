@@ -8,6 +8,8 @@ import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationSuf
 import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -20,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(name = "jms.rabbitmq.baseUrl")
 public class RabbitMQChecker {
 
     @Autowired(required = false)

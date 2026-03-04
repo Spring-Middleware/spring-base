@@ -1,0 +1,44 @@
+package io.github.spring.middleware.registry.scanner;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+
+import static io.github.spring.middleware.registry.util.EndpointUtils.joinUrl;
+import static io.github.spring.middleware.registry.util.EndpointUtils.normalizePath;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class RegistryScannerClient {
+
+    private final WebClient webClient;
+    private final RegistryScannerProperties props;
+
+    public Mono<Boolean> isAlive(String nodeLocation) {
+        String uri = joinUrl("http://" + nodeLocation, normalizePath(props.getHealthPath()));
+
+        return webClient.get()
+                .uri(uri)
+                .exchangeToMono(resp -> Mono.just(resp.statusCode().is2xxSuccessful()))
+                .timeout(Duration.ofMillis(props.getTimeoutMillis()))
+                .onErrorReturn(false);
+    }
+
+    public Mono<Void> triggerRegisterResource(String nodeLocation) {
+        String uri = joinUrl("http://" + nodeLocation, normalizePath(props.getRegisterResourcePath()));
+
+        return webClient.get()
+                .uri(uri)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofMillis(props.getTimeoutMillis()))
+                .doOnSuccess(r -> log.info("Sent registerResource trigger to {}", nodeLocation))
+                .doOnError(ex -> log.warn("Error sending registerResource to {}", nodeLocation, ex))
+                .then();
+    }
+}

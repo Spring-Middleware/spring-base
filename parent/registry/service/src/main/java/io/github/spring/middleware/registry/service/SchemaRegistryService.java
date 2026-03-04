@@ -15,6 +15,8 @@ public interface SchemaRegistryService {
 
     void removeSchemaLocationNode(String namespace, String locationNode);
 
+    void refreshNodeLastAliveCheckDate(SchemaLocation schemaLocation, String location);
+
     SchemaLocation getSchemaLocation(String namespace);
 
 }

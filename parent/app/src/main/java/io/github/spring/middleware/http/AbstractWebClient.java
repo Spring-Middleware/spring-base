@@ -1,6 +1,7 @@
 package io.github.spring.middleware.http;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -8,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Optional;
 
+@Slf4j
 public abstract class AbstractWebClient {
 
     protected WebClient webClient;
@@ -29,14 +31,24 @@ public abstract class AbstractWebClient {
                 builder.filter(exchangeFilterFunction);
             });
 
-            webClient = builder.baseUrl(getBaseUrl()).build();
+            webClient = builder.baseUrl(baseUrl).build();
+        }else{
+            log.warn("Base URL is null for WebClient in {}, WebClient will not be created", this.getClass().getSimpleName());
         }
+    }
+
+    protected WebClient client() {
+        if (webClient == null) {
+            throw new IllegalStateException(
+                    STR."\{getClass().getSimpleName()} WebClient not initialized (baseUrl missing?)"
+            );
+        }
+        return webClient;
     }
 
     protected abstract String getBaseUrl();
 
     protected ExchangeFilterFunction getExchangeFilterFunction() {
-
         return null;
     }
 

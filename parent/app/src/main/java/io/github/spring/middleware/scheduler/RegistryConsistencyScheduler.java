@@ -1,53 +1,54 @@
 package io.github.spring.middleware.scheduler;
 
-import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
-import io.github.spring.middleware.client.config.ProxyClientResilienceConfigurator;
-import io.github.spring.middleware.client.proxy.ProxyClient;
-import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
-import io.github.spring.middleware.register.resource.ResourceRegister;
-import io.github.spring.middleware.registry.model.RegistryEntry;
+import io.github.spring.middleware.manager.ProxyConfigurationClientManager;
+import io.github.spring.middleware.manager.RegistrationManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static io.github.spring.middleware.provider.ApplicationContextProvider.getApplicationContext;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "middleware.registry-consistency-scheduler.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "middleware.registry-consistency-scheduler.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class RegistryConsistencyScheduler {
 
     private final RegistryClient registryClient;
-    private final ProxyClientResilienceConfigurator clientConfigurator;
-    private final ResourceRegister resourceRegister;
+    private final RegistrationManager registrationManager;
+    private final ProxyConfigurationClientManager proxyConfigurationClientManager;
 
     private final AtomicInteger consecutiveRegistryFailures = new AtomicInteger(0);
     private final AtomicBoolean degraded = new AtomicBoolean(false);
-    private static final int MAX_FAILS = 2;
 
-    @Scheduled(cron = "*/30 * * * * *") // cada 30 segundos
+    // Cuando el registry no responde
+    private static final int MAX_REGISTRY_FAILS = 2;
+
+    // Cuando el registry responde pero mi nodo aún no está en schemaLocationNodes
+    private final AtomicInteger consecutiveNodeNotRegistered = new AtomicInteger(0);
+    private static final int MAX_NODE_NOT_REGISTERED = 2;
+
+    @Scheduled(cron = "${middleware.registry-consistency-scheduler.cron:*/30 * * * * *}")
     public void tick() {
-        log.info("Checking registry consistency (clients/resources)");
+        log.info("Checking registry consistency (clients/resources/schemas)");
 
+        // 1) Registry alive?
         if (!isRegistryAlive()) {
             int fails = consecutiveRegistryFailures.incrementAndGet();
             log.warn("Registry not reachable (fails={})", fails);
 
-            if (fails >= MAX_FAILS && degraded.compareAndSet(false, true)) {
-                log.warn("Entering degraded mode: stopping proxy configuration tasks");
-                clientConfigurator.stopAll();
+            if (fails >= MAX_REGISTRY_FAILS && degraded.compareAndSet(false, true)) {
+                log.warn("Entering degraded mode: stopping proxy configuration tasks (registry DOWN)");
+                proxyConfigurationClientManager.stopAll();
             }
             return;
         }
@@ -58,67 +59,68 @@ public class RegistryConsistencyScheduler {
             log.info("Registry is back. Leaving degraded mode.");
         }
 
-        checkClients();
-        checkResources();
+        // 2) Proxies
+        log.debug("Configuring proxies not bounded");
+        proxyConfigurationClientManager.configureNotBounded();
+
+        // 3) Schemas
+        boolean hasSchemas = registrationManager.hasSchemasToRegister();
+        log.info("Schema check: hasSchemasToRegister={}, consecutiveNodeNotRegistered={}",
+                hasSchemas, consecutiveNodeNotRegistered.get());
+
+        if (hasSchemas) {
+            boolean nodeRegistered;
+            try {
+                nodeRegistered = registrationManager.isSchemaNodeRegistered();
+            } catch (Exception ex) {
+                log.warn("Could not determine if schema node is registered; treating as NOT registered", ex);
+                nodeRegistered = false;
+            }
+
+            log.info("Schema check: nodeRegistered={}", nodeRegistered);
+
+            if (!nodeRegistered) {
+                int n = consecutiveNodeNotRegistered.incrementAndGet();
+                log.warn("Schema node is NOT registered yet (fails={}/{})", n, MAX_NODE_NOT_REGISTERED);
+
+                if (n >= MAX_NODE_NOT_REGISTERED) {
+                    log.info("Attempting to register resources + schemas (node was not registered)");
+                    try {
+                        registrationManager.registerEverything();
+                        log.info("registerEverything executed");
+                    } catch (Exception ex) {
+                        log.warn("Error registering everything", ex);
+                        proxyConfigurationClientManager.stopAll();
+                        return;
+                    }
+                } else {
+                    log.info("Node not yet stable, stopping proxy configuration tasks");
+                    proxyConfigurationClientManager.stopAll();
+                }
+                return;
+            }
+
+            log.info("Schema node already registered. Resetting counter.");
+            consecutiveNodeNotRegistered.set(0);
+
+        } else {
+            log.info("Schema check skipped: hasSchemasToRegister=false");
+        }
+
+        // 4) Resources self-heal
+        log.debug("Checking resources not registered");
+        registrationManager.registerResourcesNotRegistered();
     }
 
     private boolean isRegistryAlive() {
         try {
-            Map<String, String> resp = registryClient.isAlive(); // timeout dentro del client
+            Map<String, String> resp = registryClient.isAlive();
             if (resp == null) return false;
             String status = resp.get("status");
             return status != null && "UP".equalsIgnoreCase(status.trim());
         } catch (Exception e) {
             log.debug("isRegistryAlive check failed", e);
             return false;
-        }
-    }
-
-    private void checkClients() {
-        Set<ProxyClient<?>> unconfigured = ProxyClientRegistry.getAll().stream()
-                .filter(p -> p.getRegistryEntry() == null)
-                .collect(Collectors.toSet());
-
-        if (!unconfigured.isEmpty()) {
-            log.info("Configuring {} unconfigured proxy clients", unconfigured.size());
-            clientConfigurator.configureProxies(unconfigured);
-        }
-    }
-
-    private void checkResources() {
-        final Map<String, RegistryEntry> registries;
-        try {
-            registries = registryClient.getRegistryMap().registryMap();
-        } catch (Exception e) {
-            log.warn("Failed to load registry entries", e);
-            return;
-        }
-
-        // Resolve target classes (un-proxy) and then resolve @Register safely
-        Set<Class<?>> resourcesToCheck = getApplicationContext()
-                .getBeansWithAnnotation(Register.class)
-                .values().stream()
-                .map(AopUtils::getTargetClass)
-                .collect(Collectors.toSet());
-
-        Set<Class<?>> notRegistered = resourcesToCheck.stream()
-                .filter(clazz -> {
-                    Register ann = AnnotationUtils.findAnnotation(clazz, Register.class);
-                    if (ann == null) return false; // safety
-                    return !registries.containsKey(ann.name());
-                })
-                .collect(Collectors.toSet());
-
-        if (!notRegistered.isEmpty()) {
-            String names = notRegistered.stream()
-                    .map(c -> {
-                        Register ann = AnnotationUtils.findAnnotation(c, Register.class);
-                        return ann != null ? ann.name() : c.getSimpleName();
-                    })
-                    .collect(Collectors.joining(", "));
-
-            log.info("Registering {} resources not found in registry: {}", notRegistered.size(), names);
-            resourceRegister.register(notRegistered);
         }
     }
 }

@@ -30,39 +30,30 @@ public class ErrorClient extends AbstractWebClient {
         return baseUrl;
     }
 
-    public Flux<ErrorView> searchErrors(ErrorSearch errorSearch) throws Exception {
+    public Flux<ErrorView> searchErrors(ErrorSearch errorSearch) {
 
-        Flux errorFlux = null;
-        if (webClient != null) {
-            errorFlux = webClient.post().uri("/error/search")
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .body(Mono.just(errorSearch), ErrorSearch.class).retrieve().bodyToFlux(ErrorView.class)
-                    .doOnError(ex -> log.error("Can't connect with " + baseUrl))
-                    .onErrorResume(ex -> {
-                        if (Optional.ofNullable(ex.getCause()).map(e -> e instanceof ConnectException)
-                                .orElse(Boolean.FALSE)) {
-                            return Flux.empty();
-                        } else {
-                            return Mono.error(ex);
-                        }
-                    });
-
-        } else {
-            log.warn("ErrorClient not init");
-        }
-        return errorFlux;
+        return client().post()
+                .uri("/error/search")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(errorSearch)
+                .retrieve()
+                .bodyToFlux(ErrorView.class)
+                .doOnError(ex -> log.error("Can't connect with {}", baseUrl, ex))
+                .onErrorResume(ex ->
+                        Optional.ofNullable(ex.getCause()).filter(c -> c instanceof ConnectException).isPresent()
+                                ? Flux.empty()
+                                : Flux.error(ex)
+                );
     }
 
     public Mono<ErrorRecoveryAttemptView> setErrorRecoveryAttempt(UUID errorId,
-            ErrorRecoveryAttemptRequest errorRecoveryAttemptRequest) throws Exception {
+                                                                  ErrorRecoveryAttemptRequest errorRecoveryAttemptRequest) {
 
-        if (webClient != null) {
-            return webClient.post().uri("/errorRecoveryAttempt/" + errorId)
-                    .body(Mono.just(errorRecoveryAttemptRequest), ErrorRecoveryAttemptRequest.class).retrieve()
-                    .bodyToMono(ErrorRecoveryAttemptView.class);
-        } else {
-            throw new Exception("WebClient not init");
-        }
+        return client().post()
+                .uri("/errorRecoveryAttempt/{id}", errorId)
+                .bodyValue(errorRecoveryAttemptRequest)
+                .retrieve()
+                .bodyToMono(ErrorRecoveryAttemptView.class);
     }
 
 }

@@ -58,7 +58,7 @@ public class ResourceRegisterTask implements Runnable {
         params.setNode(InetAddress.getLocalHost().getHostAddress());
         String path = register.name();
         if (path == null) path = "/";
-        if (!path.startsWith("/")) path = "/" + path;
+        if (!path.startsWith("/")) path = STR."/\{path}";
         params.setPath(path);
         // Avoid sending the Spring-managed bean instance (may be proxied). Copy values into a plain PublicServer.
         PublicServer configured = resourceRegister.getPublicServer();

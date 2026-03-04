@@ -115,6 +115,15 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
     }
 
     @Override
+    public void refreshNodeLastAliveCheckDate(SchemaLocation schemaLocation, String location) {
+
+        schemaLocation.getSchemaLocationNodes().stream().filter(sln -> sln.getLocation().equals(location))
+                .forEach(sln -> sln.setLastAliveCheckDate(new Timestamp(System.currentTimeMillis())));
+
+        schemaLocationsMap.put(schemaLocation.getNamespace(), schemaLocation);
+    }
+
+    @Override
     public SchemaLocation getSchemaLocation(String namespace) {
         if (namespace == null || namespace.isBlank()) return null;
         return schemaLocationsMap.get(namespace.trim());
