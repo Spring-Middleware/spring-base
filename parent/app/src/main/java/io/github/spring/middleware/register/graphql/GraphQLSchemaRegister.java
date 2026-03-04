@@ -4,6 +4,7 @@ import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.params.SchemaRegisterParameters;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -19,6 +20,8 @@ public class GraphQLSchemaRegister {
     private final RegistryClient registryClient;
     private final GraphQLRegisterProperties props;
     private final ServerPortProvider serverPortProvider;
+    @Value("${server.servlet.context-path:}")
+    private String contextPath;
 
     public GraphQLSchemaRegister(final RegistryClient registryClient,
                                  final ServerPortProvider serverPortProvider,
@@ -54,8 +57,8 @@ public class GraphQLSchemaRegister {
             SchemaRegisterParameters params = buildParameters(path);
             registryClient.registerGraphQLSchemaLocation(params);
 
-            log.info("Schema {} bound to {}:{}{}",
-                    props.getNamespace(), props.getClusterName(), this.serverPortProvider.getPort(), path);
+            log.info("Schema {} bound to {}:{}{}{}",
+                    props.getNamespace(), props.getClusterName(), this.serverPortProvider.getPort(), contextPath, path);
 
         } catch (Exception ex) {
             log.error("Error registering GraphQL endpoint for {}", beanClass.getName(), ex);
@@ -77,6 +80,7 @@ public class GraphQLSchemaRegister {
         p.setLocation(STR."\{props.getClusterName()}:\{this.serverPortProvider.getPort()}");
         p.setNodeLocation(STR."\{InetAddress.getLocalHost().getHostAddress()}:\{this.serverPortProvider.getPort()}");
         p.setPathApi(path);
+        p.setContextPath(contextPath);
         return p;
     }
 }

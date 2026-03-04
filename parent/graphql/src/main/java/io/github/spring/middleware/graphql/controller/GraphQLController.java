@@ -4,10 +4,7 @@ import graphql.ExecutionInput;
 import graphql.GraphQL;
 import io.github.spring.middleware.graphql.annotations.GraphQLEndpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -34,4 +31,8 @@ public class GraphQLController {
         return graphQL.execute(input).toSpecification();
     }
 
+    @GetMapping("/_alive")
+    public Map<String, Object> alive() {
+        return Map.of("status", "UP");
+    }
 }

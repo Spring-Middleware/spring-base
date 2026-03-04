@@ -9,7 +9,6 @@ import io.github.spring.middleware.registry.service.RegistryService;
 import io.github.spring.middleware.registry.util.EndpointUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
@@ -18,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static io.github.spring.middleware.registry.util.EndpointUtils.*;
 
 
 @Slf4j
@@ -44,31 +45,39 @@ public class RegistryServiceImpl implements RegistryService {
                 resourceRegisterParameters.getNode(),
                 resourceRegisterParameters.getPort(),
                 resourceRegisterParameters.getPublicServer(),
-                resourceRegisterParameters.getPath());
+                resourceRegisterParameters.getPath(),
+                resourceRegisterParameters.getContextPath());
     }
 
     private void registerResource(String name, String cluster, String node, int port, PublicServer publicServer,
-                                  String path) {
-        if (path == null || !path.startsWith("/")) {
-            throw new PathInvalidException("Path must start with '/'");
-        }
+                                  String path, String contextPath) {
 
-        String clusterEndpoint = cluster + ":" + port + path;
+        contextPath = normalizeContextPath(contextPath);      // "" o "/product"
+        path = normalizeResourcePath(path);                   // "" o "/graphql" ...
+
+        String clusterEndpoint = joinUrl(STR."\{cluster}:\{port}", contextPath);          // product:8080 + /product
+        clusterEndpoint = joinUrl(clusterEndpoint, path);                              // + /
+
+        String nodeEndpoint = joinUrl(STR."\{node}:\{port}", contextPath);                 // 172.21.0.5:8080 + /product
+        nodeEndpoint = joinUrl(nodeEndpoint, path);                                    // + /
+
         String publicEndpoint = null;
         if (publicServer != null) {
-            publicEndpoint = publicServer.host() + ":" + publicServer.port() + StringUtils.defaultString(path);
+            publicEndpoint = joinUrl(STR."\{publicServer.host()}:\{publicServer.port()}", contextPath);
+            publicEndpoint = joinUrl(publicEndpoint, path);
         }
+
         RegistryEntry registryEntry = registryEntryMap.get(name);
         if (registryEntry == null) {
             registryEntry = createRegistryEntry(name, clusterEndpoint);
         }
-        String nodeEndpoint = node + ":" + port + path;
+
         registryEntry.addNodeEndpoint(nodeEndpoint);
         registryEntry.setClusterEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);
         registryEntry.setDateTime(LocalDateTime.now());
         registryEntryMap.put(name, registryEntry);
-        log.info("Registerd resource " + name + ":  cluster=" + clusterEndpoint + " node=" + nodeEndpoint);
+        log.info("Registerd resource={}  cluster={} node={}, publicEndpoint={}", name, clusterEndpoint, nodeEndpoint, publicEndpoint);
     }
 
     private RegistryEntry createRegistryEntry(String name, String endpoint) {
@@ -97,16 +106,15 @@ public class RegistryServiceImpl implements RegistryService {
 
         return registryEntryMap.values().stream()
                 .map(RegistryEntry::getClusterEndpoint)              // "product:8080/product"
-                .map(c ->  EndpointUtils.extractHostPort(c))                          // "product:8080"
+                .map(c -> EndpointUtils.extractHostPort(c))                          // "product:8080"
                 .anyMatch(target::equalsIgnoreCase);
     }
-
 
 
     @Override
     public void removeRegistryEntryNodeEndpoint(String clusterEndpoint, String nodeEndpoint) {
         String targetHostPort = EndpointUtils.extractHostPort(clusterEndpoint);   // "product:8080"
-        String deadHostPort   = EndpointUtils.extractHostPort(nodeEndpoint);      // "192.168.160.5:8080"
+        String deadHostPort = EndpointUtils.extractHostPort(nodeEndpoint);      // "192.168.160.5:8080"
 
         Set<String> keysRemove = new HashSet<>();
 

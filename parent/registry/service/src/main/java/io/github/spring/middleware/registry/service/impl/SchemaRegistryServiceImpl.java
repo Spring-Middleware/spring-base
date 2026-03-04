@@ -14,7 +14,7 @@ import java.util.*;
 
 /**
  * Stores GraphQL schema locations in Redis (Redisson).
- *
+ * <p>
  * Key:   namespace
  * Value: SchemaLocation (includes node locations list)
  */
@@ -53,6 +53,7 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
             // Location of the schema (cluster/service endpoint)
             schemaLocation.setLocation(params.getLocation());
             schemaLocation.setPathApi(params.getPathApi());
+            schemaLocation.setContextPath(params.getContextPath());
 
             // Ensure node list exists
             if (schemaLocation.getSchemaLocationNodes() == null) {
@@ -127,5 +128,13 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
     public SchemaLocation getSchemaLocation(String namespace) {
         if (namespace == null || namespace.isBlank()) return null;
         return schemaLocationsMap.get(namespace.trim());
+    }
+
+    @Override
+    public boolean hasAnyNode(String namespace) {
+        SchemaLocation schemaLocation = getSchemaLocation(namespace);
+        return schemaLocation != null
+                && schemaLocation.getSchemaLocationNodes() != null
+                && !schemaLocation.getSchemaLocationNodes().isEmpty();
     }
 }

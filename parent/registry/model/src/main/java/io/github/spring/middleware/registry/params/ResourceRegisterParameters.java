@@ -12,6 +12,7 @@ public class ResourceRegisterParameters {
     private String node;
     private int port;
     private String path;
+    private String contextPath;
     private PublicServer publicServer;
 
 }

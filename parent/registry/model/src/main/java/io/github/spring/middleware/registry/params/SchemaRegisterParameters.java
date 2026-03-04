@@ -7,6 +7,7 @@ public class SchemaRegisterParameters {
 
     private String namespace;
     private String location;
+    private String contextPath;
     private String pathApi;
     private String nodeLocation;
 }

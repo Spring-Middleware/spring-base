@@ -20,6 +20,11 @@ public class EndpointUtils {
         return s;
     }
 
+    public static String normalizeResourcePath(String path) {
+        if (path == null || path.isBlank() || "/".equals(path.trim())) return "";
+        return normalizePath(path);
+    }
+
     // --- helpers de paths (evita // y soporta / opcional) ---
     public static String normalizePath(String path) {
         if (path == null || path.isBlank()) return "/";
@@ -29,7 +34,16 @@ public class EndpointUtils {
         return p;
     }
 
+    public static String normalizeContextPath(String path) {
+        if (path == null || path.isBlank() || "/".equals(path.trim())) return "";
+        String p = path.trim();
+        if (!p.startsWith("/")) p = "/" + p;
+        if (p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        return p;
+    }
+
     public static String joinUrl(String base, String path) {
+        if (path == null || path.isBlank()) return base;
         if (base.endsWith("/") && path.startsWith("/")) return base.substring(0, base.length() - 1) + path;
         if (!base.endsWith("/") && !path.startsWith("/")) return base + "/" + path;
         return base + path;

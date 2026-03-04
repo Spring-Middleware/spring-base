@@ -31,8 +31,8 @@ public class ResourceRegisterTask implements Runnable {
 
             // Debug: log parameters that will be sent
             if (logger.isDebugEnabled()) {
-                logger.debug("Registering resource with params: resource={}, cluster={}, node={}, port={}, path={}, publicServer={}",
-                        params.getResourceName(), params.getCluster(), params.getNode(), params.getPort(), params.getPath(), params.getPublicServer());
+                logger.debug("Registering resource with params: resource={}, cluster={}, node={}, port={}, path={}, contextPath={}, publicServer={}",
+                        params.getResourceName(), params.getCluster(), params.getNode(), params.getPort(), params.getPath(), resourceRegister.getContextPath(), params.getPublicServer());
             }
 
             registryClient.registerResource(params); // llama al client proxy
@@ -56,10 +56,11 @@ public class ResourceRegisterTask implements Runnable {
         params.setCluster(resourceRegister.getClusterName());
         params.setPort(resourceRegister.getPort());
         params.setNode(InetAddress.getLocalHost().getHostAddress());
-        String path = register.name();
+        String path = register.path();
         if (path == null) path = "/";
         if (!path.startsWith("/")) path = STR."/\{path}";
         params.setPath(path);
+        params.setContextPath(resourceRegister.getContextPath());
         // Avoid sending the Spring-managed bean instance (may be proxied). Copy values into a plain PublicServer.
         PublicServer configured = resourceRegister.getPublicServer();
         if (configured != null) {

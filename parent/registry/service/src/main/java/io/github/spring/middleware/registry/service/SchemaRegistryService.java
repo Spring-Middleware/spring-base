@@ -19,4 +19,6 @@ public interface SchemaRegistryService {
 
     SchemaLocation getSchemaLocation(String namespace);
 
+    boolean hasAnyNode(String namespace);
+
 }

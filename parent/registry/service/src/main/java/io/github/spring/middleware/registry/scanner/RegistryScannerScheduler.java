@@ -75,14 +75,13 @@ public class RegistryScannerScheduler {
     }
 
     private Mono<AliveResult> checkAlive(NodeRef ref) {
-        String nodeLocation = ref.node().getLocation(); // "192.168.x.x:8080"
-        String url = "http://" + nodeLocation;
+        String nodeLocation = joinUrl(ref.node().getLocation(), ref.schemaLocation().getContextPath());
+        String graphQLPath = joinUrl(nodeLocation, normalizePath(ref.schemaLocation().getPathApi()));
 
-        String healthPath = normalizePath(props.getHealthPath()); // "/actuator/health"
-        String uri = joinUrl(url, healthPath);
-
-        return scannerClient.isAlive(uri)
-                .map(alive -> AliveResult.alive(ref))
+        return scannerClient.isAlive(graphQLPath)
+                .map(alive -> alive
+                        ? AliveResult.alive(ref)
+                        : AliveResult.dead(ref, null))
                 .onErrorResume(ex -> Mono.just(AliveResult.dead(ref, ex)));
     }
 
@@ -124,6 +123,11 @@ public class RegistryScannerScheduler {
         // 1) remove from schemaLocation
         schemaRegistryService.removeSchemaLocationNode(namespace, nodeLocation);
 
+        // si ya no quedan nodos para ese namespace, borra el SchemaLocation entero
+        if (!schemaRegistryService.hasAnyNode(namespace)) {   // implementa esto
+            schemaRegistryService.removeSchemaLocation(namespace);
+        }
+
         // 2) remove node endpoint from RegistryEntry cluster (product:8080 -> remove ip:port)
         registryService.removeRegistryEntryNodeEndpoint(schemaLocation.getLocation(), nodeLocation);
 
@@ -157,7 +161,8 @@ public class RegistryScannerScheduler {
         resourceRegisterParameters.setResourceName("registry");
         resourceRegisterParameters.setCluster("registry");
         resourceRegisterParameters.setNode(InetAddress.getLocalHost().getHostAddress());
-        resourceRegisterParameters.setPath("/registry");
+        resourceRegisterParameters.setContextPath("/registry");
+        resourceRegisterParameters.setPath("/");
         resourceRegisterParameters.setPort(serverPortProvider.getPort());
         resourceRegisterParameters.setPublicServer(publicServer);
         return resourceRegisterParameters;

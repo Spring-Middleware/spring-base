@@ -5,6 +5,7 @@ import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.model.PublicServer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -24,6 +25,9 @@ public class ResourceRegister {
     private final RegistryClient registryClient;
     private final PublicServer publicServer;
     private final ServerPortProvider serverPortProvider;
+    @Value("${server.servlet.context-path:}")
+    private String contextPath;
+
 
     public ResourceRegister(final ResourceRegisterConfiguration resourceRegisterConfiguration,
                             final RegistryClient registryClient, final PublicServer publicServer,
@@ -70,6 +74,10 @@ public class ResourceRegister {
 
     public PublicServer getPublicServer() {
         return publicServer;
+    }
+
+    public String getContextPath() {
+        return contextPath;
     }
 }
 

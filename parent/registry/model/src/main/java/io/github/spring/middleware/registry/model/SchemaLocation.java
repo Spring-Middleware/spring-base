@@ -13,6 +13,7 @@ public class SchemaLocation {
     private String namespace;
     private String schemaVersion;
     private String location;
+    private String contextPath;
     private String pathApi;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "CET")
     private Timestamp createDate;

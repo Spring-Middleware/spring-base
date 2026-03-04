@@ -24,8 +24,12 @@ public class RegistryScannerClient {
 
         return webClient.get()
                 .uri(uri)
-                .exchangeToMono(resp -> Mono.just(resp.statusCode().is2xxSuccessful()))
+                .exchangeToMono(resp ->
+                        resp.bodyToMono(String.class)
+                                .map(body -> resp.statusCode().is2xxSuccessful() && body.contains("\"status\":\"UP\""))
+                )
                 .timeout(Duration.ofMillis(props.getTimeoutMillis()))
+                .doOnNext(alive -> log.debug("Health {} -> {}", uri, alive))
                 .onErrorReturn(false);
     }
 

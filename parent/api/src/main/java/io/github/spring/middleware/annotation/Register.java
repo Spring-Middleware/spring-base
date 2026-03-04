@@ -9,5 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Register {
 
-    String name() default "";
+    String name();
+    String path() default "/";
+
 }
