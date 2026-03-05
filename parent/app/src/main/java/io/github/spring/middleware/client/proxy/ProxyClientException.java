@@ -1,14 +1,17 @@
 package io.github.spring.middleware.client.proxy;
 
+import io.github.spring.middleware.error.ErrorDescriptor;
+
 import java.io.Serial;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ProxyClientException extends RuntimeException {
+public class ProxyClientException extends RuntimeException implements ErrorDescriptor {
 
     @Serial
     private static final long serialVersionUID = 1L;
+    private static final String ERROR_CODE = "PROXY_CLIENT_ERROR";
 
     private final Map<String, Object> extensions;
 
@@ -26,6 +29,12 @@ public class ProxyClientException extends RuntimeException {
         this.extensions = new HashMap<>();
     }
 
+    @Override
+    public String getCode() {
+        return ERROR_CODE;
+    }
+
+    @Override
     public Map<String, Object> getExtensions() {
         return Collections.unmodifiableMap(extensions);
     }

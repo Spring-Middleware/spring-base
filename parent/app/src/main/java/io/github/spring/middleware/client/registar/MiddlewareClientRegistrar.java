@@ -92,7 +92,7 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
         AbstractBeanDefinition beanDefinition =
                 builder.getBeanDefinition();
         beanDefinition.setInstanceSupplier(() -> {
-            ProxyClient<?> proxyClient = new ProxyClient<>(clazz, clientAnnotation.timeout());
+            ProxyClient<?> proxyClient = new ProxyClient<>(clazz);
             ProxyClientRegistry.add(proxyClient);
             try {
                 return proxyClient.wrappedInstance();

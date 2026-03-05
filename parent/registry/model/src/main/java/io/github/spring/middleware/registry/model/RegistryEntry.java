@@ -7,6 +7,7 @@ import java.util.Set;
 
 public class RegistryEntry implements Serializable {
 
+    private String name;
     private String clusterEndpoint;
     private Set<String> nodeEndpoints;
     private String publicEndpoint;
@@ -58,5 +59,13 @@ public class RegistryEntry implements Serializable {
 
     public LocalDateTime getDateTime() {
         return this.dateTime;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

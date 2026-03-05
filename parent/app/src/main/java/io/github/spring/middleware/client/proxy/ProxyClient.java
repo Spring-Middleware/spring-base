@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.spring.middleware.annotation.NoCacheSession;
-import io.github.spring.middleware.client.config.ProxyClientConfigurationProperties;
 import io.github.spring.middleware.client.params.MethodParamExtractor;
+import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.filter.Context;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.util.WebClientUtils;
@@ -17,6 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProxyClient<T> implements ClientConfigurable {
@@ -24,28 +26,34 @@ public class ProxyClient<T> implements ClientConfigurable {
     @JsonIgnore
     private Class<T> interf;
     private RegistryEntry registryEntry;
-    private int timeout;
     @JsonIgnore
     private WebClient webClient = null;
     private String name;
-    private ProxyClientConfigurationProperties proxyClientConfigurationProperties;
+    private ErrorMessageFactory errorMessageFactory;
+    @JsonIgnore
+    private ClusterBulkheadRegistry bulkheadRegistry;
+    private MiddlewareClientConnectionParameters connectionParameters;
+    private Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
+
 
     private Logger logger = LoggerFactory.getLogger(ProxyClient.class);
 
-    public ProxyClient(Class<T> interf, int timeout) {
-        this.timeout = timeout;
+    public ProxyClient(Class<T> interf) {
         this.interf = interf;
         this.name = interf.getSimpleName();
     }
 
     public void configureHttpClient() {
-        webClient = WebClientUtils.reconfigureWebClient(webClient, timeout);
+        webClient = WebClientUtils.reconfigureWebClient(webClient, connectionParameters.getTimeout(), connectionParameters.getMaxConnections());
     }
 
     public void recreateHttpClient() {
-        webClient = WebClientUtils.createWebClient(timeout);
+        webClient = WebClientUtils.createWebClient(connectionParameters.getTimeout(), connectionParameters.getMaxConnections());
     }
 
+    public void setBulkheadRegistry(final ClusterBulkheadRegistry clusterBulkheadRegistry) {
+        this.bulkheadRegistry = clusterBulkheadRegistry;
+    }
 
     @JsonProperty("name")
     public String getName() {
@@ -61,12 +69,16 @@ public class ProxyClient<T> implements ClientConfigurable {
         return this.registryEntry;
     }
 
-    public void setProxyClientConfigurationProperties(ProxyClientConfigurationProperties proxyClientConfigurationProperties) {
-        this.proxyClientConfigurationProperties = proxyClientConfigurationProperties;
+    public void setMiddlewareClientConnectionParameters(MiddlewareClientConnectionParameters connectionParameters) {
+        this.connectionParameters = connectionParameters;
     }
 
-    public Integer getTimeout() {
-        return this.timeout;
+    public void setErrorMessageFactory(ErrorMessageFactory errorMessageFactory) {
+        this.errorMessageFactory = errorMessageFactory;
+    }
+
+    public void setMethodMethodMetaDataMap(Map<Method, MethodMetaData> methodMethodMetaDataMap) {
+        this.methodMethodMetaDataMap = methodMethodMetaDataMap;
     }
 
     public Class<T> getInterf() {
@@ -94,7 +106,8 @@ public class ProxyClient<T> implements ClientConfigurable {
                     };
                 }
 
-                MethodParamExtractor.ExtractedParams extractedParams = MethodParamExtractor.extract(method, args);
+                final MethodMetaData methodMetaData = methodMethodMetaDataMap.get(method);
+                MethodMetaData.ExtractedParams extractedParams = methodMetaData.extractedParams(args);
                 String queryPath = ResourceMetadaURLResolver.resolvePath(extractedParams.getPath(), extractedParams.getPathVariables(), extractedParams.getRequestParams());
                 if (registryEntry != null && registryEntry.getClusterEndpoint() != null) {
                     String url = UrlJoiner.join(registryEntry.getClusterEndpoint(), queryPath);
@@ -128,13 +141,27 @@ public class ProxyClient<T> implements ClientConfigurable {
 
                     if (returned == null) {
                         Object body = extractedParams.getBody();
-                        ProxyConnectionTask<T> task = new ProxyConnectionTask(webClient, url, method, body, timeout, proxyClientConfigurationProperties);
+                        ProxyConnectionTask<T> task = new ProxyConnectionTask(webClient, url, method, body, connectionParameters, errorMessageFactory);
                         task.setContext(Context.get());
-                        returned = task.call();
+
+                        if (bulkheadRegistry == null) {
+                            logger.warn("No bulkhead registry configured for proxy {}, executing call without bulkhead protection", getName());
+                            returned = task.call();
+                        } else {
+                            int max = connectionParameters.getMaxConcurrentCalls();
+                            var sem = bulkheadRegistry.getOrCreate(getName(), max);
+
+                            sem.acquire();
+                            try {
+                                returned = task.call();
+                            } finally {
+                                sem.release();
+                            }
+                        }
                     }
                     return returned;
                 } else {
-                    throw new ProxyClientException("ProxyClient for " + interf.getSimpleName() + " is not configured");
+                    throw new ProxyClientException(STR."ProxyClient for \{interf.getSimpleName()} is not configured");
                 }
 
             }

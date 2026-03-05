@@ -2,7 +2,11 @@ package io.github.spring.middleware.client.config;
 
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.client.proxy.ClusterBulkheadRegistry;
+import io.github.spring.middleware.client.proxy.MiddlewareClientConnectionParameters;
 import io.github.spring.middleware.client.proxy.ProxyClient;
+import io.github.spring.middleware.client.proxy.ProxyClientAnalyzer;
+import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -20,8 +24,11 @@ public class ProxyClientConfigurationTask implements Runnable {
 
     private final ProxyClient<?> proxyClient;
     private final RegistryClient registryClient;
-    private final ProxyClientConfigurationProperties properties;
+    private final MiddlewareClientConnectionParameters connectionParameters;
     private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
+    private final ErrorMessageFactory errorMessageFactory;
+    private final ProxyClientAnalyzer proxyClientAnalyzer;
+    private final ClusterBulkheadRegistry clusterBulkheadRegistry;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final Sinks.One<Void> stopSink = Sinks.one();
@@ -33,15 +40,21 @@ public class ProxyClientConfigurationTask implements Runnable {
     private static final Duration ERROR_RETRY_MAX_BACKOFF = Duration.ofSeconds(30);
 
     public ProxyClientConfigurationTask(
-            ProxyClient<?> proxyClient,
-            RegistryClient registryClient,
-            ProxyClientConfigurationProperties properties,
-            ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties
+            final ProxyClient<?> proxyClient,
+            final RegistryClient registryClient,
+            final MiddlewareClientConnectionParameters connectionParameters,
+            final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
+            final ErrorMessageFactory errorMessageFactory,
+            final ProxyClientAnalyzer proxyClientAnalyzer,
+            final ClusterBulkheadRegistry clusterBulkheadRegistry
     ) {
         this.proxyClient = Objects.requireNonNull(proxyClient, "proxyClient");
         this.registryClient = Objects.requireNonNull(registryClient, "registryClient");
-        this.properties = Objects.requireNonNull(properties, "properties");
+        this.connectionParameters = Objects.requireNonNull(connectionParameters, "connectionParameters");
         this.taskConfigProperties = Objects.requireNonNull(taskConfigProperties, "taskConfigProperties");
+        this.errorMessageFactory = Objects.requireNonNull(errorMessageFactory, "errorMessageFactory");
+        this.proxyClientAnalyzer = Objects.requireNonNull(proxyClientAnalyzer, "proxyClientAnalyzer");
+        this.clusterBulkheadRegistry = Objects.requireNonNull(clusterBulkheadRegistry, "clusterBulkheadRegistry");
     }
 
     @Override
@@ -53,13 +66,13 @@ public class ProxyClientConfigurationTask implements Runnable {
         }
 
         MiddlewareContract contract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
-        if (contract == null || contract.value() == null || contract.value().isBlank()) {
+        if (contract == null || contract.name() == null || contract.name().isBlank()) {
             log.warn("Proxy client {} has no @MiddlewareContract(value). Skipping configuration.",
                     proxyClient.getInterf().getSimpleName());
             return;
         }
 
-        String endpointName = contract.value().trim();
+        String endpointName = contract.name().trim();
 
         this.subscription =
                 attemptConfigure(endpointName)
@@ -107,7 +120,10 @@ public class ProxyClientConfigurationTask implements Runnable {
 
                     // Configura SOLO cuando hay entry
                     proxyClient.setRegistryEntry(entry);
-                    proxyClient.setProxyClientConfigurationProperties(properties);
+                    proxyClient.setMiddlewareClientConnectionParameters(connectionParameters);
+                    proxyClient.setBulkheadRegistry(clusterBulkheadRegistry);
+                    proxyClient.setErrorMessageFactory(errorMessageFactory);
+                    proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(proxyClient.getInterf()));
                     proxyClient.configureHttpClient();
 
                     return Mono.just(entry);

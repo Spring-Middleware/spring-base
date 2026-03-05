@@ -1,9 +1,9 @@
 package io.github.spring.middleware.client.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.spring.middleware.client.config.ProxyClientConfigurationProperties;
-import io.github.spring.middleware.client.error.ErrorResponse;
 import io.github.spring.middleware.config.PropertyNames;
+import io.github.spring.middleware.error.ErrorMessage;
+import io.github.spring.middleware.error.ErrorMessageFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -28,22 +29,23 @@ public class ProxyConnectionTask<T> implements Callable<T> {
     private final String url;
     private final Method method;
     private final Object body;
-    private final int timeoutMillis;
     private Map<String, Object> context;
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final ProxyClientConfigurationProperties proxyClientConfigurationProperties;
+    private final MiddlewareClientConnectionParameters connectionParameters;
+    private final ErrorMessageFactory errorMessageFactory;
 
     static {
         objectMapper.findAndRegisterModules();
     }
 
-    public ProxyConnectionTask(WebClient webClient, String url, Method method, Object body, int timeoutMillis, final ProxyClientConfigurationProperties proxyClientConfigurationProperties) {
+    public ProxyConnectionTask(final WebClient webClient, final String url, final Method method, final Object body,
+                               final MiddlewareClientConnectionParameters connectionParameters, final ErrorMessageFactory errorMessageFactory) {
         this.webClient = webClient;
         this.url = url;
         this.method = method;
         this.body = body;
-        this.timeoutMillis = timeoutMillis;
-        this.proxyClientConfigurationProperties = proxyClientConfigurationProperties;
+        this.connectionParameters = connectionParameters;
+        this.errorMessageFactory = errorMessageFactory;
     }
 
     public void setContext(Map<String, Object> context) {
@@ -71,12 +73,17 @@ public class ProxyConnectionTask<T> implements Callable<T> {
                 return buildRequest()
                         .retrieve()
                         .bodyToMono(MethodReturnTypeResolver.getTypeReference(method))
-                        .timeout(Duration.ofMillis(timeoutMillis))
+                        .timeout(Duration.ofMillis(connectionParameters.getTimeout()))
                         .retryWhen(
                                 reactor.util.retry.Retry.backoff(
-                                        proxyClientConfigurationProperties.getMaxRetries(),       // número de reintentos
-                                        Duration.ofMillis(proxyClientConfigurationProperties.getRetryBackoffMillis()) // tiempo entre reintentos
-                                ).filter(throwable -> !(throwable instanceof WebClientResponseException.BadRequest)) // opcional: no reintentar si es 4xx
+                                        connectionParameters.getMaxRetries(),       // número de reintentos
+                                        Duration.ofMillis(connectionParameters.getRetryBackoffMillis()) // tiempo entre reintentos
+                                ).filter(t -> {
+                                    if (t instanceof WebClientResponseException wex) {
+                                        return !wex.getStatusCode().is4xxClientError(); // retry solo si NO es 4xx
+                                    }
+                                    return true; // otros errores sí (timeouts, 5xx, connect, etc.)) // opcional: no reintentar si es 4xx
+                                })
                         )
                         .doOnNext(resp -> {
                             if (body == null) ProxyCacheSession.put(url, resp);
@@ -87,12 +94,14 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         } catch (WebClientResponseException ex) {
             // Manejo de errores HTTP
             String content = ex.getResponseBodyAsString();
-            logger.error("WebClientResponseException calling {} {} -> status: {}, body: {}", method.getName(), url, ex.getStatusCode(), content);
-            processError(content);
+            logger.error("WebClientResponseException calling {} {} -> status: {}, body: {}",
+                    method.getName(), url, ex.getStatusCode(), content);
+
+            processError(content, ex.getStatusCode().value(), url, method.getName());
             return null;
         } catch (Exception ex) {
             logger.warn("Error connecting to {}: {}", url, ex.getMessage(), ex);
-            ProxyClientException pce = new ProxyClientException("Error connecting to " + url, ex);
+            ProxyClientException pce = new ProxyClientException(STR."Error connecting to \{url}", ex);
             pce.addExtension("remote.url", url);
             pce.addExtension("remote.method", method.getName());
             throw pce;
@@ -156,16 +165,59 @@ public class ProxyConnectionTask<T> implements Callable<T> {
     }
 
 
-    private void processError(String content) throws RemoteServerException {
+    private void processError(String content, int statusCode, String url, String method) {
+        String requestId = (String) Optional.ofNullable(context)
+                .map(c -> c.get(PropertyNames.REQUEST_ID))
+                .orElse(StringUtils.EMPTY);
+
         try {
-            ErrorResponse error = objectMapper.readValue(content, ErrorResponse.class);
-            throw new RemoteServerException(String.valueOf(error), 500, (String) Optional.ofNullable(context)
-                    .map(c -> c.get(PropertyNames.REQUEST_ID)).orElse(StringUtils.EMPTY));
-        } catch (Exception ex) {
-            throw new RemoteServerException("Error parsing error response: " + content, 500,
-                    (String) Optional.ofNullable(context)
-                            .map(c -> c.get(PropertyNames.REQUEST_ID)).orElse(StringUtils.EMPTY));
+            ErrorMessage remoteBody = objectMapper.readValue(content, ErrorMessage.class);
+
+            // Ensure extensions is mutable
+            if (remoteBody.getExtensions() == null) {
+                remoteBody.setExtensions(new HashMap<>());
+            } else if (!(remoteBody.getExtensions() instanceof HashMap)) {
+                remoteBody.setExtensions(new HashMap<>(remoteBody.getExtensions()));
+            }
+
+            // Enriquecemos extensions SIEMPRE
+            remoteBody.getExtensions().putIfAbsent("remote.url", url);
+            remoteBody.getExtensions().putIfAbsent("remote.method", method);
+            remoteBody.getExtensions().putIfAbsent("remote.requestId", requestId);
+
+            throw new RemoteServerException(remoteBody, statusCode, requestId);
+
+        } catch (Exception parseEx) {
+
+            // No pude parsear el body remoto -> genero descriptor local (UNKNOWN)
+            ErrorMessage fallback = errorMessageFactory.from(parseEx);
+
+            // Ensure extensions is mutable
+            if (fallback.getExtensions() == null) {
+                fallback.setExtensions(new HashMap<>());
+            } else if (!(fallback.getExtensions() instanceof java.util.HashMap)) {
+                fallback.setExtensions(new HashMap<>(fallback.getExtensions()));
+            }
+
+            // Enriquecer
+            fallback.getExtensions().put("remote.url", url);
+            fallback.getExtensions().put("remote.method", method);
+            fallback.getExtensions().put("remote.httpStatus", statusCode);
+            fallback.getExtensions().put("remote.requestId", requestId);
+            fallback.getExtensions().put("remote.body", safeTruncate(content, 2000));
+
+            throw new RemoteServerException(
+                    fallback,
+                    // aquí también usaría rawStatus si es válido, y si no 502/500
+                    statusCode > 0 ? statusCode : 500,
+                    requestId
+            );
         }
+    }
+
+    private String safeTruncate(String s, int max) {
+        if (s == null) return null;
+        return s.length() <= max ? s : s.substring(0, max);
     }
 
 }

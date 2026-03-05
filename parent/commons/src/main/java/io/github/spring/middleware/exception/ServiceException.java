@@ -1,72 +1,58 @@
 package io.github.spring.middleware.exception;
 
-import lombok.Getter;
-import lombok.Setter;
+import io.github.spring.middleware.error.ErrorDescriptor;
+import io.github.spring.middleware.error.FrameworkErrorCodes;
 import org.springframework.http.HttpStatus;
 
-@Getter
-@Setter
-public class ServiceException extends RuntimeException {
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-    private String errorCode;
+public abstract class ServiceException extends RuntimeException implements ErrorDescriptor {
+
     private final HttpStatus httpStatus;
+    private final ErrorDescriptor descriptor;
+    private final Map<String, Object> extensions;
 
-    public ServiceException(Throwable cause) {
-
-        this(cause.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, cause);
+    protected ServiceException(HttpStatus httpStatus, ErrorDescriptor descriptor, String message) {
+        this(httpStatus, descriptor, message, null, null);
     }
 
-    public ServiceException(Throwable cause, HttpStatus httpStatus) {
-
-        this(cause.getMessage(), httpStatus, cause);
+    protected ServiceException(HttpStatus httpStatus, ErrorDescriptor descriptor, String message, Throwable cause) {
+        this(httpStatus, descriptor, message, cause, null);
     }
 
-    public ServiceException() {
-
-        this(null, HttpStatus.INTERNAL_SERVER_ERROR, null);
-    }
-
-    public ServiceException(String errorMessage) {
-
-        this(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR, null);
-    }
-
-    public ServiceException(String errorCode, String errorMessage) {
-
-        this(errorCode, errorMessage, HttpStatus.INTERNAL_SERVER_ERROR, null);
-    }
-
-    public ServiceException(String errorMessage, HttpStatus httpStatus, Throwable cause) {
-
-        super(errorMessage, cause);
+    protected ServiceException(HttpStatus httpStatus,
+                               ErrorDescriptor descriptor,
+                               String message,
+                               Throwable cause,
+                               Map<String, Object> extensions) {
+        super(message, cause);
         this.httpStatus = httpStatus;
+        this.descriptor = descriptor;
+        Map<String, Object> merged = new HashMap<>();
+        if (descriptor != null && descriptor.getExtensions() != null) merged.putAll(descriptor.getExtensions());
+        if (extensions != null) merged.putAll(extensions);
+        this.extensions = Collections.unmodifiableMap(merged);
     }
 
-    public ServiceException(String errorCode, String errorMessage, HttpStatus httpStatus, Throwable cause) {
-        super(errorMessage, cause);
-        this.httpStatus = httpStatus;
-        this.errorCode = errorCode;
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
     }
 
-    public ServiceException(String errorMessage, Throwable cause) {
-
-        this(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR, cause);
+    @Override
+    public String getCode() {
+        return descriptor != null ? descriptor.getCode() : FrameworkErrorCodes.UNKNOWN_ERROR.getCode();
     }
 
-    public ServiceException(String errorCode, String errorMessage, Throwable cause) {
-
-        this(errorCode, errorMessage, HttpStatus.INTERNAL_SERVER_ERROR, cause);
+    @Override
+    public String getMessage() {
+        // El message de RuntimeException manda (más específico del contexto)
+        return super.getMessage();
     }
 
-    public ServiceException(String errorMessage, HttpStatus httpStatus) {
-
-        this(errorMessage, httpStatus, null);
+    @Override
+    public Map<String, Object> getExtensions() {
+        return extensions;
     }
-
-    public ServiceException(String errorCode, String errorMessage, HttpStatus httpStatus) {
-
-        this(errorCode, errorMessage, httpStatus, null);
-
-    }
-
 }

@@ -6,10 +6,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties
+@ConfigurationProperties("middleware.client.configuration-task")
 public class ProxyClientConfigurationTaskConfigurationProperties {
 
     private int retryDelaySeconds = 10;
     private int retryMinBackoffSeconds = 2;
     private int retryMaxBackoffSeconds = 60;
+    private int threadPoolSize = 10;
 }

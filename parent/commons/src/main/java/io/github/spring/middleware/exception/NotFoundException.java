@@ -1,21 +1,15 @@
 package io.github.spring.middleware.exception;
 
+import io.github.spring.middleware.error.ErrorDescriptor;
 import org.springframework.http.HttpStatus;
 
 public class NotFoundException extends ServiceException {
 
-    public NotFoundException(String errorMessage) {
-
-        super(errorMessage, HttpStatus.NOT_FOUND);
+    public NotFoundException(ErrorDescriptor descriptor, String message) {
+        super(HttpStatus.NOT_FOUND, descriptor, message);
     }
 
-    public NotFoundException(String errorCode, String errorMessage) {
-
-        super(errorCode, errorMessage, HttpStatus.NOT_FOUND);
-    }
-
-    public NotFoundException(String errorCode, String errorMessage, Throwable cause) {
-
-        super(errorCode, errorMessage, HttpStatus.NOT_FOUND, cause);
+    public NotFoundException(ErrorDescriptor descriptor, String message, Throwable cause) {
+        super(HttpStatus.NOT_FOUND, descriptor, message, cause);
     }
 }

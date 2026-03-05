@@ -8,7 +8,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MiddlewareContract {
-    String value() default "";
 
-    int timeout() default 30000; // default timeout in milliseconds
+    String name();
+
+    MiddlewareContractConnection connection() default @MiddlewareContractConnection;
+
 }

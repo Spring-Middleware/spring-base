@@ -72,6 +72,7 @@ public class RegistryServiceImpl implements RegistryService {
             registryEntry = createRegistryEntry(name, clusterEndpoint);
         }
 
+        registryEntry.setName(name);
         registryEntry.addNodeEndpoint(nodeEndpoint);
         registryEntry.setClusterEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@MiddlewareContract(timeout = 30000)
+@MiddlewareContract(name = "registry")
 public interface RegistryClient {
 
     @PostMapping("/resource")

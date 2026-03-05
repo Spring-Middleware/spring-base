@@ -2,6 +2,7 @@ package io.github.spring.middleware.client.proxy;
 
 import io.github.spring.middleware.client.params.PathVariableValue;
 import io.github.spring.middleware.client.params.RequestParamValue;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collection;
 import java.util.List;
@@ -9,37 +10,39 @@ import java.util.Optional;
 
 public class ResourceMetadaURLResolver {
 
-    public static <T> String resolvePath(String path, List<PathVariableValue<?>> pathParamsValued,
-                                         List<RequestParamValue<?>> queryParamsValued) {
+    public static String resolvePath(
+            String path,
+            List<PathVariableValue<?>> pathParamsValued,
+            List<RequestParamValue<?>> queryParamsValued) {
 
-        for (PathVariableValue pathVariableValued : pathParamsValued) {
-            path = path.replace("{" + pathVariableValued.getPathParam().value() + "}",
-                    Optional.ofNullable(pathVariableValued.getValue()).map(Object::toString).orElse(""));
+        // 1) Replace path variables (raw replacement) and then URI-encode the final URI
+        // NOTE: This expects @PathVariable("name") to match the {name} placeholders in the path.
+        for (PathVariableValue<?> pv : pathParamsValued) {
+            String key = pv.getPathParam().value();
+            String value = Optional.ofNullable(pv.getValue()).map(Object::toString).orElse("");
+            path = path.replace("{" + key + "}", value);
         }
 
-        if (!queryParamsValued.isEmpty()) {
-            StringBuilder query = new StringBuilder("?");
-            for (RequestParamValue requestParamValued : queryParamsValued) {
-                Object val = requestParamValued.getValue();
-                if (val instanceof Collection<?> collection) {
-                    for (Object v : collection) {
-                        query.append(requestParamValued.getQueryParam().value())
-                                .append("=")
-                                .append(v)
-                                .append("&");
-                    }
-                } else if (val != null) {
-                    query.append(requestParamValued.getQueryParam().value())
-                            .append("=")
-                            .append(val)
-                            .append("&");
+        // 2) Build URI with proper query encoding
+        UriComponentsBuilder b = UriComponentsBuilder.fromUriString(path);
+
+        for (RequestParamValue<?> qp : queryParamsValued) {
+            String key = qp.getQueryParam().value();
+            Object val = qp.getValue();
+            if (val == null) continue;
+
+            if (val instanceof Collection<?> c) {
+                for (Object v : c) {
+                    if (v != null) b.queryParam(key, v);
                 }
+            } else {
+                b.queryParam(key, val);
             }
-            // quitar el último "&"
-            query.setLength(query.length() - 1);
-            path += query.toString();
         }
 
-        return path;
+        // encode() will percent-encode query params and any illegal URI chars
+        // build(true) keeps any already-encoded sequences; encode() handles the rest safely
+        return b.build(true).encode().toUriString();
     }
+
 }

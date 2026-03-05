@@ -74,9 +74,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, responseWrapper);
         Optional.ofNullable(stopWatch).ifPresent(StopWatch::stop);
         if (isNotActuator(request) && requestResponseLog.isInfoEnabled()) {
-            requestResponseLog.info(responseWrapper.getStatus() + " " +
-                    IOUtils.toString(responseWrapper.getContentInputStream(), Charset.defaultCharset()) +
-                    getResponseTime(stopWatch));
+            requestResponseLog.info(STR."\{responseWrapper.getStatus()} \{IOUtils.toString(responseWrapper.getContentInputStream(), Charset.defaultCharset())}\{getResponseTime(stopWatch)}");
         }
         responseWrapper.copyBodyToResponse();
     }

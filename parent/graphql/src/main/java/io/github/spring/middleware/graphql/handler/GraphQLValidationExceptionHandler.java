@@ -11,6 +11,7 @@ import graphql.schema.DataFetchingEnvironment;
 import io.github.spring.middleware.error.ConstraintErrorResolver;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
+import io.github.spring.middleware.exception.ServiceException;
 import io.github.spring.middleware.utils.ExceptionUtils;
 import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolation;
@@ -47,6 +48,12 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
 
         // 0) Si ya es una GraphQLException nuestra, la renderizamos tal cual
         if (exception instanceof GraphQLException gqlEx) {
+            errors.add(buildError(gqlEx, path, sourceLocation));
+            return completed(errors);
+        }
+
+        if (exception instanceof ErrorDescriptor ed) {
+            GraphQLException gqlEx = new GraphQLException(ed);
             errors.add(buildError(gqlEx, path, sourceLocation));
             return completed(errors);
         }

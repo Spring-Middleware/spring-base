@@ -6,7 +6,9 @@ import io.github.spring.middleware.graphql.annotations.GraphQLEndpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 
 @GraphQLEndpoint
@@ -23,9 +25,20 @@ public class GraphQLController {
 
     @PostMapping
     public Map<String, Object> execute(@RequestBody Map<String, Object> request) {
+
+
+        Map<String, Object> variables = Optional
+                .ofNullable((Map<String, Object>) request.get("variables"))
+                .orElse(Collections.emptyMap());
+
+        String operationName = Optional
+                .ofNullable((String) request.get("operationName"))
+                .orElse(null);
+
         ExecutionInput input = ExecutionInput.newExecutionInput()
                 .query((String) request.get("query"))
-                .variables((Map<String, Object>) request.get("variables"))
+                .operationName(operationName)
+                .variables(variables)
                 .build();
 
         return graphQL.execute(input).toSpecification();
