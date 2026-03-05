@@ -63,3 +63,33 @@ Error model
 - ErrorMessage
 - ErrorMessageFactory
 - @RestControllerAdvice
+
+
+## Current Work (2026-03-05)
+
+### GraphQL Error Handling
+
+Implemented centralized GraphQL exception handling in `spring-base`.
+
+Main class:
+- `GraphQLValidationExceptionHandler`
+
+Supported exception mapping:
+- `ServiceException` / `ErrorDescriptor`
+- `PersistenceException` with Hibernate constraint resolution
+- `ConstraintViolationException` (Jakarta Validation)
+- `LazyInitializationException` ignored
+- Fallback to `FrameworkErrorCodes.UNKNOWN_ERROR`
+
+GraphQL errors now follow a consistent structure:
+
+Example:
+
+```json
+{
+  "message": "Product with 9c537be6-0684-4744-8d9c-9144dde40fb4 not found",
+  "path": ["product"],
+  "extensions": {
+    "code": "PRODUCT:NOT_FOUND"
+  }
+}
