@@ -13,9 +13,18 @@ The framework provides infrastructure components for:
 - distributed request tracing
 - infrastructure integrations (Redis, MongoDB, RabbitMQ)
 
-The project is distributed via Maven Central BOM:
+The framework is distributed via Maven Central using the BOM:
 
 `io.github.spring-middleware:bom`
+
+Example dependency:
+
+```xml
+<dependency>
+  <groupId>io.github.spring-middleware</groupId>
+  <artifactId>app</artifactId>
+</dependency>
+```
 
 ---
 
@@ -52,8 +61,10 @@ Registration is annotation-driven.
 
 Example:
 
-    @Register
-    @RestController
+```java
+@Register
+@RestController
+```
 
 ---
 
@@ -61,27 +72,73 @@ Example:
 
 ## cluster
 
-Logical service name  
-(usually a Kubernetes Service)
+Logical service identifier.
+
+Typically corresponds to a Kubernetes Service or logical microservice name.
+
+Examples:
+
+- product-service
+- catalog-service
 
 ## node
 
-Running service instance  
-(pod / container / IP)
+Running instance of a cluster.
+
+Examples:
+
+- Kubernetes pod
+- Docker container
+- VM instance
+- container IP endpoint
 
 ---
 
+# Key Annotations
+
+Spring Middleware uses annotations to drive platform behavior.
+
+## @Register
+
+Marks a REST resource that should be registered in the Registry.
+
+Example:
+
+```java
+@Register
+@RestController
+```
+
+## @MiddlewareClient
+
+Declares a declarative service client.
+
+Example:
+
+```java
+@MiddlewareClient(service = "product")
+```
+
+Capabilities:
+
+- registry based service discovery
+- automatic endpoint resolution
+- request context propagation
+- structured remote error handling
+
+---
+
+# Registry Model
+
 ## RegistryEntry
 
-Represents a service in the registry.
+Represents a service registered in the platform registry.
 
 Fields:
 
 - clusterEndpoint
 - nodeEndpoints
 - publicEndpoint
-
----
 
 ## SchemaLocation
 
@@ -104,10 +161,25 @@ The Registry maintains the global topology of the platform.
 Responsibilities:
 
 - maintain service topology
-- health check nodes
+- perform node health checks
 - remove dead nodes
 - store REST API metadata
 - store GraphQL schema locations
+
+---
+
+# Service Bootstrapping
+
+When a service starts:
+
+1. Spring Boot initializes the application.
+2. Middleware scans for annotated resources.
+3. REST resources are registered in the Registry.
+4. GraphQL schemas are registered.
+5. The node instance registers itself under its cluster.
+6. A scheduler periodically validates registry consistency.
+
+This process is automatic and annotation-driven.
 
 ---
 
@@ -117,7 +189,9 @@ Services communicate using declarative middleware clients.
 
 Example:
 
-    @MiddlewareClient(service = "product")
+```java
+@MiddlewareClient(service = "product")
+```
 
 Capabilities:
 
@@ -145,13 +219,15 @@ Purpose:
 
 Example chain:
 
-    Client
-      ↓
-    Service A (span A1)
-      ↓
-    Service B (span B3)
-      ↓
-    Service C (span C7)
+```
+Client
+  ↓
+Service A (span A1)
+  ↓
+Service B (span B3)
+  ↓
+Service C (span C7)
+```
 
 ---
 
@@ -168,15 +244,17 @@ Core classes:
 - RemoteServerException
 - @RestControllerAdvice
 
-Error payload example:
+Example error payload:
 
-    {
-      "statusCode": 404,
-      "statusMessage": "Not Found",
-      "code": "PRODUCT:NOT_FOUND",
-      "message": "Product not found",
-      "extensions": {}
-    }
+```json
+{
+  "statusCode": 404,
+  "statusMessage": "Not Found",
+  "code": "PRODUCT:NOT_FOUND",
+  "message": "Product not found",
+  "extensions": {}
+}
+```
 
 Remote errors preserve additional metadata:
 
@@ -191,7 +269,7 @@ Remote errors preserve additional metadata:
 
 # Modules
 
-Spring Middleware is composed of multiple modules.
+Spring Middleware is composed of multiple modules organized as a multi-module Maven repository.
 
 ## Core
 
@@ -219,24 +297,61 @@ Spring Middleware is composed of multiple modules.
 
 ---
 
+# Repository Layout
+
+Infrastructure modules typically follow this structure:
+
+```
+module
+ ├─ api
+ ├─ core
+ └─ core-react (optional)
+```
+
+Typical dependency hierarchy:
+
+```
+boot
+ ↓
+core
+ ↓
+api
+```
+
+Infrastructure integration:
+
+```
+service
+ ↓
+middleware app
+ ↓
+middleware infrastructure modules
+```
+
+---
+
 # GraphQL Support
 
-GraphQL infrastructure provides:
+GraphQL infrastructure is registry-driven and supports distributed schema federation.
+
+Capabilities:
 
 - schema registration
 - namespace management
 - centralized GraphQL error handling
 - schema federation foundation
 
-Example error:
+Example GraphQL error:
 
-    {
-      "message": "Product not found",
-      "path": ["product"],
-      "extensions": {
-        "code": "PRODUCT:NOT_FOUND"
-      }
-    }
+```json
+{
+  "message": "Product not found",
+  "path": ["product"],
+  "extensions": {
+    "code": "PRODUCT:NOT_FOUND"
+  }
+}
+```
 
 ---
 
@@ -246,7 +361,9 @@ GraphQL centralized exception handling.
 
 Main component:
 
-    GraphQLValidationExceptionHandler
+```
+GraphQLValidationExceptionHandler
+```
 
 Handled exceptions:
 
