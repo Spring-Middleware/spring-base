@@ -16,6 +16,7 @@ public class FrameworkErrorProperties {
         // Set default HTTP status codes for common exceptions
         httpStatus.putIfAbsent("PROXY_CLIENT_ERROR", 502);
         httpStatus.putIfAbsent("FRAMEWORK:UNKNOWN_ERROR", 500);
+        httpStatus.putIfAbsent("FRAMEWORK:VALIDATION_ERROR", 400);
     }
 
     public Map<String, Integer> getHttpStatus() {

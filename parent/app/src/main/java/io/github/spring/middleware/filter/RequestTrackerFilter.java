@@ -1,11 +1,7 @@
 package io.github.spring.middleware.filter;
 
 import io.github.spring.middleware.config.PropertyNames;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.log4j.MDC;
@@ -29,6 +25,15 @@ public class RequestTrackerFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
         String requestId = Optional.ofNullable(httpServletRequest.getHeader(PropertyNames.REQUEST_ID))
                 .orElseGet(() -> UUID.randomUUID().toString().replaceAll("-", "").toUpperCase());
+
+        String spanId = UUID.randomUUID().toString().replace("-", "").toUpperCase();
+
+        MDC.put(PropertyNames.REQUEST_ID, requestId);
+        MDC.put(PropertyNames.SPAN_ID, spanId);
+
+        httpServletResponse.addHeader(PropertyNames.REQUEST_ID, requestId);
+        httpServletResponse.addHeader(PropertyNames.SPAN_ID, spanId);
+
         MDC.put(PropertyNames.REQUEST_ID, requestId);
         httpServletResponse.addHeader(PropertyNames.REQUEST_ID, requestId);
         filterChain.doFilter(httpServletRequest, httpServletResponse);

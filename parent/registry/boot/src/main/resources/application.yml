@@ -4,6 +4,15 @@ server:
     context-path: ${SERVER_CONTEXT_PATH:/registry}
 
 middleware:
+  log:
+    apiKey: ${LOG_API_KEY}
+    request:
+      enabled: ${LOG_REQUEST_ENABLED:true}
+    response:
+      enabled: ${LOG_RESPONSE_ENABLED:true}
+    responseTime:
+      enabled: ${LOG_RESPONSE_TIME_ENABLED:false}
+
   client:
     # When running in Docker compose the registry service is reachable at hostname `registry` on port 8080
     registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8080/registry}
@@ -48,5 +57,3 @@ logging:
     io.github.spring.middleware: ${LOG_LEVEL_PACKAGE:DEBUG}
     root: ${LOG_LEVEL_ROOT:ERROR}
 
-# Activate this profile in Docker either by setting SPRING_PROFILES_ACTIVE=DOCKER
-# or by passing --spring.profiles.active=DOCKER to the JVM arguments.

@@ -19,7 +19,7 @@ public class TestUtils {
     public static void copyJsonToFile(String json, String filename) throws RuntimeException {
 
         try {
-            File file = new File("src/test/resources/" + filename);
+            File file = new File(STR."src/test/resources/\{filename}");
             FileUtils.writeStringToFile(file, json, Charset.defaultCharset());
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -29,7 +29,7 @@ public class TestUtils {
     public static void checkJson(String json, String filename) throws RuntimeException {
 
         try {
-            File file = new File("src/test/resources/" + filename);
+            File file = new File(STR."src/test/resources/\{filename}");
             JSONAssert.assertEquals(json, FileUtils.readFileToString(file, Charset.defaultCharset()), false);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

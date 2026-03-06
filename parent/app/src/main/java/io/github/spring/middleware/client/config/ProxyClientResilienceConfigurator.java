@@ -1,12 +1,10 @@
 package io.github.spring.middleware.client.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotation.MiddlewareContractConnection;
 import io.github.spring.middleware.client.RegistryClient;
-import io.github.spring.middleware.client.proxy.ClusterBulkheadRegistry;
-import io.github.spring.middleware.client.proxy.MiddlewareClientConnectionParameters;
-import io.github.spring.middleware.client.proxy.ProxyClient;
-import io.github.spring.middleware.client.proxy.ProxyClientAnalyzer;
+import io.github.spring.middleware.client.proxy.*;
 import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
@@ -28,26 +26,29 @@ public class ProxyClientResilienceConfigurator {
     private final Executor taskExecutor;
     private final String registryEndpoint;
     private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
-    private final ErrorMessageFactory errorMessageFactory;
+    private final ProxyConnectionErrorHandler errorHandler;
     private final Environment environment;
     private final ProxyClientAnalyzer proxyClientAnalyzer;
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
+    private final ObjectMapper objectMapper;
 
     public ProxyClientResilienceConfigurator(final RegistryClient registryClient,
                                              @Value("${middleware.client.registryEndpoint}") final String registryEndpoint,
                                              final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
-                                             final ErrorMessageFactory errorMessageFactory,
+                                             final ProxyConnectionErrorHandler proxyConnectionErrorHandler,
                                              final Environment environment,
                                              final ProxyClientAnalyzer proxyClientAnalyzer,
-                                             final ClusterBulkheadRegistry clusterBulkheadRegistry) {
+                                             final ClusterBulkheadRegistry clusterBulkheadRegistry,
+                                             final ObjectMapper objectMapper) {
         this.registryEndpoint = registryEndpoint;
         this.registryClient = registryClient;
         this.taskConfigProperties = taskConfigProperties;
-        this.errorMessageFactory = errorMessageFactory;
+        this.errorHandler = proxyConnectionErrorHandler;
         this.taskExecutor = Executors.newFixedThreadPool(taskConfigProperties.getThreadPoolSize());
         this.environment = environment;
         this.proxyClientAnalyzer = proxyClientAnalyzer;
         this.clusterBulkheadRegistry = clusterBulkheadRegistry;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -62,7 +63,8 @@ public class ProxyClientResilienceConfigurator {
                     pc.setRegistryEntry(new RegistryEntry(registryEndpoint));
                     pc.setMiddlewareClientConnectionParameters(clientConnectionParameters);
                     pc.setBulkheadRegistry(clusterBulkheadRegistry);
-                    pc.setErrorMessageFactory(errorMessageFactory);
+                    pc.setObjectMapper(objectMapper);
+                    pc.setErrorHandler(errorHandler);
                     pc.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(pc.getInterf()));
                     pc.configureHttpClient();
                     log.info("RegistryClient proxy configured -> {}", registryEndpoint);
@@ -77,9 +79,10 @@ public class ProxyClientResilienceConfigurator {
                         registryClient,
                         clientConnectionParameters,
                         taskConfigProperties,
-                        errorMessageFactory,
+                        errorHandler,
                         proxyClientAnalyzer,
-                        clusterBulkheadRegistry);
+                        clusterBulkheadRegistry,
+                        objectMapper);
                 configurationTasks.add(task);
                 runAsyncTask(task);
             }

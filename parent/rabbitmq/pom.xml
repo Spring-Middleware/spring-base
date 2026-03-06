@@ -1,151 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>io.github.spring-middleware</groupId>
         <artifactId>parent</artifactId>
-        <version>${revision}</version>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>rabbitmq</artifactId>
     <version>${core.rabbitmq.version}</version>
     <name>Rabbit MQ Integration</name>
-    <packaging>jar</packaging>
+    <description>RabbitMQ integration</description>
 
-    <!-- Property to allow skipping tests in this module specifically -->
     <properties>
         <skip.rabbitmq.tests>false</skip.rabbitmq.tests>
+        <jakarta.jms.version>3.1.0</jakarta.jms.version>
+        <rabbitmq.jms.version>3.2.0</rabbitmq.jms.version>
+        <commons.pool2.version>2.12.0</commons.pool2.version>
+        <jaxb.runtime.version>4.0.5</jaxb.runtime.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
     </properties>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jboss-maven2-release-repository</id>
-            <url>https://repo.maven.apache.org/maven2/</url>
-            <layout>default</layout>
-        </pluginRepository>
-    </pluginRepositories>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
         </dependency>
-        <!-- La API de JMS 3.0 (Jakarta) -->
+
         <dependency>
             <groupId>jakarta.jms</groupId>
             <artifactId>jakarta.jms-api</artifactId>
-            <version>3.1.0</version>
+            <version>${jakarta.jms.version}</version>
         </dependency>
-        <!-- El "traductor" de RabbitMQ a JMS (indispensable) -->
+
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.2.0</version> <!-- Esta versión ya usa Jakarta -->
+            <version>${rabbitmq.jms.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
-            <version>2.12.0</version>
+            <version>${commons.pool2.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
         </dependency>
+
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
 
-        <!-- Implementación de JAXB (necesaria en runtime para que no de error) -->
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
+            <version>${jaxb.runtime.version}</version>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version> <!-- Versión moderna -->
         </dependency>
+
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>0.10.2</version> <!-- Versión compatible con Java 17 -->
         </dependency>
+
+        <!-- Test -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>rabbitmq</artifactId>
-            <version>1.19.3</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- 1. JUnit 4 (Proporciona @ClassRule, @Test, @Before) -->
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Keep JUnit 4 only if current tests still use it -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
-        <!-- 2. Testcontainers JUnit Support (Obligatorio para usar Rules) -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId> <!-- Aunque se llame jupiter, incluye el soporte base para Rules de JUnit 4 -->
-            <version>1.19.3</version>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.junit.jupiter</groupId>
-                    <artifactId>junit-jupiter</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Configure surefire/failsafe to respect module-specific skip property -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
                 <configuration>
                     <skipTests>${skip.rabbitmq.tests}</skipTests>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.1.2</version>
                 <configuration>
                     <skipITs>${skip.rabbitmq.tests}</skipITs>
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

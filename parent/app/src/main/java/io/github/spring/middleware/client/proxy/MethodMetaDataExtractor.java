@@ -67,7 +67,15 @@ public class MethodMetaDataExtractor {
         throw new IllegalArgumentException("Method must be annotated with a mapping annotation");
     }
 
-    private static String resolvePath(Method method) {
+    private static String resolveClassLevelPath(Method method) {
+        RequestMapping classRequestMapping = method.getDeclaringClass().getAnnotation(RequestMapping.class);
+        if (classRequestMapping == null) {
+            return "";
+        }
+        return firstNonEmpty(classRequestMapping.path(), classRequestMapping.value());
+    }
+
+    private static String resolveMethodLevelPath(Method method) {
 
         // value y path son aliases: cubrimos ambos y el caso vacío.
         if (method.isAnnotationPresent(GetMapping.class)) {
@@ -96,6 +104,40 @@ public class MethodMetaDataExtractor {
         }
 
         throw new IllegalArgumentException("Method must be annotated with a mapping annotation");
+    }
+
+    private static String resolvePath(Method method) {
+        String classPath = resolveClassLevelPath(method);
+        String methodPath = resolveMethodLevelPath(method);
+        return joinPaths(classPath, methodPath);
+    }
+
+    private static String joinPaths(String classPath, String methodPath) {
+        String left = classPath == null ? "" : classPath.trim();
+        String right = methodPath == null ? "" : methodPath.trim();
+
+        if (left.isEmpty()) {
+            return normalizePath(right);
+        }
+        if (right.isEmpty()) {
+            return normalizePath(left);
+        }
+
+        return normalizePath(
+                left.endsWith("/") ? left.substring(0, left.length() - 1) : left,
+                right.startsWith("/") ? right : "/" + right
+        );
+    }
+
+    private static String normalizePath(String... parts) {
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (part != null) {
+                sb.append(part);
+            }
+        }
+        String path = sb.toString().replaceAll("//+", "/");
+        return path.startsWith("/") ? path : "/" + path;
     }
 
     private static String firstNonEmpty(String[] a, String[] b) {

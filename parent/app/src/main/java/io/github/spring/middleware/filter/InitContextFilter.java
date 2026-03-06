@@ -6,7 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
@@ -16,10 +15,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.spring.middleware.config.PropertyNames.REQUEST_ID;
+import static io.github.spring.middleware.config.PropertyNames.*;
 
 @Component
 @Order(value = Ordered.HIGHEST_PRECEDENCE + 1)
@@ -27,9 +27,9 @@ public class InitContextFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-            FilterChain filterChain) throws ServletException, IOException {
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        initContext(getContextProperties(httpServletRequest,null));
+        initContext(getContextProperties(httpServletRequest, null));
         filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
@@ -45,8 +45,8 @@ public class InitContextFilter extends OncePerRequestFilter {
         myContext.put(REQUEST_ID,
                 Optional.ofNullable(propertyNamesObjectMap.get(REQUEST_ID))
                         .orElse(StringUtils.EMPTY));
-        myContext.put(PropertyNames.REQUEST_LOG_ENABLED,
-                Optional.ofNullable(propertyNamesObjectMap.get(PropertyNames.REQUEST_LOG_ENABLED))
+        myContext.put(PropertyNames.LOGGING_KEY,
+                Optional.ofNullable(propertyNamesObjectMap.get(PropertyNames.LOGGING_KEY))
                         .orElse(Boolean.FALSE));
         myContext.put(PropertyNames.CONTENT_LANGUAGE,
                 Optional.ofNullable(propertyNamesObjectMap.get(PropertyNames.CONTENT_LANGUAGE))
@@ -60,10 +60,10 @@ public class InitContextFilter extends OncePerRequestFilter {
         Optional.ofNullable(MDC.get(REQUEST_ID))
                 .ifPresent(reqId -> contextProperties.put(REQUEST_ID, reqId));
 
-        contextProperties.put(PropertyNames.REQUEST_LOG_ENABLED, isRequestLogEnabled(httpServletRequest));
+        contextProperties.put(PropertyNames.LOGGING_KEY, isRequestLogEnabled(httpServletRequest));
         contextProperties.put(PropertyNames.RESPONSE_TIME_LOG, isResponseTimeLogEnabled(httpServletRequest));
-        contextProperties.put(PropertyNames.CONTENT_LANGUAGE,
-                Optional.ofNullable(locale).orElse(getContentLanguage(httpServletRequest)));
+        contextProperties.put(PropertyNames.CONTENT_LANGUAGE, Optional.ofNullable(locale).orElse(getContentLanguage(httpServletRequest)));
+        contextProperties.put(PropertyNames.HEADERS, List.of(LOGGING_KEY, RESPONSE_TIME_LOG, REQUEST_ID, CONTENT_LANGUAGE));
         return contextProperties;
     }
 

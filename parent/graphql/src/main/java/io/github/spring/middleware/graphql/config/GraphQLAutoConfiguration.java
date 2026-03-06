@@ -4,6 +4,7 @@ import graphql.GraphQL;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.schema.GraphQLSchema;
 import io.github.spring.middleware.error.ConstraintErrorResolver;
+import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.graphql.annotations.GraphQLService;
 import io.github.spring.middleware.graphql.handler.GraphQLValidationExceptionHandler;
 import io.leangen.graphql.GraphQLSchemaGenerator;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class GraphQLAutoConfiguration {
 
     private final ConstraintErrorResolver constraintErrorResolver;
+    private final ErrorMessageFactory errorMessageFactory;
 
     @Bean
     @ConditionalOnProperty(prefix = "middleware.graphql", name = "enabled", havingValue = "true", matchIfMissing = false)
@@ -40,8 +42,8 @@ public class GraphQLAutoConfiguration {
                 .forEach(generator::withOperationsFromSingleton);
         GraphQLSchema schema = generator.generate();
         return GraphQL.newGraphQL(schema)
-                .mutationExecutionStrategy(new AsyncExecutionStrategy(new GraphQLValidationExceptionHandler(constraintErrorResolver)))
-                .queryExecutionStrategy(new AsyncExecutionStrategy(new GraphQLValidationExceptionHandler(constraintErrorResolver)))
+                .mutationExecutionStrategy(new AsyncExecutionStrategy(new GraphQLValidationExceptionHandler(constraintErrorResolver, errorMessageFactory)))
+                .queryExecutionStrategy(new AsyncExecutionStrategy(new GraphQLValidationExceptionHandler(constraintErrorResolver, errorMessageFactory)))
                 .build();
 
     }

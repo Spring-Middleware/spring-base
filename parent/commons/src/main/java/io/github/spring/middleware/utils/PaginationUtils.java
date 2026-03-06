@@ -8,14 +8,16 @@ public class PaginationUtils {
     public static <E, P> List<E> findAllPages(final Finder<E, P> finder, final P params, final int initialPage, final int pageSize) {
         int page = initialPage;
         int size = pageSize;
-        List<E> result = new ArrayList<>();
+        List<E> allResult = new ArrayList<>();
+        List<E> result = null;
         do {
-            result.addAll(finder.findPage(params, page, size));
+            result = finder.findPage(params, page, size);
             if (result != null && !result.isEmpty()) {
+                allResult.addAll(result);
                 page++;
             }
         } while (result != null && !result.isEmpty());
-        return result;
+        return allResult;
     }
 
     public static interface Finder<E, P> {

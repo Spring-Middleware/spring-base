@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
@@ -7,21 +8,28 @@
     <parent>
         <groupId>io.github.spring-middleware</groupId>
         <artifactId>bom</artifactId>
-        <version>${revision}</version>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>parent</artifactId>
-    <version>${revision}</version>
-    <name>parent</name>
-    <description>Core Parent</description>
+    <version>1.1.0</version>
+    <name>spring-middleware-parent</name>
+    <description>Core parent for Spring Middleware modules</description>
+    <url>https://github.com/Spring-Middleware/spring-base</url>
+    <inceptionYear>2024</inceptionYear>
 
-    <url>https://github.com</url>
+    <organization>
+        <name>Spring Middleware</name>
+        <url>https://github.com/Spring-Middleware</url>
+    </organization>
 
     <licenses>
         <license>
             <name>MIT License</name>
-            <url>http://www.opensource.org</url>
+            <url>https://opensource.org/license/mit</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
 
@@ -30,7 +38,7 @@
             <name>Fernando Guardiola Ruiz</name>
             <email>fernandoguardiolaruiz@gmail.com</email>
             <organization>Spring Middleware</organization>
-            <organizationUrl>https://github.com</organizationUrl>
+            <organizationUrl>https://github.com/Spring-Middleware</organizationUrl>
         </developer>
     </developers>
 
@@ -38,24 +46,42 @@
         <connection>scm:git:https://github.com/Spring-Middleware/spring-base.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:Spring-Middleware/spring-base.git</developerConnection>
         <url>https://github.com/Spring-Middleware/spring-base</url>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
         <revision>1.0.0</revision>
         <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
+
         <spring.boot.version>3.4.2</spring.boot.version>
-        <spring.shell.version>3.4.0</spring.shell.version> <!-- Actualizado -->
-        <springdoc.openapi.version>2.8.4</springdoc.openapi.version> <!-- Actualizado para SB 3.4 -->
+        <spring.shell.version>3.4.0</spring.shell.version>
+        <springdoc.openapi.version>2.8.4</springdoc.openapi.version>
+
         <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
-        <jakarta.validation.api.version>3.1.0</jakarta.validation.api.version> <!-- Actualizado -->
+        <jakarta.validation.api.version>3.1.0</jakarta.validation.api.version>
         <jakarta.persistence.api.version>3.1.0</jakarta.persistence.api.version>
-        <swagger.annotations.version>2.2.28</swagger.annotations.version> <!-- Actualizado -->
-        <lombok.version>1.18.36</lombok.version> <!-- Actualizado -->
-        <modelmapper.version>3.2.2</modelmapper.version> <!-- Versión 3.x para mejor soporte Java 17 -->
-        <redis.clients.version>5.2.0</redis.clients.version> <!-- Jedis 5.x es el estándar ahora -->
+        <swagger.annotations.version>2.2.28</swagger.annotations.version>
+        <lombok.version>1.18.36</lombok.version>
+        <modelmapper.version>3.2.2</modelmapper.version>
+        <redis.clients.version>5.2.0</redis.clients.version>
         <java.queues>2.7</java.queues>
-        <!-- JVM args used to enable preview features during compile/test/javadoc -->
+
+        <commons.collections4.version>4.4</commons.collections4.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
+        <commons.lang3.version>3.14.0</commons.lang3.version>
+        <commons.beanutils.version>1.9.4</commons.beanutils.version>
+        <statefulj.version>3.0</statefulj.version>
+        <jsonassert.version>1.5.1</jsonassert.version>
+        <guava.version>33.2.0-jre</guava.version>
+        <hibernate.core.version>6.1.7.Final</hibernate.core.version>
+        <postgresql.version>42.2.5</postgresql.version>
+        <reflections.version>0.9.10</reflections.version>
+        <commons.io.version>2.16.1</commons.io.version>
+        <gson.version>2.10.1</gson.version>
+        <aws.secrets.manager.version>2.4.4</aws.secrets.manager.version>
+        <aws.sdk.sts.version>1.12.429</aws.sdk.sts.version>
+
         <enable.preview.args>--enable-preview</enable.preview.args>
     </properties>
 
@@ -79,10 +105,11 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.4.2</version>
+                <version>${spring.boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <dependency>
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>commons</artifactId>
@@ -148,11 +175,14 @@
                 <artifactId>graphql</artifactId>
                 <version>${core.graphql.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>${redis.clients.version}</version>
             </dependency>
+
+            <!-- Mantener versiones explícitas aquí en tu caso -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
@@ -199,6 +229,13 @@
                 <version>${spring.boot.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring.boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.springframework.shell</groupId>
                 <artifactId>spring-shell-starter</artifactId>
                 <version>${spring.shell.version}</version>
@@ -209,22 +246,18 @@
                 <artifactId>spring-shell-starter-test</artifactId>
                 <version>${spring.shell.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>io.awspring.cloud</groupId>
                 <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
-                <version>2.4.4</version>
+                <version>${aws.secrets.manager.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-sts</artifactId>
-                <version>1.12.429</version>
+                <version>${aws.sdk.sts.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-test</artifactId>
-                <version>${spring.boot.version}</version>
-                <scope>test</scope>
-            </dependency>
+
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
@@ -258,27 +291,27 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
-                <version>4.1</version>
+                <version>${commons.collections4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
-                <version>3.6.1</version>
+                <version>${commons.math3.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.8.1</version>
+                <version>${commons.lang3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.3</version>
+                <version>${commons.beanutils.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.statefulj</groupId>
                 <artifactId>statefulj-fsm</artifactId>
-                <version>3.0</version>
+                <version>${statefulj.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -293,27 +326,27 @@
             <dependency>
                 <groupId>org.skyscreamer</groupId>
                 <artifactId>jsonassert</artifactId>
-                <version>1.5.0</version>
+                <version>${jsonassert.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1-jre</version>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>6.1.7.Final</version>
+                <version>${hibernate.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.2.5</version>
+                <version>${postgresql.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
-                <version>0.9.10</version>
+                <version>${reflections.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.guava</groupId>
@@ -329,12 +362,12 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.11.0</version>
+                <version>${commons.io.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.6</version>
+                <version>${gson.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
@@ -360,10 +393,8 @@
     </dependencyManagement>
 
     <build>
-        <!-- Central pluginManagement to enable Java 21 + preview across modules -->
         <pluginManagement>
             <plugins>
-                <!-- Compiler: set release and enable preview -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -376,34 +407,27 @@
                     </configuration>
                 </plugin>
 
-                <!-- Surefire: pass enable-preview argument to test JVMs -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.1.2</version>
                     <configuration>
-                        <!-- Pass enable-preview to test JVMs -->
-                        <argLine>${enable.preview.args}</argLine>
+                        <argLine>@{argLine} ${enable.preview.args}</argLine>
                         <forkCount>1C</forkCount>
                         <reuseForks>true</reuseForks>
                     </configuration>
                 </plugin>
 
-                <!-- Failsafe: same as surefire -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>3.1.2</version>
                     <configuration>
-                        <argLine>${enable.preview.args}</argLine>
+                        <argLine>@{argLine} ${enable.preview.args}</argLine>
                         <forkCount>1C</forkCount>
                         <reuseForks>true</reuseForks>
                     </configuration>
                 </plugin>
-
-                <!-- Javadoc configuration omitted here (some environments validate plugin schemas).
-                     If needed run: mvn javadoc:javadoc -Dadditionalparam="${enable.preview.args}" -->
-
             </plugins>
         </pluginManagement>
 
@@ -434,7 +458,6 @@
                 </executions>
             </plugin>
 
-            <!-- Ensure javadoc runs with preview features enabled (string templates, etc.) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -445,5 +468,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

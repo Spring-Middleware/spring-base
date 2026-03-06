@@ -1,10 +1,12 @@
 package io.github.spring.middleware.resolver;
 
 import io.github.spring.middleware.error.ErrorDescriptor;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 
+@Component
 public class CompositeHttpStatusCodeResolver {
 
     private final List<HttpStatusCodeResolver> delegates;

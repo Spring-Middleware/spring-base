@@ -10,10 +10,9 @@ import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 import io.github.spring.middleware.error.ConstraintErrorResolver;
 import io.github.spring.middleware.error.ErrorDescriptor;
-import io.github.spring.middleware.error.FrameworkErrorCodes;
-import io.github.spring.middleware.exception.ServiceException;
+import io.github.spring.middleware.error.ErrorMessage;
+import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.utils.ExceptionUtils;
-import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
@@ -22,15 +21,16 @@ import org.hibernate.LazyInitializationException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHandler {
 
     private final ConstraintErrorResolver errorResolver;
+    private final ErrorMessageFactory errorMessageFactory;
 
-    public GraphQLValidationExceptionHandler(ConstraintErrorResolver errorResolver) {
+    public GraphQLValidationExceptionHandler(ConstraintErrorResolver errorResolver, ErrorMessageFactory errorMessageFactory) {
         this.errorResolver = errorResolver;
+        this.errorMessageFactory = errorMessageFactory;
     }
 
     @Override
@@ -46,36 +46,7 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
 
         List<GraphQLError> errors = new ArrayList<>();
 
-        // 0) Si ya es una GraphQLException nuestra, la renderizamos tal cual
-        if (exception instanceof GraphQLException gqlEx) {
-            errors.add(buildError(gqlEx, path, sourceLocation));
-            return completed(errors);
-        }
-
-        if (exception instanceof ErrorDescriptor ed) {
-            GraphQLException gqlEx = new GraphQLException(ed);
-            errors.add(buildError(gqlEx, path, sourceLocation));
-            return completed(errors);
-        }
-
-        // 1) Hibernate DB constraint violation (unique, fk, etc.)
-        if (exception instanceof PersistenceException
-                && exception.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
-
-            org.hibernate.exception.ConstraintViolationException dbViolation =
-                    (org.hibernate.exception.ConstraintViolationException) exception.getCause();
-
-            ErrorDescriptor descriptor =
-                    errorResolver.resolveFromDbConstraintName(dbViolation.getConstraintName());
-
-            GraphQLException gqlEx = new GraphQLException(descriptor);
-            errors.add(buildError(gqlEx, path, sourceLocation));
-            return completed(errors);
-        }
-
-        // 2) Bean Validation (jakarta.validation)
         if (exception instanceof ConstraintViolationException validationEx) {
-
             for (ConstraintViolation<?> violation : validationEx.getConstraintViolations()) {
 
                 Annotation annotation = violation.getConstraintDescriptor().getAnnotation();
@@ -84,8 +55,9 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
                 ErrorDescriptor descriptor = errorResolver.resolveFromAnnotation(annoType);
 
                 GraphQLException gqlEx = new GraphQLException(descriptor);
-                // si quieres meter params (min/max/etc) esto es el sitio
-                // gqlEx.setParameters(...)
+                gqlEx.addExtension("field", extractFieldName(violation.getPropertyPath()));
+                gqlEx.addExtension("validationMessage", violation.getMessage());
+                gqlEx.addExtension("constraint", annoType.getSimpleName());
 
                 ResultPath validationPath = buildPath(path, violation.getPropertyPath());
 
@@ -95,18 +67,13 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
             return completed(errors);
         }
 
-        // 3) LazyInitializationException -> ignorar (como hacías antes)
         if (exception instanceof LazyInitializationException) {
             return completed(errors);
         }
 
-        // 4) Fallback UNKNOWN (framework default)
-        GraphQLException unknown = new GraphQLException(
-                FrameworkErrorCodes.UNKNOWN_ERROR.getCode(),
-                Optional.ofNullable(ExceptionUtils.getExceptionMessage(exception, 2))
-                        .orElse(FrameworkErrorCodes.UNKNOWN_ERROR.getMessage())
-        );
-        errors.add(buildError(unknown, path, sourceLocation));
+        ErrorMessage error = errorMessageFactory.from(exception);
+        GraphQLException gqlEx = new GraphQLException(error);
+        errors.add(buildError(gqlEx, path, sourceLocation));
         return completed(errors);
     }
 
@@ -147,6 +114,14 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
         });
 
         return ResultPath.fromList(nodes);
+    }
+
+    private String extractFieldName(Path path) {
+        String field = null;
+        for (Path.Node node : path) {
+            field = node.getName();
+        }
+        return field;
     }
 
     private CompletableFuture<DataFetcherExceptionHandlerResult> completed(List<GraphQLError> errors) {

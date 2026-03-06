@@ -7,14 +7,15 @@
     <parent>
         <groupId>io.github.spring-middleware</groupId>
         <artifactId>parent</artifactId>
-        <version>${revision}</version>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>mongo</artifactId>
     <version>${core.mongo.version}</version>
     <name>mongo</name>
-    <description>Core  Mongo</description>
+    <description>Core Mongo</description>
 
     <modules>
         <module>api</module>
@@ -22,5 +23,4 @@
         <module>core</module>
         <module>core-react</module>
     </modules>
-
 </project>

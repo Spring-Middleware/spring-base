@@ -1,12 +1,9 @@
 package io.github.spring.middleware.client.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.client.RegistryClient;
-import io.github.spring.middleware.client.proxy.ClusterBulkheadRegistry;
-import io.github.spring.middleware.client.proxy.MiddlewareClientConnectionParameters;
-import io.github.spring.middleware.client.proxy.ProxyClient;
-import io.github.spring.middleware.client.proxy.ProxyClientAnalyzer;
-import io.github.spring.middleware.error.ErrorMessageFactory;
+import io.github.spring.middleware.client.proxy.*;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -26,35 +23,34 @@ public class ProxyClientConfigurationTask implements Runnable {
     private final RegistryClient registryClient;
     private final MiddlewareClientConnectionParameters connectionParameters;
     private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
-    private final ErrorMessageFactory errorMessageFactory;
+    private final ProxyConnectionErrorHandler errorHandler;
     private final ProxyClientAnalyzer proxyClientAnalyzer;
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
+    private final ObjectMapper objectMapper;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final Sinks.One<Void> stopSink = Sinks.one();
     private volatile Disposable subscription;
 
-    // Tunables (puedes moverlos a properties si quieres)
-    private static final Duration EMPTY_RETRY_DELAY = Duration.ofSeconds(10);
-    private static final Duration ERROR_RETRY_MIN_BACKOFF = Duration.ofSeconds(2);
-    private static final Duration ERROR_RETRY_MAX_BACKOFF = Duration.ofSeconds(30);
 
     public ProxyClientConfigurationTask(
             final ProxyClient<?> proxyClient,
             final RegistryClient registryClient,
             final MiddlewareClientConnectionParameters connectionParameters,
             final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
-            final ErrorMessageFactory errorMessageFactory,
+            final ProxyConnectionErrorHandler proxyConnectionErrorHandler,
             final ProxyClientAnalyzer proxyClientAnalyzer,
-            final ClusterBulkheadRegistry clusterBulkheadRegistry
+            final ClusterBulkheadRegistry clusterBulkheadRegistry,
+            final ObjectMapper objectMapper
     ) {
         this.proxyClient = Objects.requireNonNull(proxyClient, "proxyClient");
         this.registryClient = Objects.requireNonNull(registryClient, "registryClient");
         this.connectionParameters = Objects.requireNonNull(connectionParameters, "connectionParameters");
         this.taskConfigProperties = Objects.requireNonNull(taskConfigProperties, "taskConfigProperties");
-        this.errorMessageFactory = Objects.requireNonNull(errorMessageFactory, "errorMessageFactory");
+        this.errorHandler = Objects.requireNonNull(proxyConnectionErrorHandler, "proxyConnectionErrorHandler");
         this.proxyClientAnalyzer = Objects.requireNonNull(proxyClientAnalyzer, "proxyClientAnalyzer");
         this.clusterBulkheadRegistry = Objects.requireNonNull(clusterBulkheadRegistry, "clusterBulkheadRegistry");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
 
     @Override
@@ -122,7 +118,8 @@ public class ProxyClientConfigurationTask implements Runnable {
                     proxyClient.setRegistryEntry(entry);
                     proxyClient.setMiddlewareClientConnectionParameters(connectionParameters);
                     proxyClient.setBulkheadRegistry(clusterBulkheadRegistry);
-                    proxyClient.setErrorMessageFactory(errorMessageFactory);
+                    proxyClient.setErrorHandler(errorHandler);
+                    proxyClient.setObjectMapper(objectMapper);
                     proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(proxyClient.getInterf()));
                     proxyClient.configureHttpClient();
 

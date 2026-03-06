@@ -1,1030 +1,351 @@
-# Spring Base Framework
+# Spring Middleware
 
-[![Java](https://img.shields.io/badge/Java-17%20%2F%2021-orange.svg)](https://openjdk.java.net/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://search.maven.org/artifact/io.github.spring-middleware/bom)
-[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Modular-blueviolet.svg)](#architecture)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-green.svg)](https://spring.io/projects/spring-boot)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://central.sonatype.com/artifact/io.github.spring-middleware/bom)
+[![Status](https://img.shields.io/badge/status-active%20development-brightgreen)](#)
+[![Architecture](https://img.shields.io/badge/Architecture-Microservices%20Platform-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 📋 Table of Contents
+**Current Version:** `1.1.0`  
+**Status:** Active Development
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Modules](#modules)
-  - [Commons](#commons)
-  - [View System](#view-system)
-  - [MongoDB Integration](#mongodb-integration)
-  - [Redis Integration](#redis-integration)
-  - [RabbitMQ Integration](#rabbitmq-integration)
-  - [JPA Integration](#jpa-integration)
-  - [Cache Module](#cache-module)
-  - [Application Core](#application-core)
-  - [API Module](#api-module)
-  - [Model Module](#model-module)
-- [Key Features](#key-features)
-- [Getting Started](#getting-started)
-- [Usage Examples](#usage-examples)
-- [Design Patterns](#design-patterns)
+**Spring Middleware** is a modular framework designed to build **consistent, resilient, and discoverable Spring Boot microservices**.
 
----
+It provides infrastructure for:
 
-## Overview
+- service discovery
+- declarative HTTP clients
+- API metadata registry
+- GraphQL schema federation
+- distributed error propagation
+- request context propagation
+- dynamic search engines (Mongo / JPA)
+- Redis abstractions and distributed locks
+- RabbitMQ event integration
 
-**Spring Base** is a battle-tested, modular framework architected to standardize the development of high-performance Spring Boot microservices.
-
-Born from production experience in high-traffic environments (e.g., Travel & Retail sectors), it solves recurring architectural challenges—distributed locking, complex search, data composition, and error recovery—allowing developers to focus on business logic while inheriting enterprise-grade reliability and consistency.
-
-### 🛡️ Core Philosophy
-*   **Consistency by Default**: Enforces standardized patterns for Errors, Logging, and Data Access across all services.
-*   **Resilience First**: Distributed locking and stateful error recovery are first-class citizens, not afterthoughts.
-*   **Dependency Inversion**: Strict separation between API contracts and Core implementations modules to prevent tight coupling.
-*   **Developer Velocity**: Annotations like `@MongoSearchProperty`, `@ViewProperty`, and `@Join` eliminate 90% of the boilerplate code typically required for complex data fetching and mapping.
+The framework emerged from real production microservices and aims to remove recurring infrastructure complexity while keeping architecture explicit and transparent.
 
 ---
 
-## Architecture
+# Overview
+
+Spring Middleware provides the **foundation layer for microservice platforms**.
+
+It sits between:
 
 ```
-spring-base/
-├── parent/
-│   ├── api/                    # Core API contracts
-│   ├── commons/                # Shared utilities
-│   ├── view/                   # View transformation system
-│   │   ├── api/               # View annotations & interfaces
-│   │   └── core/              # View resolution engine
-│   ├── mongo/                  # MongoDB dynamic search
-│   │   ├── api/               # Search annotations
-│   │   ├── core/              # Synchronous implementation
-│   │   ├── core-commons/      # Shared MongoDB utilities
-│   │   └── core-react/        # Reactive implementation
-│   ├── redis/                  # Redis abstraction layer
-│   │   ├── api/               # Redis contracts
-│   │   ├── core/              # Synchronous implementation
-│   │   └── core-react/        # Reactive implementation
-│   ├── rabbitmq/              # RabbitMQ (JMS) integration
-│   ├── jpa/                    # JPA/Hibernate dynamic search
-│   │   ├── api/               # Search annotations
-│   │   └── core/              # HQL query builder
-│   ├── cache/                  # Cache management
-│   ├── app/                    # Application core utilities
-│   └── model/                  # Domain model utilities
+Application Business Logic
+        ↓
+Spring Middleware
+        ↓
+Spring Boot / Infrastructure
 ```
 
-**Design Philosophy:**
-- **Separation of Concerns**: API contracts separated from implementations
-- **Dependency Inversion**: Consumers depend on abstractions (`api`), not concrete implementations (`core`)
-- **Single Responsibility**: Each module has a focused, well-defined purpose
-- **Plugin Architecture**: Modules are independent and can be used individually
+Instead of every microservice reimplementing infrastructure concerns, Spring Middleware provides:
+
+- **standardized communication**
+- **central service registry**
+- **consistent error model**
+- **context propagation**
+- **schema federation**
+- **distributed data utilities**
 
 ---
 
-## Modules
+# Core Concepts
 
-### Commons
+| Concept | Description |
+|------|-------------|
+| Cluster | Logical service name (usually a Kubernetes service) |
+| Node | Running instance of the service |
+| Registry | Central topology and metadata storage |
+| Resource | Registered REST endpoint |
+| Schema | Registered GraphQL schema |
+| MiddlewareClient | Declarative HTTP client |
+| ErrorMessage | Unified error model |
 
-**Location:** `parent/commons/`
+---
 
-Shared utilities used across all modules.
+# Architecture
 
-#### Key Components:
+```
+                      ┌──────────────────────┐
+                      │   Registry Service   │
+                      │                      │
+                      │  - Service topology  │
+                      │  - API metadata      │
+                      │  - GraphQL schemas   │
+                      │  - Node health       │
+                      └──────────┬───────────┘
+                                 │
+                                 │
+            ┌────────────────────┼────────────────────┐
+            │                    │                    │
+            ▼                    ▼                    ▼
 
-| Class | Description |
-|-------|-------------|
-| `ReflectionUtils` | Advanced reflection operations (field introspection, method resolution) |
-| `TestUtils` | JSON file loading for integration tests |
-| `JsonConverter` | Jackson-based serialization with MixIn support |
-| `ExceptionUtils` | Exception handling utilities |
-| `Pagination` | Pagination data structures |
+      ┌────────────┐      ┌────────────┐      ┌────────────┐
+      │  Service A │      │  Service B │      │  Service C │
+      │            │      │            │      │            │
+      │ @Register  │      │ @Register  │      │ @Register  │
+      │ GraphQL    │      │ GraphQL    │      │ GraphQL    │
+      │ Middleware │      │ Middleware │      │ Middleware │
+      │ Client     │◄────►│ Client     │◄────►│ Client     │
+      └────────────┘      └────────────┘      └────────────┘
+```
 
-#### Exception Hierarchy:
+Each service automatically:
+
+- registers its REST resources
+- registers its GraphQL schemas
+- reports running nodes
+- participates in topology updates
+- communicates via middleware clients
+
+---
+
+# Service Communication
+
+Spring Middleware provides **declarative service-to-service communication**.
+
+Instead of manually writing WebClient logic, services declare clients.
+
+### Example
 
 ```java
-ServiceException (parent)
-├── BadRequestException (400 errors)
-└── NotFoundException (404 errors)
+@MiddlewareClient(service = "product")
+public interface ProductsApi {
+
+    @PostMapping("/api/v1/products/bulk")
+    List<ProductDto> createProducts(ProductBulkCreateRequestDto request);
+
+}
 ```
 
-#### Controllers:
+The framework automatically handles:
 
-- **`CommonsController`**: Base controller with common response patterns
-- **`ErrorMessageFactory`**: Standardized error response builder
+- service discovery
+- node selection
+- load distribution
+- error propagation
+- context propagation
+- retry strategies
 
 ---
 
-### View System
+# Request Context Propagation
 
-**Location:** `parent/view/`
+Each request carries two identifiers:
 
-Annotation-driven **model-to-DTO transformation** with security, filtering, and lazy-loading support.
+| Header | Description |
+|------|-------------|
+| `X-Request-ID` | Global request identifier across services |
+| `X-Span-ID` | Local span identifier inside the service |
 
-#### Core Annotations:
+### Example propagation
 
-##### `@ViewProperty`
-Maps entity fields to view properties with filtering capabilities.
+```
+Client Request
+   │
+   ▼
+Service A
+requestId = 4C7F...
+spanId = A12F...
+
+   │
+   ▼
+Service B
+requestId = 4C7F...
+spanId = B992...
+
+   │
+   ▼
+Service C
+requestId = 4C7F...
+spanId = C11A...
+```
+
+This enables **traceability across the entire request chain** without requiring full tracing infrastructure.
+
+---
+
+# Error Propagation
+
+Spring Middleware provides a **unified error model** across all services.
+
+Errors propagate through service calls while preserving context.
+
+### Example propagation chain
+
+```
+Client
+  │
+  ▼
+Service A
+  │
+  ▼
+Service B
+  │
+  ▼
+Service C
+  │
+  ▼
+Service D (error occurs)
+```
+
+Returned error contains the entire call chain.
+
+### Example response
+
+```json
+{
+  "statusCode": 404,
+  "statusMessage": "Not Found",
+  "code": "PRODUCT:NOT_FOUND",
+  "message": "Product not found",
+  "extensions": {
+    "requestId": "F4D29AAFE7FC4844A1FF8794F186B102",
+    "span": [
+      {
+        "service": "catalog",
+        "method": "replaceProducts",
+        "httpStatus": 404
+      }
+    ]
+  }
+}
+```
+
+---
+
+# GraphQL Support
+
+Spring Middleware includes infrastructure for **GraphQL microservice composition**.
+
+Each service can expose GraphQL schemas which are automatically registered.
+
+The registry keeps track of:
+
+- schema namespaces
+- schema locations
+- nodes exposing schemas
+
+Future capabilities include:
+
+- GraphQL schema federation
+- automatic cross-service query linking
+- schema stitching
+
+Example concept:
 
 ```java
-@ViewProperty(
-    value = "customFieldName",           // Custom name in view
-    filter = MyFilter.class,              // Runtime filter predicate
-    filterContext = MyContextFilter.class, // Reactive context-based filter
-    excludeProperties = {"password"},     // Exclude nested properties
-    includeProperties = {"id", "name"}    // Include only specific nested properties
+@GraphQLLink(
+    schema = "company",
+    type = "Vendor",
+    query = "vendor"
 )
-private User user;
-```
-
-##### `@ViewType`
-Defines view classes for polymorphic entities.
-
-```java
-@ViewType(types = {
-    @ViewFromClass(clazz = Admin.class, view = AdminView.class),
-    @ViewFromClass(clazz = Customer.class, view = CustomerView.class)
-})
-```
-
-##### `@PropertyRolesAllowed`
-Role-based field access control.
-
-```java
-@PropertyRolesAllowed(
-    value = {"ADMIN", "MANAGER"},
-    authorizer = CustomAuthorizer.class
-)
-private BigDecimal salary;
-```
-
-##### `@FillerProperty` (View Enrichment)
-Used by `FillerResolver` to populate fields **after** the initial view transformation. This effectively decouples the View transformation from external data fetching, enabling efficient **Cross-Microservice Composition**.
-
-**Use Cases:**
-- Hydrating a View with data from another microservice (e.g., populating `UserView` in `OrderView`).
-- Bulk loading data to avoid N+1 queries.
-- Merging data from different data sources (e.g., SQL + Mongo).
-
-```java
-// 1. View Definition
-public class OrderView implements View {
-    private String userId; // Stored as String, but IDs must be Integer for FillerResolver
-    
-    // Configures the field to be filled by the "user-service-fetcher" function
-    // using "userId" as the key.
-    @FillerProperty(fillerFunctionName = "user-service-fetcher", supplier = "userId")
-    private UserView userDetails;
-    
-    public String getUserId() { return this.userId; }
-}
-
-// 2. Define the Filler Function (e.g., in a @Configuration class)
-public FillerFunction<OrderView, UserView> createUserFillerFunction(UserClient userClient) {
-    final FillerFunction<OrderView, UserView> filler = new FillerFunction<>();
-    filler.setFunctionName("user-service-fetcher");
-    
-    // A. Define how to extract the ID from the source (OrderView)
-    // Note: SupplierId expects Function<View, Integer>
-    filler.setSuppliersId(List.of(
-        new SupplierId<>(view -> Integer.parseInt(view.getUserId()), "userId")
-    ));
-    
-    // B. Define how to match the result back (extract ID from UserView)
-    filler.setResponsesId(UserView::getId);
-    
-    // C. Define the Bulk Fetch Logic (Batch API Call)
-    // Input: Collection<Integer> ids -> Output: Collection<UserView>
-    filler.setFillerFunction(ids -> userClient.getUsersByIds(ids));
-    
-    return filler;
-}
-
-// 3. Usage in Business Logic
-List<OrderView> orders = viewMapper.map(orderEntities, OrderView.class);
-
-// Create or inject the list of functions
-List<FillerFunction<?, ?>> fillers = List.of(this.createUserFillerFunction(userClient));
-
-// Bulk fetch user details for ALL orders in one go
-FillerResolver.resolve(orders, fillers);
-```
-
-**Key Components:**
-- **`FillerResolver`**: The engine that coordinates the enrichment.
-- **`FillerFunction`**: Defines the bulk fetching logic (IDs -> Views).
-- **`FillerProperty`**: Links the View field to a specific `FillerFunction`.
-
-##### `@DataAdapter`
-Custom data transformation during view resolution.
-
-```java
-@DataAdapter(adaptor = DateToStringAdapter.class)
-private LocalDateTime createdAt;
-```
-
-#### Key Features:
-
-✅ **Lazy-loading aware**: Handles Hibernate proxies without `LazyInitializationException`  
-✅ **Polymorphism support**: Resolves views based on entity runtime type  
-✅ **Nested object mapping**: Recursive transformation with circular reference detection  
-✅ **Collection handling**: Transforms `List`, `Set`, `Map` structures  
-✅ **Security**: Role-based field visibility  
-✅ **Context-aware filtering**: Reactive context propagation  
-
-#### Usage Example:
-
-```java
-// Entity
-@Entity
-public class Order {
-    private Long id;
-    private User customer;
-    private List<OrderItem> items;
-    private BigDecimal totalAmount;
-}
-
-// View
-public class OrderView implements View {
-    @ViewProperty
-    private Long id;
-    
-    @ViewProperty(includeProperties = {"id", "email"})
-    private UserView customer;
-    
-    @ViewProperty
-    private List<OrderItemView> items;
-    
-    @ViewProperty
-    @PropertyRolesAllowed({"ADMIN", "FINANCE"})
-    private BigDecimal totalAmount;
-}
-
-// Usage
-OrderView view = ViewResolver.resolveEntity(OrderView.class, order);
 ```
 
 ---
 
-### MongoDB Integration
+# Modules
 
-**Location:** `parent/mongo/`
+The framework is organized into independent modules.
 
-**Annotation-driven dynamic search** for MongoDB with aggregation pipeline support.
+```
+spring-middleware/
+├── api
+├── commons
+├── app
+├── model
+├── cache
+├── view
+├── mongo
+├── jpa
+├── redis
+├── rabbitmq
+└── microservice-runtime
+```
 
-#### Core Annotations:
+Modules can be used individually or combined.
 
-##### `@MongoSearchProperty`
-Maps request fields to MongoDB criteria.
+---
+
+# Redis Module
+
+Provides a high-level abstraction over Redis.
+
+Features include:
+
+- key-value operations
+- hash structures
+- distributed locking
+- bulk operations
+- container/unit models
+
+Example:
+
+```java
+redisService.set(commands, "user:123", user, 3600);
+
+User user = redisService.get(commands, "user:123", User.class);
+```
+
+---
+
+# Mongo Search Engine
+
+Annotation-driven dynamic Mongo queries.
+
+Example:
 
 ```java
 @MongoSearchProperty(
-    value = "email",                      // MongoDB field path
-    operationType = OperationType.LIKE,   // Search operation
-    conditionType = ConditionType.AND     // Logical operator
-)
-private String userEmail;
-```
-
-**Supported Operations:**
-- `IS`: Exact match (`field = value`)
-- `LIKE`: Regex match (`field ~= /value/i`)
-- `IN`: Inclusion (`field in [values]`)
-- `GTE`: Greater than or equal (`field >= value`)
-- `LTE`: Less than or equal (`field <= value`)
-- `EXISTS`: Field existence check
-
-##### `@MongoSearchClass`
-Nested object search.
-
-```java
-@MongoSearchClass(value = "address")
-private AddressSearch address;
-```
-
-##### `@MongoSearchProperties`
-Multiple field search (OR condition).
-
-```java
-@MongoSearchProperties(
-    value = {"firstName", "lastName", "email"},
+    value = "email",
     operationType = OperationType.LIKE
 )
-private String searchTerm;
+private String email;
 ```
 
-##### `@MongoConcatProperty`
-Search on concatenated fields.
-
-```java
-@MongoConcatProperty(
-    properties = {"firstName", "lastName"},
-    separator = " ",
-    operationType = OperationType.LIKE
-)
-private String fullName;
-```
-
-##### `@MongoAddFieldProperty`
-Add computed fields using aggregation expressions.
-
-```java
-@MongoAddFieldProperty(
-    name = "discountedPrice",
-    function = "$multiply",
-    properties = {"price", "discountRate"}
-)
-```
-
-#### Repository Integration:
-
-```java
-public interface ProductRepository extends 
-    MongoRepository<Product, String>, 
-    MongoSearchRepository<Product, ProductSearch> { }
-```
-
-**Custom Methods:**
-```java
-List<Product> search(ProductSearch searchCriteria);
-Page<Product> search(ProductSearch searchCriteria, Pageable pageable);
-long count(ProductSearch searchCriteria);
-```
-
-**Reactive Support:**
-```java
-public interface ReactiveProductRepository extends 
-    ReactiveMongoRepository<Product, String>,
-    MongoSearchReactiveRepository<Product, ProductSearch> { }
-
-Flux<Product> search(ProductSearch searchCriteria);
-Mono<Long> count(ProductSearch searchCriteria);
-```
+Repositories automatically support dynamic searches.
 
 ---
 
-### Redis Integration
+# JPA Search Engine
 
-**Location:** `parent/redis/`
+Dynamic HQL query generation using annotations.
 
-**Type-safe, high-level abstraction** over Redis data structures with transparent serialization.
-
-#### Core Concepts:
-
-##### 1. **Simple Key-Value Operations**
-
-```java
-@Service
-public class MyService {
-    
-    @Autowired
-    private RedisService redisService;
-
-    @Autowired
-    private RedisConnectionManager redisConnectionManager;
-    
-    public void processUser(User userObject) {
-        final RedisCommands redisCommands = this.redisConnectionManager.getConnection();
-        try {
-            // Store object
-            this.redisService.set(redisCommands, "user:123", userObject, 3600);
-            
-            // Retrieve object
-            final User user = this.redisService.get(redisCommands, "user:123", User.class);
-            
-            // Delete
-            this.redisService.delete(redisCommands, "user:123");
-        } finally {
-            this.redisConnectionManager.closeConnection(redisCommands);
-        }
-    }
-}
-```
-
-##### 2. **Hash Operations**
-
-```java
-RedisCommands redisCommands = redisConnectionManager.getConnection();
-
-try {
-    // Store hash
-    Map<String, String> userData = Map.of(
-        "name", "John",
-        "email", "john@example.com"
-    );
-    redisService.setHash(redisCommands, "user:123", userData);
-
-    // Get single field
-    String email = redisService.getHashField(this.redisCommands, "user:123", "email");
-
-    // Get all fields
-    Map<String, String> allData = redisService.getHash(this.redisCommands, "user:123");
-} finally {
-    redisConnectionManager.closeConnection(redisCommands);
-}
-```
-
-
-
-#### Distributed Locking:
-
-```java
-RedisLock lock = redisLockFactory.create("resource:123", 30000, 10000);
-
-try {
-    if (lock.acquire()) {
-        // Critical section
-        performAtomicOperation();
-    }
-} finally {
-    lock.release();
-}
-```
-
-#### Functional API (Bulk Operations Strategy)
-
-The framework uses a functional strategy pattern for handling complex bulk operations (get, set, update) efficiently on **Key-Value** pairs.
-
-**1. Implement `GetFunctions` for Read Operations:**
-
-```java
-public class OrderGetFunctions implements GetFunctions<OrderKey, OrderValue, OrderKeyValue> {
-    
-    private final JsonConverter<OrderValue> converter = new JsonConverter<>(OrderValue.class);
-
-    @Override
-    public ToValueFunction<OrderKey, OrderValue> toValueFunction() {
-        return (key, rawJson) -> rawJson != null ? this.converter.toObject(rawJson) : null;
-    }
-
-    @Override
-    public ToKeyValueFunction<OrderKey, OrderValue, OrderKeyValue> toKeyValueFunction() {
-        return (key, value) -> new OrderKeyValue(key, value);
-    }
-}
-```
-
-**2. Implement `SetFunctions` for Write Operations:**
-
-```java
-public class OrderSetFunctions implements SetFunctions<OrderKey, OrderValue, OrderKeyValue> {
-
-    private final Collection<OrderUpdateData> updates;
-
-    public OrderSetFunctions(Collection<OrderUpdateData> updates) {
-        this.updates = updates;
-    }
-
-    @Override
-    public UpdateValueFunction<OrderKey, OrderValue> updateValueFunction() {
-        return (key, currentOrder) -> {
-            // Business logic to update the order
-            findUpdate(key).ifPresent(update -> currentOrder.setStatus(update.getStatus()));
-            return currentOrder;
-        };
-    }
-
-    @Override
-    public NewValueFunction<OrderKey, OrderValue> newValueFunction() {
-        return (key) -> {
-             // Logic to create a new order if not found
-             return new OrderValue(findUpdate(key).orElse(null));
-        };
-    }
-    
-    // ... implement other methods
-}
-```
-
-**3. Usage:**
-
-```java
-@Autowired
-private RedisService<OrderKey, OrderValue, OrderKeyValue> redisService;
-
-public void processOrders(List<String> orderIds) {
-    final List<OrderKey> keys = orderIds.stream().map(OrderKey::new).toList();
-    
-    // Bulk read
-    final Collection<OrderKeyValue> orders = this.redisService.getKeyValues(keys, new OrderGetFunctions());
-    
-    // Bulk update/insert
-    this.redisService.setKeyValues(keys, new OrderSetFunctions(incomingUpdates));
-}
-```
-
-#### 🔴 Redis Units (Advanced Hash Management)
-
-**Location:** `parent/redis/`
-
-`RedisUnitService` simplifies managing hierarchical data where a **Container** (e.g., Order) holds a collection of **Units** (e.g., OrderItems) stored as a Redis **Hash**.
-- **Redis Key**: The Container ID (`OrderKey`).
-- **Hash Field**: The Unit Key (`OrderItemKey`).
-- **Hash Value**: The Unit Data (`OrderItem`).
-
-**1. Define the Structure:**
-
-```java
-// 1. Container Key (The Redis Key)
-public class OrderKey implements RedisKey {
-    private String id;
-    @Override public String getKey() { return "order:" + this.id; }
-}
-
-// 2. Unit Key (The Hash Field)
-public class OrderItemKey implements RedisUnitKey {
-    private String sku;
-    @Override public String getKey() { return this.sku; } // Unique within the container
-}
-
-// 3. Unit (The data stored in Hash Value)
-public class OrderItem implements RedisUnit<OrderItemKey> {
-    private OrderItemKey key;
-    private int quantity;
-    @Override public OrderItemKey getKey() { return this.key; }
-}
-
-// 4. Container (The Object representing the whole structure)
-public class Order implements RedisUnitContainer<OrderKey, OrderItem> {
-    private OrderKey key;
-    private Collection<OrderItem> items;
-    // ... getters/setters/constructor
-    @Override public OrderKey getRedisKey() { return this.key; }
-    @Override public Collection<OrderItem> getRedisUnits() { return this.items; }
-}
-```
-
-**2. Usage (`RedisUnitService`):**
-
-```java
-@Autowired
-private RedisUnitService<OrderKey, OrderItemKey, OrderItem, Order> redisUnitService;
-
-public void manageOrderItems() {
-    final List<OrderKey> keys = List.of(new OrderKey("ORD-1"));
-
-    // READ: Get Orders with their Items
-    // Requires: Mapping Function (Hash Map -> Units) + Creation Function (Units -> Container)
-    final Collection<Order> orders = this.redisUnitService.getRedisUnitContainers(
-        keys, 
-        RedisFunctions.mappingUnitFunction(), 
-        RedisFunctions.redisUnitContainerCreationFunction(), 
-        item -> item.getQuantity() > 0 // Optional: Filter units
-    );
-
-    // WRITE: Save Orders and their Items
-    // Requires: Mapping Attribute Function (Units -> Hash Map) + Merger Function
-    this.redisUnitService.setRedisUnitContainers(
-        orders,
-        RedisFunctions.mappingUnitFunction(),       // Map -> Unit
-        RedisFunctions.mappingAttributeFunction(),  // Unit -> Map
-        RedisFunctions.mergerUnitFunction(),        // Merge Strategy
-        RedisFunctions.redisUnitContainerCreationFunction()
-    );
-}
-```
-
----
-
-### JPA Integration
-
-**Location:** `parent/jpa/`
-
-**Annotation-driven dynamic HQL query generation** for JPA/Hibernate.
-
-#### Core Annotations:
-
-##### `@SearchProperty`
-Maps request fields to JPA entity properties.
+Example:
 
 ```java
 @SearchProperty(
-    value = "email",                        // Entity property path
-    isLike = true,                          // Use LIKE operator
-    conditionType = ConditionType.AND,      // Logical operator
-    compareOperator = CompareOperator.EQUAL, // Comparison operator
-    join = @Join(path = "user", alias = "u") // Join configuration
+    value = "customer.email",
+    isLike = true
 )
-private String userEmail;
-```
-
-##### `@SearchProperties`
-Search across multiple properties (OR condition).
-
-```java
-@SearchProperties(
-    value = {"firstName", "lastName", "email"},
-    isLike = true,
-    conditionType = ConditionType.OR
-)
-private String searchTerm;
-```
-
-##### `@SearchPropertyExists`
-Check for null/non-null values.
-
-```java
-@SearchPropertyExists(
-    value = "deletedAt",
-    exists = false  // WHERE deletedAt IS NULL
-)
-private Boolean activeOnly;
-```
-
-##### `@SubSearch`
-Nested search criteria.
-
-```java
-@SubSearch(conditionType = ConditionType.AND)
-private AddressSearch address;
-```
-
-##### `@Join`
-Configure entity joins.
-
-```java
-@Join(
-    path = "orders",           // Navigation property
-    alias = "o",               // Join alias
-    type = JoinType.LEFT_JOIN  // Join type
-)
-```
-
-#### Repository Integration:
-
-```java
-public interface OrderRepository extends 
-    JpaRepository<Order, Long>,
-    SearchRepository<Order, OrderSearch> { }
-```
-
-**Custom Methods:**
-```java
-List<Order> search(OrderSearch searchCriteria);
-Page<Order> search(OrderSearch searchCriteria, Pageable pageable);
-long count(OrderSearch searchCriteria);
+private String customerEmail;
 ```
 
 ---
 
-### RabbitMQ Integration
+# RabbitMQ Integration
 
-**Location:** `parent/rabbitmq/`
+The framework provides a lightweight JMS-like abstraction over RabbitMQ.
 
-**Module README:** [parent/rabbitmq/README.md](parent/rabbitmq/README.md) (documentation included in the repository)
-
-This module provides integration with RabbitMQ through a lightweight JMS-like abstraction to support event-driven and message queue patterns. It is intended to be used by other framework modules (for example, `app` or `commons`) for:
-
-- Publishing business events (producers)
-- Consuming and processing messages (consumers)
-- Automatic error registration and forwarding to dead-letter queues (DLQs)
-- Operational management of consumers (via `JmsController`)
-
-Key components (summary):
-
-- `JmsProducerResource` / `JmsConsumerResource`: base classes for producers and consumers.
-- `JmsErrorProducer`: internal producer used by `ErrorRegister` to send error details to an error queue.
-- Annotations: `@JmsProducer`, `@JmsConsumer`, `@JmsDestination`, `@JmsBinding`, etc., to declare destinations and bindings.
-- `JmsController`: management endpoints to start/stop and list consumers at runtime.
-
-Quick example — Producer:
+Example producer:
 
 ```java
 @Component
 @JmsProducer
-@NotifyErrorHandler
-@JmsDestination(name = "event-queue", clazzSuffix = JmsActiveProfileSuffix.class)
-public class EventProducerResource extends JmsProducerResource<EventRequest> {
-    // Usage: send(event)
-}
-```
-
-Quick example — ErrorRegister usage:
-
-```java
-@Component
-public class ErrorRegister {
-
-    @Autowired
-    private JmsErrorProducer jmsErrorProducer;
-
-    public void registryError(Throwable exception, Map<String, String> data) {
-        this.jmsErrorProducer.send(ErrorRequest.builder()
-            .errorMessage(exception.getMessage())
-            .data(data)
-            .build());
-    }
-}
-```
-
-For detailed configuration, reconnection strategies, parallel consumption patterns and exchanges/queues definitions, see the module README (`parent/rabbitmq/README.md`) 
-
----
-
-### Cache Module
-
-**Location:** `parent/cache/`
-
-**Redis-based caching** with Spring Cache abstraction and management endpoints.
-
-#### Configuration:
-
-```java
-@Service
-public class UserService {
-    
-    @Cacheable(value = "users", key = "#userId")
-    @RedisCacheConfiguration(ttl = 3600) // 1 hour TTL
-    public User getUserById(String userId) {
-        return userRepository.findById(userId);
-    }
-    
-    @CacheEvict(value = "users", key = "#user.id")
-    public void updateUser(User user) {
-        userRepository.save(user);
-    }
-}
-```
-
-#### Management API:
-
-```java
-@RestController
-@RequestMapping("/admin/cache")
-public class CacheController {
-    
-    @Autowired
-    private CacheService cacheService;
-    
-    @DeleteMapping("/{cacheName}")
-    public boolean clearCache(@PathVariable String cacheName) {
-        return this.cacheService.clearCache(cacheName);
-    }
-    
-    @GetMapping("/statistics")
-    public Collection<CacheInformationStatistics> getStats() {
-        return this.cacheService.getCacheInformationStadistics(filter);
-    }
+@JmsDestination(name = "event-queue")
+public class EventProducer extends JmsProducerResource<EventRequest> {
 }
 ```
 
 ---
 
-### Application Core
+# Installation
 
-**Location:** `parent/app/`
-
-**Production-ready utilities** for Spring Boot applications.
-
-#### 1. Error Recovery System
-
-**Recovery mechanism** for failed operations. Errors are registered in an external service, and a background task polls for pending errors to trigger the recovery logic.
-
-```java
-@Service
-@ErrorRecovery(maxRetries = "3", fixedDelayMilis = "5000")
-public class OrderService implements Recoverable {
-    
-    @Autowired
-    private ErrorRegister errorRegister;
-    
-    public void processOrder(Order order) {
-        try {
-            // Business logic that might fail
-            paymentGateway.charge(order);
-        } catch (final Exception ex) {
-            // Register error for later recovery
-            this.errorRegister.registryErrorAsync(
-                ex,
-                "processOrder", 
-                this.getClass().getName(), // Class name matches the bean for recovery
-                Map.of("orderId", order.getId()), 
-                true
-            );
-        }
-    }
-
-    @Override
-    public void recover(ErrorView errorView) {
-        // Recovery logic executed by the background task
-        final String orderId = errorView.getData().get("orderId");
-        final Order order = orderRepository.findById(orderId);
-        this.processOrder(order); 
-    }
-}
-```
-
-#### 2. Request Tracking
-
-**Distributed tracing** with request ID propagation.
-
-```java
-@Component
-public class RequestTrackerFilter implements Filter {
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) {
-        final String requestId = UUID.randomUUID().toString();
-        MDC.put("REQUEST_ID", requestId);
-        response.addHeader("X-Request-ID", requestId);
-        chain.doFilter(request, response);
-    }
-}
-```
-
-#### 3. JMS/RabbitMQ Integration
-
-**Integration with `rabbitmq-java-queue`** for message-driven architecture.
-
-The framework leverages the separate library **`rabbitmq-java-queue`** to provide robust messaging capabilities. Within `spring-base`, this is used primarily for:
-
-1.  **Error Reporting:** Automatic sending of exceptions to an error queue via `ErrorRegister`.
-2.  **Event Propagation:** Publishing of business events using producers like `EventProducerResource`.
-
-**Example 1: Event Producer**
-
-```java
-@Component
-@JmsProducer
-@NotifyErrorHandler
-@JmsDestination(name = "event-queue", clazzSuffix = JmsActiveProfileSuffix.class)
-public class EventProducerResource extends JmsProducerResource<EventRequest> {
-    // Methods to publish events inherited from JmsProducerResource (e.g., send(event))
-}
-```
-
-**Example 2: Error Reporting (internal)**
-
-The `ErrorRegister` component uses an internal producer (`JmsErrorProducer`) to send error details to the configured error queue.
-
-```java
-@Component
-public class ErrorRegister {
-
-    @Autowired
-    private JmsErrorProducer jmsErrorProducer;
-
-    public void registryError(Throwable exception, Map<String, String> data) {
-        // Sends error details to the error queue
-        this.jmsErrorProducer.send(ErrorRequest.builder()
-            .errorMessage(exception.getMessage())
-            .data(data)
-            .build());
-    }
-}
-```
-
----
-
-## API Module
-
-**Location:** `parent/api/`
-
-**Core contracts** for service APIs.
-
-#### Base Request/Response:
-
-```java
-public abstract class BaseRequest {
-    private String requestId;
-    private LocalDateTime timestamp;
-}
-
-public abstract class BaseResponse {
-    private String requestId;
-    private LocalDateTime timestamp;
-    private ErrorMessage error;
-}
-
-public class SingleBaseResponse<T> extends BaseResponse {
-    private T data;
-}
-
-public class CollectionBaseResponse<T> extends BaseResponse {
-    private Collection<T> data;
-    private Pagination pagination;
-}
-```
-
----
-
-## Model Module
-
-**Location:** `parent/model/`
-
-**Domain model utilities** and audit support.
-
-#### Audit Interface:
-
-```java
-public interface Audit {
-    AuditInfo getAuditInfo();
-    void setAuditInfo(AuditInfo auditInfo);
-}
-
-@Embeddable
-public class AuditInfo {
-    private LocalDateTime createdAt;
-    private String createdBy;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
-}
-```
-
----
-
-## Key Features
-
-### ✅ **Dynamic Querying**
-- **MongoDB**: Annotation-driven aggregation pipelines with support for **Geospatial search**, computed fields (`$multiply`, etc.), and field concatenation.
-- **JPA/Hibernate**: Dynamic HQL generation with automatic Join handling.
-- **Advanced Filtering**: Support for `IS`, `LIKE`, `IN`, `GTE`, `LTE`, `EXISTS` and nested criteria.
-
-### ✅ **View Transformation & Composition**
-- **Cross-Microservice Composition**: Hydrate views with data from external services using `FillerResolver`.
-- **Annotation-based**: Minimal boilerplate for Model-to-DTO mapping.
-- **Security-aware**: Role-based field filtering (`@PropertyRolesAllowed`).
-- **Lazy-loading safe**: Intelligent Hibernate proxy handling to avoid N+1 and initialization exceptions.
-- **Polymorphic**: Runtime type resolution for inheritance hierarchies.
-
-### ✅ **Redis Ecosystem**
-- **Hierarchical Data**: Manage complex "Container-Unit" structures (e.g., Orders -> Items) with `RedisUnitService`.
-- **Functional Strategies**: Type-safe `GetFunctions`/`SetFunctions` for efficient bulk operations.
-- **Distributed Locking**: Robust mutex implementation for cluster-safe operations.
-- **Reactive Support**: Fully non-blocking implementations for high-throughput scenarios.
-
-### ✅ **Resilience & Recovery**
-- **Error Recovery System**: Interface-based (`Recoverable`) scheduled recovery for failed operations.
-- **Message-Driven Architecture**: Integration with `rabbitmq-java-queue` for robust Event-Driven patterns.
-- **Automatic Error Reporting**: Seamless integration with error queues and DLQ strategies.
-
-### ✅ **Application Operations**
-- **Refreshable Scope**: Custom `@Scope("refreshable-singleton")` for runtime bean reloading without restart.
-- **Management Endpoints**: Built-in controllers for managing JMS consumers, clearing caches, and triggering manual recovery.
-- **Cache Management**: Method-level TTL configuration (`@RedisCacheConfiguration`) and runtime statistics.
-- **Request Tracing**: Distributed tracing with Request ID propagation across HTTP and JMS borders.
-
-### ✅ **Modular Architecture**
-- **Dependency Inversion**: Strict separation between `api` (contracts) and `core` (implementations).
-- **Plug-and-Play**: Modules (Mongo, Redis, View, etc.) can be used independently.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Java 17+**
-- **Maven 3.8+**
-- **Spring Boot 3.x**
-
-### Installation
-
-Add the required modules to your `pom.xml`:
-
-```xml
-<dependencies>
-    <!-- Commons -->
-    <dependency>
-        <groupId>com.core</groupId>
-        <artifactId>commons</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-    
-    <!-- View System -->
-    <dependency>
-        <groupId>com.core</groupId>
-        <artifactId>view-api</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-    <dependency>
-        <groupId>com.core</groupId>
-        <artifactId>view-core</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-    
-    <!-- MongoDB Integration -->
-    <dependency>
-        <groupId>com.core</groupId>
-        <artifactId>mongo-api</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-    <dependency>
-        <groupId>com.core</groupId>
-        <artifactId>mongo-core</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-</dependencies>
-```
-
-### Build
-
-```bash
-mvn clean install
-```
-
----
-
-### Published artifacts and installation
-
-This project publishes a BOM to Maven Central which makes it easy to align versions across modules.
-
-1) Import the BOM in your project's `pom.xml` (dependency management):
+Import the BOM:
 
 ```xml
 <dependencyManagement>
@@ -1032,7 +353,7 @@ This project publishes a BOM to Maven Central which makes it easy to align versi
     <dependency>
       <groupId>io.github.spring-middleware</groupId>
       <artifactId>bom</artifactId>
-      <version>REPLACE_WITH_BOM_VERSION</version>
+      <version>REPLACE_WITH_VERSION</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -1040,259 +361,43 @@ This project publishes a BOM to Maven Central which makes it easy to align versi
 </dependencyManagement>
 ```
 
-2) Add module dependencies (versions will be managed by the BOM):
+---
 
-```xml
-<dependencies>
-  <dependency>
-    <groupId>io.github.spring-middleware</groupId>
-    <artifactId>rabbitmq</artifactId>
-    <!-- version managed by the BOM -->
-  </dependency>
-</dependencies>
-```
+# Requirements
 
-3) If you prefer to depend directly on a single artifact without importing the BOM, add the explicit coordinates and version:
-
-```xml
-<dependency>
-  <groupId>io.github.spring-middleware</groupId>
-  <artifactId>rabbitmq</artifactId>
-  <version>REPLACE_WITH_VERSION</version>
-</dependency>
-```
-
-You can find the latest published versions on Maven Central: https://search.maven.org/artifact/io.github.spring-middleware/bom
+- Java **21 (Preview features enabled)**
+- Spring Boot **3.4.2**
+- Maven **3.8+**
 
 ---
 
-## Usage Examples
+# Design Patterns
 
-### Example 1: MongoDB Dynamic Search
-
-```java
-// 1. Define search request
-@Data
-public class ProductSearch implements MongoSortedSearch {
-    
-    @MongoSearchProperty(value = "name", operationType = OperationType.LIKE)
-    private String name;
-    
-    @MongoSearchProperty(value = "category", operationType = OperationType.IS)
-    private String category;
-    
-    @MongoSearchProperty(value = "price", operationType = OperationType.GTE)
-    private BigDecimal minPrice;
-    
-    private SortCriteria sortCriteria;
-}
-
-// 2. Create repository
-public interface ProductRepository extends 
-    MongoRepository<Product, String>,
-    MongoSearchRepository<Product, ProductSearch> { }
-
-// 3. Use in service
-@Service
-public class ProductService {
-    
-    @Autowired
-    private ProductRepository productRepository;
-    
-    public List<Product> searchProducts(ProductSearch search) {
-        return this.productRepository.search(search);
-    }
-}
-```
-
-### Example 2: View Transformation with Security
-
-```java
-// 1. View with role-based filtering
-public class EmployeeView implements View {
-    
-    @ViewProperty
-    private Long id;
-    
-    @ViewProperty
-    private String firstName;
-    
-    @ViewProperty
-    @PropertyRolesAllowed({"ADMIN", "HR"})
-    private BigDecimal salary;  // Only visible to ADMIN/HR
-    
-    @ViewProperty(includeProperties = {"id", "name"})
-    private DepartmentView department;
-}
-
-// 2. Transform
-@Service
-public class EmployeeService {
-    
-    public EmployeeView getEmployeeView(Long id) throws Exception {
-        final Employee employee = employeeRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Employee not found"));
-        
-        return ViewResolver.resolveEntity(EmployeeView.class, employee);
-    }
-}
-```
-
-### Example 3: JPA Dynamic Search with Joins
-
-```java
-// 1. Search request
-@Data
-@SearchForClass(entityClass = Order.class)
-public class OrderSearch implements Search {
-    
-    @SearchProperty(
-        value = "status",
-        inclusionOperator = IncusionOperator.IN
-    )
-    private List<OrderStatus> statuses;
-    
-    @SearchProperty(
-        value = "c.email",
-        isLike = true,
-        join = @Join(value = "customer c", left = true)
-    )
-    private String customerEmail;
-    
-    @SearchProperties(
-        value = {"c.firstName", "c.lastName"},
-        isLike = true,
-        conditionType = ConditionType.OR
-    )
-    private String customerName;
-    
-    private OrderBy orderBy;
-}
-
-// 2. Repository
-public interface OrderRepository extends 
-    JpaRepository<Order, Long>,
-    SearchRepository<Order, OrderSearch> { }
-
-// 3. Usage
-Page<Order> orders = orderRepository.search(search, PageRequest.of(0, 20));
-```
-
-### Example 4: Advanced JPA Search (SubSearch & Complex Joins)
-
-Shows complex querying with chained joins, sub-searches (nested logic), and string concatenation.
-
-```java
-@Data
-@SearchForClass(value = Booking.class, distinct = true)
-public class BookingSearch extends Search {
-
-    // Complex search on multiple fields with conditions
-    @SearchProperties({
-        @SearchProperty(
-            join = @Join("c.bookingPaxes p"),
-            preCondition = @PreCondition(condition = "p.isLeadPax = true"), // Only search lead pax
-            concat = @Concat({"p.name", "p.surname"}),                       // Search 'Name Surname'
-            isLike = true
-        ),
-        @SearchProperty("bookingReference"),
-        @SearchProperty(
-            join = @Join("c.bookingProductItems bp"), 
-            value = "bp.productName", 
-            isLike = true
-        )
-    })
-    private String searchText;
-
-    // Chained Joins: Booking -> ProductItems -> ServiceItems
-    @SearchProperty(
-        join = @Join("c.bookingProductItems bp JOIN bp.bookingServiceItems bi"),
-        value = "bi.startDate"
-    )
-    private Date eventDate;
-
-    // SubSearch: Groups these conditions with custom logic (e.g., OR)
-    // AND ( ... main search conditions ... ) AND ( ... companyOrSearch conditions ... )
-    @SubSearch
-    private BookingCompanyOrSearch companyOrSearch;
-}
-
-@Data
-public class BookingCompanyOrSearch extends Search {
-    
-    // This allows finding a booking if ANY of these company IDs match (OR logic)
-    
-    @SearchProperty(value = "promoterCompanyId", conditionType = ConditionType.OR)
-    private Integer promoterCompanyId;
-
-    @SearchProperty(
-        join = @Join("c.bookingProductItems bp JOIN bp.bookingServiceItems bi"),
-        value = "bi.providerCompanyId", 
-        conditionType = ConditionType.OR
-    )
-    private Integer providerCompanyId;
-
-    @SearchProperty(
-        join = @Join("c.bookingProductItems bp"),
-        value = "bp.sellerCompanyId", 
-        conditionType = ConditionType.OR
-    )
-    private Integer sellerCompanyId;
-}
-```
-
-### Example 5: Redis with Distributed Lock
-
-```java
-@Service
-public class InventoryService {
-    
-    @Autowired
-    private RedisService redisService;
-    
-    @Autowired
-    private RedisLockFactory redisLockFactory;
-    
-    public void reserveProduct(String productId, int quantity) {
-        final RedisLock lock = this.redisLockFactory.create("inventory:" + productId, 30000, 10000);
-        
-        try {
-            if (lock.acquire()) {
-                // Get current inventory
-                final Inventory inventory = this.redisService.get(
-                    commands, 
-                    "inventory:" + productId, 
-                    Inventory.class
-                );
-                
-                // Update inventory
-                inventory.reserve(quantity);
-                this.redisService.set(commands, "inventory:" + productId, inventory, 3600);
-            }
-        } finally {
-            lock.release();
-        }
-    }
-}
-```
+| Pattern | Usage |
+|------|------|
+| Specification | Dynamic query engines |
+| Builder | Query construction |
+| Strategy | Search strategies |
+| Factory | Object creation |
+| Proxy | Declarative HTTP clients |
+| Repository | Data access |
+| Mutex | Distributed locking |
 
 ---
 
-## Design Patterns
+# Roadmap
 
-### Patterns Implemented:
+Planned improvements:
 
-| Pattern | Module | Description |
-|---------|--------|-------------|
-| **Specification** | JPA, MongoDB | Dynamic query construction |
-| **Builder** | JPA, MongoDB | Fluent query building |
-| **Strategy** | All search modules | Different search implementations |
-| **Factory** | Redis, Error Recovery | Object creation abstraction |
-| **Proxy** | View System | Hibernate proxy handling |
-| **Template Method** | HTTP Client | WebClient abstraction |
-| **Chain of Responsibility** | View System | Annotation processing pipeline |
-| **Decorator** | Redis | Functional transformation chains |
-| **Repository** | JPA, MongoDB | Data access abstraction |
-| **Unit of Work** | Redis Units | Aggregate operations |
-| **Mutex** | Redis | Distributed locking |
+- GraphQL federation
+- Kubernetes native discovery
+- distributed tracing integration
+- observability tooling
+- service mesh support
+- API gateway module
 
+---
+
+# License
+
+MIT License

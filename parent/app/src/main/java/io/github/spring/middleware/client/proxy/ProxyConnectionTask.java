@@ -2,13 +2,13 @@ package io.github.spring.middleware.client.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.config.PropertyNames;
-import io.github.spring.middleware.error.ErrorMessage;
-import io.github.spring.middleware.error.ErrorMessageFactory;
+import io.github.spring.middleware.filter.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -16,9 +16,8 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 public class ProxyConnectionTask<T> implements Callable<T> {
@@ -30,22 +29,22 @@ public class ProxyConnectionTask<T> implements Callable<T> {
     private final Method method;
     private final Object body;
     private Map<String, Object> context;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     private final MiddlewareClientConnectionParameters connectionParameters;
-    private final ErrorMessageFactory errorMessageFactory;
+    private final ProxyConnectionErrorHandler errorHandler;
+    private MethodMetaData methodMetaData;
+    private final ObjectMapper objectMapper;
 
-    static {
-        objectMapper.findAndRegisterModules();
-    }
 
-    public ProxyConnectionTask(final WebClient webClient, final String url, final Method method, final Object body,
-                               final MiddlewareClientConnectionParameters connectionParameters, final ErrorMessageFactory errorMessageFactory) {
-        this.webClient = webClient;
-        this.url = url;
-        this.method = method;
-        this.body = body;
-        this.connectionParameters = connectionParameters;
-        this.errorMessageFactory = errorMessageFactory;
+
+    public ProxyConnectionTask(final ProxyConnectionTaskParameters params) {
+        this.webClient = params.getWebClient();
+        this.url = params.getUrl();
+        this.method = params.getMethod();
+        this.body = params.getBody();
+        this.connectionParameters = params.getConnectionParameters();
+        this.errorHandler = params.getErrorHandler();
+        this.methodMetaData = params.getMethodMetaData();
+        this.objectMapper = params.getObjectMapper();
     }
 
     public void setContext(Map<String, Object> context) {
@@ -70,7 +69,7 @@ public class ProxyConnectionTask<T> implements Callable<T> {
                     logger.debug("Preparing outgoing request: method={}, url={}, bodyPresent={}", method.getName(), url, body != null);
                 }
 
-                return buildRequest()
+                return buildRequest(methodMetaData)
                         .retrieve()
                         .bodyToMono(MethodReturnTypeResolver.getTypeReference(method))
                         .timeout(Duration.ofMillis(connectionParameters.getTimeout()))
@@ -97,7 +96,7 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             logger.error("WebClientResponseException calling {} {} -> status: {}, body: {}",
                     method.getName(), url, ex.getStatusCode(), content);
 
-            processError(content, ex.getStatusCode().value(), url, method.getName());
+            errorHandler.processError(content, ex.getStatusCode().value(), url, method.getName(), context);
             return null;
         } catch (Exception ex) {
             logger.warn("Error connecting to {}: {}", url, ex.getMessage(), ex);
@@ -108,22 +107,25 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         }
     }
 
-    private WebClient.RequestHeadersSpec<?> buildRequest() throws ProxyClientException {
+    private WebClient.RequestHeadersSpec<?> buildRequest(final MethodMetaData methodMetaData) throws ProxyClientException {
         WebClient.RequestHeadersSpec<?> specHeaders;
 
         // Determinar método HTTP
-        if (method.isAnnotationPresent(PostMapping.class)) {
-            specHeaders = webClient.post().uri(URI.create(url));
-        } else if (method.isAnnotationPresent(GetMapping.class)) {
+        HttpMethod httpMethod = methodMetaData.getHttpMethod();
+
+        if (httpMethod == HttpMethod.GET) {
             specHeaders = webClient.get().uri(URI.create(url));
-        } else if (method.isAnnotationPresent(PutMapping.class)) {
+        } else if (httpMethod == HttpMethod.POST) {
+            specHeaders = webClient.post().uri(URI.create(url));
+        } else if (httpMethod == HttpMethod.PUT) {
             specHeaders = webClient.put().uri(URI.create(url));
-        } else if (method.isAnnotationPresent(DeleteMapping.class)) {
+        } else if (httpMethod == HttpMethod.DELETE) {
             specHeaders = webClient.delete().uri(URI.create(url));
-        } else if (method.isAnnotationPresent(PatchMapping.class)) {
+        } else if (httpMethod == HttpMethod.PATCH) {
             specHeaders = webClient.patch().uri(URI.create(url));
         } else {
-            throw new ProxyClientException("Unsupported HTTP method for method: " + method.getName());
+            throw new ProxyClientException(
+                    STR."Unsupported HTTP method for method: \{methodMetaData.getMethod().getName()}");
         }
 
         // Body (si aplica)
@@ -142,13 +144,15 @@ public class ProxyConnectionTask<T> implements Callable<T> {
 
         // Headers context
         if (context != null) {
-            Map<String, String> headers = (Map<String, String>) context.get(PropertyNames.HEADERS);
-            if (headers != null) {
-                WebClient.RequestHeadersSpec<?> finalSpecHeaders = specHeaders;
-                headers.forEach((k, v) -> finalSpecHeaders.header(k, v));
+            List<String> headerNames = (List<String>) context.get(PropertyNames.HEADERS);
+            if (headerNames != null) {
+                for (String headerName : headerNames) {
+                    Object value = Context.get(headerName);
+                    if (value != null && StringUtils.isNotBlank(value.toString())) {
+                        specHeaders.header(headerName, value.toString());
+                    }
+                }
             }
-            String requestId = (String) context.get(PropertyNames.REQUEST_ID);
-            if (StringUtils.isNotBlank(requestId)) specHeaders.header(PropertyNames.REQUEST_ID, requestId);
         }
 
         // Accept type
@@ -162,62 +166,6 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         }
         specHeaders = specHeaders.accept(MediaType.valueOf(accept));
         return specHeaders;
-    }
-
-
-    private void processError(String content, int statusCode, String url, String method) {
-        String requestId = (String) Optional.ofNullable(context)
-                .map(c -> c.get(PropertyNames.REQUEST_ID))
-                .orElse(StringUtils.EMPTY);
-
-        try {
-            ErrorMessage remoteBody = objectMapper.readValue(content, ErrorMessage.class);
-
-            // Ensure extensions is mutable
-            if (remoteBody.getExtensions() == null) {
-                remoteBody.setExtensions(new HashMap<>());
-            } else if (!(remoteBody.getExtensions() instanceof HashMap)) {
-                remoteBody.setExtensions(new HashMap<>(remoteBody.getExtensions()));
-            }
-
-            // Enriquecemos extensions SIEMPRE
-            remoteBody.getExtensions().putIfAbsent("remote.url", url);
-            remoteBody.getExtensions().putIfAbsent("remote.method", method);
-            remoteBody.getExtensions().putIfAbsent("remote.requestId", requestId);
-
-            throw new RemoteServerException(remoteBody, statusCode, requestId);
-
-        } catch (Exception parseEx) {
-
-            // No pude parsear el body remoto -> genero descriptor local (UNKNOWN)
-            ErrorMessage fallback = errorMessageFactory.from(parseEx);
-
-            // Ensure extensions is mutable
-            if (fallback.getExtensions() == null) {
-                fallback.setExtensions(new HashMap<>());
-            } else if (!(fallback.getExtensions() instanceof java.util.HashMap)) {
-                fallback.setExtensions(new HashMap<>(fallback.getExtensions()));
-            }
-
-            // Enriquecer
-            fallback.getExtensions().put("remote.url", url);
-            fallback.getExtensions().put("remote.method", method);
-            fallback.getExtensions().put("remote.httpStatus", statusCode);
-            fallback.getExtensions().put("remote.requestId", requestId);
-            fallback.getExtensions().put("remote.body", safeTruncate(content, 2000));
-
-            throw new RemoteServerException(
-                    fallback,
-                    // aquí también usaría rawStatus si es válido, y si no 502/500
-                    statusCode > 0 ? statusCode : 500,
-                    requestId
-            );
-        }
-    }
-
-    private String safeTruncate(String s, int max) {
-        if (s == null) return null;
-        return s.length() <= max ? s : s.substring(0, max);
     }
 
 }

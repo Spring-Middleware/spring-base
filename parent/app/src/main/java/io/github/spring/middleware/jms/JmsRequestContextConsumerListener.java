@@ -30,7 +30,7 @@ public class JmsRequestContextConsumerListener implements JmsResourceListener {
     private Map<String, Object> getContextProperties(Properties properties) {
 
         HashMap<String, Object> contextProperties = new HashMap<>();
-        contextProperties.put(PropertyNames.REQUEST_LOG_ENABLED,
+        contextProperties.put(PropertyNames.LOGGING_KEY,
                 Optional.ofNullable((String) properties.get(HttpHeaderNames.LogRequestEnabled))
                         .map(s -> Boolean.valueOf(s)).orElse(Boolean.FALSE));
         return contextProperties;

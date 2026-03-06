@@ -7,15 +7,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StopWatch;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.MultipartResolver;
@@ -31,41 +30,33 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 @Order(value = Ordered.HIGHEST_PRECEDENCE + 2)
+@RequiredArgsConstructor
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private LogRequestResponse requestResponseLog;
-    @Autowired
-    private MultipartResolver multipartResolver;
+    private final LogRequestResponse requestResponseLog;
+    private final MultipartResolver multipartResolver;
+    private final MiddlewareLogProperties middlewareLogProperties;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    @Value("${logging.logResponseTime:false}")
-    private boolean logResponseTime;
-
-    @Value("#{'${logging.exclude.urlPattern:}'.split(',')}")
-    private Collection<String> excludeUrlPatterns;
-    private Collection<Pattern> excludePatterns;
-
-    @PostConstruct
-    public void initPatterns() {
-        excludePatterns = excludeUrlPatterns.stream().filter(s -> !s.isEmpty()).map(Pattern::compile)
-                .collect(Collectors.toSet());
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+                                    FilterChain filterChain) throws ServletException, IOException {
+
 
         StopWatch stopWatch = null;
         if (!multipartResolver.isMultipart(request)) {
             request = new CustomHttpServletRequestWrapper(request);
             if (isNotActuator(request) && requestResponseLog.isInfoEnabled()) {
                 try {
-                    requestResponseLog.info(getMessageLog(request));
+                    if (middlewareLogProperties.getRequest().isEnabled()) {
+                        requestResponseLog.info(getMessageLog(request));
+                    }
                 } catch (Exception ex) {
                     log.error("Error retrieving request log ", ex);
                 }
             }
-            if (isReponseTimeLog()) {
+            if (isResponseTimeLog() && middlewareLogProperties.getResponse().isEnabled()) {
                 stopWatch = new StopWatch();
                 stopWatch.start();
             }
@@ -73,16 +64,19 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
         filterChain.doFilter(request, responseWrapper);
         Optional.ofNullable(stopWatch).ifPresent(StopWatch::stop);
-        if (isNotActuator(request) && requestResponseLog.isInfoEnabled()) {
+        if (isNotActuator(request) && requestResponseLog.isInfoEnabled() && middlewareLogProperties.getResponse().isEnabled()) {
             requestResponseLog.info(STR."\{responseWrapper.getStatus()} \{IOUtils.toString(responseWrapper.getContentInputStream(), Charset.defaultCharset())}\{getResponseTime(stopWatch)}");
         }
         responseWrapper.copyBodyToResponse();
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
 
-        return excludePatterns.stream().anyMatch(p -> p.matcher(request.getRequestURI()).matches());
+        return middlewareLogProperties.getExclude().getUrlPatterns().stream()
+                .filter(StringUtils::isNotBlank)
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
     private boolean isNotActuator(HttpServletRequest request) {
@@ -90,16 +84,16 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         return !request.getRequestURI().contains("actuator");
     }
 
-    private boolean isReponseTimeLog() {
+    private boolean isResponseTimeLog() {
 
-        return logResponseTime ||
+        return middlewareLogProperties.getResponseTime().isEnabled() ||
                 Optional.ofNullable((Boolean) Context.get(PropertyNames.RESPONSE_TIME_LOG)).orElse(Boolean.FALSE);
     }
 
     private String getResponseTime(StopWatch stopWatch) {
 
         return Optional.ofNullable(stopWatch).map(s -> {
-            return " " + stopWatch.getLastTaskInfo().getTimeMillis();
+            return STR." \{stopWatch.getLastTaskInfo().getTimeMillis()}";
         }).orElse(StringUtils.EMPTY);
     }
 
@@ -112,7 +106,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             logMessage.append("?").append(request.getQueryString());
         }
         request = new CustomHttpServletRequestWrapper(request);
-        logMessage.append(" " + Optional.ofNullable(request.getInputStream())
+        logMessage.append(STR." \{Optional.ofNullable(request.getInputStream())
                 .map(is -> {
                     try {
                         return IOUtils.toString(is, Charset.defaultCharset());
@@ -121,7 +115,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     }
                 })
                 .orElse(
-                        StringUtils.EMPTY));
+                        StringUtils.EMPTY)}");
         return logMessage.toString();
     }
 

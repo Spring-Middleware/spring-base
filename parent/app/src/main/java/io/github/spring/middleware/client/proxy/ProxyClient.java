@@ -3,9 +3,8 @@ package io.github.spring.middleware.client.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.NoCacheSession;
-import io.github.spring.middleware.client.params.MethodParamExtractor;
-import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.filter.Context;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.util.WebClientUtils;
@@ -29,11 +28,12 @@ public class ProxyClient<T> implements ClientConfigurable {
     @JsonIgnore
     private WebClient webClient = null;
     private String name;
-    private ErrorMessageFactory errorMessageFactory;
+    private ProxyConnectionErrorHandler errorHandler;
     @JsonIgnore
     private ClusterBulkheadRegistry bulkheadRegistry;
     private MiddlewareClientConnectionParameters connectionParameters;
     private Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
+    private ObjectMapper objectMapper;
 
 
     private Logger logger = LoggerFactory.getLogger(ProxyClient.class);
@@ -55,6 +55,10 @@ public class ProxyClient<T> implements ClientConfigurable {
         this.bulkheadRegistry = clusterBulkheadRegistry;
     }
 
+    public void setObjectMapper(final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @JsonProperty("name")
     public String getName() {
         return this.name;
@@ -73,9 +77,10 @@ public class ProxyClient<T> implements ClientConfigurable {
         this.connectionParameters = connectionParameters;
     }
 
-    public void setErrorMessageFactory(ErrorMessageFactory errorMessageFactory) {
-        this.errorMessageFactory = errorMessageFactory;
+    public void setErrorHandler(ProxyConnectionErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
     }
+
 
     public void setMethodMethodMetaDataMap(Map<Method, MethodMetaData> methodMethodMetaDataMap) {
         this.methodMethodMetaDataMap = methodMethodMetaDataMap;
@@ -141,7 +146,8 @@ public class ProxyClient<T> implements ClientConfigurable {
 
                     if (returned == null) {
                         Object body = extractedParams.getBody();
-                        ProxyConnectionTask<T> task = new ProxyConnectionTask(webClient, url, method, body, connectionParameters, errorMessageFactory);
+                        ProxyConnectionTaskParameters params = new ProxyConnectionTaskParameters(webClient, url, method, body, connectionParameters, errorHandler, methodMetaData, objectMapper);
+                        ProxyConnectionTask<T> task = new ProxyConnectionTask<>(params);
                         task.setContext(Context.get());
 
                         if (bulkheadRegistry == null) {

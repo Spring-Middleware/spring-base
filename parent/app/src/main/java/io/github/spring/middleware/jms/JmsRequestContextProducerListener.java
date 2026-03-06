@@ -22,7 +22,7 @@ public class JmsRequestContextProducerListener implements JmsResourceListener {
             properties.put(PropertyNames.REQUEST_ID, requestId);
         });
         properties.put(HttpHeaderNames.LogRequestEnabled,
-                Optional.ofNullable((Boolean) Context.get(PropertyNames.REQUEST_LOG_ENABLED)).map(b -> b.toString())
+                Optional.ofNullable((Boolean) Context.get(PropertyNames.LOGGING_KEY)).map(b -> b.toString())
                         .orElse(Boolean.FALSE.toString()));
     }
 }

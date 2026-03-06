@@ -6,13 +6,27 @@ public class UrlJoiner {
     }
 
     public static String join(String base, String path) {
-        if (base == null || base.isBlank()) throw new IllegalArgumentException("base is blank");
-        if (path == null || path.isBlank()) return stripTrailingSlashes(base);
+        if (base == null || base.isBlank()) {
+            throw new IllegalArgumentException("base is blank");
+        }
+
+        base = ensureHttpScheme(base);
+
+        if (path == null || path.isBlank()) {
+            return stripTrailingSlashes(base);
+        }
 
         String b = stripTrailingSlashes(base);
         String p = stripLeadingSlashes(path);
 
         return b + "/" + p;
+    }
+
+    private static String ensureHttpScheme(String url) {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
+        return "http://" + url;
     }
 
     private static String stripTrailingSlashes(String s) {

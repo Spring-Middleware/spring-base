@@ -5,6 +5,7 @@ import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.ErrorMessageFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,22 +29,30 @@ public class CommonsControllerAdvice {
 
         ErrorMessage body = errorMessageFactory.from(ex);
 
-        // Enrich extensions (safe)
         Map<String, Object> ext = new HashMap<>();
-        if (body.getExtensions() != null) ext.putAll(body.getExtensions());
+        if (body.getExtensions() != null) {
+            ext.putAll(body.getExtensions());
+        }
 
         ext.putIfAbsent("http.path", request.getRequestURI());
         ext.putIfAbsent("http.method", request.getMethod());
 
-        // requestId from request attribute (si lo estás propagando así)
-        Object reqId = request.getAttribute(PropertyNames.REQUEST_ID);
-        if (reqId != null) ext.putIfAbsent("requestId", reqId.toString());
+        Object requestId = request.getAttribute(PropertyNames.REQUEST_ID);
+        if (requestId == null) {
+            requestId = MDC.get(PropertyNames.REQUEST_ID);
+        }
+        if (requestId != null && StringUtils.isNotBlank(requestId.toString())) {
+            ext.putIfAbsent("requestId", requestId.toString());
+        }
 
-        // traceId from MDC (si lo usas)
-        String traceId = MDC.get("traceId");
-        if (traceId != null && !traceId.isBlank()) ext.putIfAbsent("traceId", traceId);
+        Object spanId = request.getAttribute(PropertyNames.SPAN_ID);
+        if (spanId == null) {
+            spanId = MDC.get(PropertyNames.SPAN_ID);
+        }
+        if (spanId != null && StringUtils.isNotBlank(spanId.toString())) {
+            ext.putIfAbsent("spanId", spanId.toString());
+        }
 
-        // Si tu ErrorMessage permite setExtensions:
         body.setExtensions(ext);
 
         return ResponseEntity
