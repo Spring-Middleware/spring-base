@@ -12,6 +12,8 @@ The framework provides infrastructure components for:
 - structured error propagation
 - distributed request tracing
 - infrastructure integrations (Redis, MongoDB, RabbitMQ)
+- security configuration
+- registry-driven service topology
 
 The framework is distributed via Maven Central using the BOM:
 
@@ -28,10 +30,11 @@ Example dependency:
 
 ---
 
-# Tech Stack
+## Tech Stack
 
 - Java 21 (preview features enabled)
 - Spring Boot 3.4.x
+- Spring Security
 - WebClient
 - Redis (Redisson)
 - MongoDB
@@ -43,11 +46,20 @@ Example dependency:
 
 ---
 
-# Architecture
+## Architecture
 
-Spring Middleware uses a registry-driven microservice architecture.
+Spring Middleware uses a **registry-driven microservice architecture**.
 
-A central **Registry Service** maintains the global topology of the platform.
+A central **Registry Service** acts as the **control plane** of the platform.
+
+The registry stores:
+
+- service topology
+- REST resource metadata
+- GraphQL schemas
+- active node instances
+- cluster endpoints
+- node endpoints
 
 Each microservice automatically:
 
@@ -68,9 +80,9 @@ Example:
 
 ---
 
-# Core Concepts
+## Core Concepts
 
-## cluster
+### cluster
 
 Logical service identifier.
 
@@ -81,7 +93,7 @@ Examples:
 - product-service
 - catalog-service
 
-## node
+### node
 
 Running instance of a cluster.
 
@@ -94,109 +106,33 @@ Examples:
 
 ---
 
-# Key Annotations
+## Middleware Contracts
 
-Spring Middleware uses annotations to drive platform behavior.
-
-## @Register
-
-Marks a REST resource that should be registered in the Registry.
+Services expose remote contracts using `@MiddlewareContract`.
 
 Example:
 
 ```java
-@Register
-@RestController
+@MiddlewareContract(name = "product")
+public interface ProductsApi {
+    Product getProduct(String id);
+}
 ```
 
-## @MiddlewareClient
-
-Declares a declarative service client.
+Other services consume them using declarative clients.
 
 Example:
 
 ```java
 @MiddlewareClient(service = "product")
+ProductsApi productsApi;
 ```
 
 Capabilities:
 
 - registry based service discovery
 - automatic endpoint resolution
-- request context propagation
-- structured remote error handling
-
----
-
-# Registry Model
-
-## RegistryEntry
-
-Represents a service registered in the platform registry.
-
-Fields:
-
-- clusterEndpoint
-- nodeEndpoints
-- publicEndpoint
-
-## SchemaLocation
-
-Represents GraphQL schema location metadata.
-
-Fields:
-
-- namespace
-- location
-- contextPath
-- pathApi
-- schemaLocationNodes
-
----
-
-# Registry Responsibilities
-
-The Registry maintains the global topology of the platform.
-
-Responsibilities:
-
-- maintain service topology
-- perform node health checks
-- remove dead nodes
-- store REST API metadata
-- store GraphQL schema locations
-
----
-
-# Service Bootstrapping
-
-When a service starts:
-
-1. Spring Boot initializes the application.
-2. Middleware scans for annotated resources.
-3. REST resources are registered in the Registry.
-4. GraphQL schemas are registered.
-5. The node instance registers itself under its cluster.
-6. A scheduler periodically validates registry consistency.
-
-This process is automatic and annotation-driven.
-
----
-
-# Service Communication
-
-Services communicate using declarative middleware clients.
-
-Example:
-
-```java
-@MiddlewareClient(service = "product")
-```
-
-Capabilities:
-
-- service discovery via registry
-- automatic endpoint resolution
+- WebClient configuration
 - request context propagation
 - structured remote error handling
 - retry / resilience strategies
@@ -204,12 +140,12 @@ Capabilities:
 
 ---
 
-# Request Context Propagation
+## Request Context Propagation
 
 Every request propagates two identifiers:
 
-- X-Request-ID
-- X-Span-ID
+- `X-Request-ID`
+- `X-Span-ID`
 
 Purpose:
 
@@ -219,7 +155,7 @@ Purpose:
 
 Example chain:
 
-```
+```text
 Client
   ↓
 Service A (span A1)
@@ -231,18 +167,63 @@ Service C (span C7)
 
 ---
 
-# Error Model
+## Security
+
+Spring Middleware includes a configurable security module built on top of Spring Security.
+
+Configuration prefix:
+
+`middleware.security`
+
+Supported security types:
+
+- `NONE`
+- `BASIC_AUTH`
+- `JWT` (planned)
+- `API_KEY` (planned)
+
+Example configuration:
+
+```yaml
+middleware:
+  security:
+    type: BASIC_AUTH
+
+    public-paths:
+      - /api-docs/**
+      - /swagger-ui/**
+
+    protected-endpoints:
+      - path: /api/v1/catalogs/**
+        enabled: true
+        methods: [GET]
+        allowed-roles: [GET_USER, ADMIN]
+
+    basic:
+      credentials:
+        username: admin
+        password: admin
+        roles: [ADMIN]
+```
+
+Protected endpoints are evaluated dynamically during security configuration.
+
+Authorization rules are translated into Spring Security `requestMatchers`.
+
+---
+
+## Error Model
 
 Errors are propagated using a structured error model.
 
 Core classes:
 
-- ServiceException
-- ErrorDescriptor
-- ErrorMessage
-- ErrorMessageFactory
-- RemoteServerException
-- @RestControllerAdvice
+- `ServiceException`
+- `ErrorDescriptor`
+- `ErrorMessage`
+- `ErrorMessageFactory`
+- `RemoteServerException`
+- `@RestControllerAdvice`
 
 Example error payload:
 
@@ -256,81 +237,18 @@ Example error payload:
 }
 ```
 
-Remote errors preserve additional metadata:
+Remote errors preserve metadata:
 
-- remote.url
-- remote.method
-- remote.service
-- requestId
-- spanId
-- callChain
-
----
-
-# Modules
-
-Spring Middleware is composed of multiple modules organized as a multi-module Maven repository.
-
-## Core
-
-- commons
-- api
-- app
-- model
-- view
-
-## Data
-
-- mongo
-- jpa
-- redis
-- cache
-
-## Messaging
-
-- rabbitmq
-
-## Platform
-
-- registry
-- graphql
+- `remote.url`
+- `remote.method`
+- `remote.service`
+- `requestId`
+- `spanId`
+- `callChain`
 
 ---
 
-# Repository Layout
-
-Infrastructure modules typically follow this structure:
-
-```
-module
- ├─ api
- ├─ core
- └─ core-react (optional)
-```
-
-Typical dependency hierarchy:
-
-```
-boot
- ↓
-core
- ↓
-api
-```
-
-Infrastructure integration:
-
-```
-service
- ↓
-middleware app
- ↓
-middleware infrastructure modules
-```
-
----
-
-# GraphQL Support
+## GraphQL Support
 
 GraphQL infrastructure is registry-driven and supports distributed schema federation.
 
@@ -355,28 +273,91 @@ Example GraphQL error:
 
 ---
 
-# Recent Improvements (2026-03)
+## Modules
+
+Spring Middleware is composed of multiple modules organized as a multi-module Maven repository.
+
+### Core
+
+- commons
+- api
+- app
+- model
+- view
+
+### Data
+
+- mongo
+- jpa
+- redis
+- cache
+
+### Messaging
+
+- rabbitmq
+
+### Platform
+
+- registry
+- graphql
+
+---
+
+## Repository Layout
+
+Infrastructure modules typically follow this structure:
+
+```text
+module
+ ├─ api
+ ├─ core
+ └─ core-react (optional)
+```
+
+Typical dependency hierarchy:
+
+```text
+boot
+ ↓
+core
+ ↓
+api
+```
+
+Infrastructure integration:
+
+```text
+service
+ ↓
+middleware app
+ ↓
+middleware infrastructure modules
+```
+
+---
+
+## Recent Improvements (2026-03)
 
 GraphQL centralized exception handling.
 
 Main component:
 
-```
+```text
 GraphQLValidationExceptionHandler
 ```
 
 Handled exceptions:
 
-- ServiceException
-- ErrorDescriptor
-- PersistenceException (Hibernate constraint resolution)
-- ConstraintViolationException (Jakarta Validation)
-- LazyInitializationException (ignored)
-- fallback → FrameworkErrorCodes.UNKNOWN_ERROR
+- `ServiceException`
+- `ErrorDescriptor`
+- `PersistenceException` (Hibernate constraint resolution)
+- `ConstraintViolationException` (Jakarta Validation)
+- `LazyInitializationException` (ignored)
+- fallback → `FrameworkErrorCodes.UNKNOWN_ERROR`
 
 ---
 
-# Current Status
+## Current Status
 
 Version: **1.1.0**  
 Java: **21**  
@@ -394,4 +375,21 @@ Current capabilities:
 - Redis / Mongo / JPA infrastructure
 - GraphQL schema registry
 - centralized error handling
+- configurable security module
 - BOM distribution via Maven Central
+
+---
+
+# Documentation Output Rules
+
+When generating Markdown documentation for this project:
+
+- Always return the document inside a fenced block using `~~~~markdown` instead of ` ```markdown `.
+- This avoids breaking nested code blocks that contain triple backticks, for example XML, YAML, JSON, or Java examples.
+- The content inside the block must be valid Markdown and safe to copy directly into `.md` files.
+- This rule applies whenever documentation is requested for:
+    - README files
+    - architecture documentation
+    - AI_CONTEXT updates
+    - examples or guides
+    - any `.md` content
