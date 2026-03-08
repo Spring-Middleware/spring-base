@@ -11,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 
@@ -20,10 +22,9 @@ import java.beans.Introspector;
 import java.util.Map;
 import java.util.Set;
 
-public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware {
+public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
-    private ResourceLoader resourceLoader;
-
+    private Environment environment;
     private static final Logger log = LoggerFactory.getLogger(MiddlewareClientRegistrar.class);
 
     @Override
@@ -76,11 +77,14 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
                     }
 
                     MiddlewareContract clientAnnotation = clazz.getAnnotation(MiddlewareContract.class);
-                    BeanDefinitionBuilder builder =
-                            BeanDefinitionBuilder.genericBeanDefinition(clazz);
-                    AbstractBeanDefinition beanDefinition = getAbstractBeanDefinition(builder, clazz, clientAnnotation);
-                    log.info("Registering MiddlewareClient bean: {} -> {}", beanName, className);
-                    registry.registerBeanDefinition(beanName, beanDefinition);
+                    boolean enabled = Boolean.valueOf(environment.resolvePlaceholders(clientAnnotation.enabled()));
+                    if (enabled) {
+                        BeanDefinitionBuilder builder =
+                                BeanDefinitionBuilder.genericBeanDefinition(clazz);
+                        AbstractBeanDefinition beanDefinition = getAbstractBeanDefinition(builder, clazz, clientAnnotation);
+                        log.info("Registering MiddlewareClient bean: {} -> {}", beanName, className);
+                        registry.registerBeanDefinition(beanName, beanDefinition);
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to create proxy for " + className, e);
                 }
@@ -97,14 +101,15 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
             try {
                 return proxyClient.wrappedInstance();
             } catch (Exception e) {
-                throw new RegistarClientException("Error registering client " + Introspector.decapitalize(clazz.getSimpleName()), e);
+                throw new RegistarClientException(STR."Error registering client \{Introspector.decapitalize(clazz.getSimpleName())}", e);
             }
         });
         return beanDefinition;
     }
 
+
     @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
+    public void setEnvironment(Environment environment) {
+      this.environment  = environment;
     }
 }

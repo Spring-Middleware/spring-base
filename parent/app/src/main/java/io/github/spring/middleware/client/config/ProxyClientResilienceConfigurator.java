@@ -5,7 +5,6 @@ import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotation.MiddlewareContractConnection;
 import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.client.proxy.*;
-import io.github.spring.middleware.error.ErrorMessageFactory;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,7 +72,9 @@ public class ProxyClientResilienceConfigurator {
         // Configuramos el resto de proxies de forma asíncrona
         configurationTasks.clear();
         for (ProxyClient<?> proxyClient : proxyClients) {
-            if (!proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf())) {
+            MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
+            boolean enabled = Boolean.valueOf(environment.resolvePlaceholders(middlewareContract.enabled()));
+            if (!proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf()) && enabled) {
                 MiddlewareClientConnectionParameters clientConnectionParameters = createConnectionParameters(proxyClient);
                 ProxyClientConfigurationTask task = new ProxyClientConfigurationTask(proxyClient,
                         registryClient,

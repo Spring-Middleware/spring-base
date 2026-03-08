@@ -1,29 +1,24 @@
 package io.github.spring.middleware.error;
 
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@ConfigurationProperties(prefix = "spring-middleware.errors")
+@Data
+@ConfigurationProperties(prefix = "middleware")
 public class FrameworkErrorProperties {
 
-    private Map<String, Integer> httpStatus = new HashMap<>();
+    private Map<String, Integer> errors = new HashMap<>();
 
     @PostConstruct
     public void init() {
         // Set default HTTP status codes for common exceptions
-        httpStatus.putIfAbsent("PROXY_CLIENT_ERROR", 502);
-        httpStatus.putIfAbsent("FRAMEWORK:UNKNOWN_ERROR", 500);
-        httpStatus.putIfAbsent("FRAMEWORK:VALIDATION_ERROR", 400);
+        errors.putIfAbsent("PROXY_CLIENT_ERROR", 502);
+        errors.putIfAbsent("FRAMEWORK:UNKNOWN_ERROR", 500);
+        errors.putIfAbsent("FRAMEWORK:VALIDATION_ERROR", 400);
     }
 
-    public Map<String, Integer> getHttpStatus() {
-        return httpStatus;
-    }
-
-    public void setHttpStatus(Map<String, Integer> httpStatus) {
-        this.httpStatus = httpStatus;
-    }
 }

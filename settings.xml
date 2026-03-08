@@ -23,7 +23,7 @@
     <mirrors>
         <mirror>
             <id>repo</id>
-            <name>Triggle Nexus Public Mirror</name>
+            <name>Nexus Public Mirror</name>
             <url>https://nexus.shared.app/repository/maven-public/</url>
             <mirrorOf>*</mirrorOf>
         </mirror>

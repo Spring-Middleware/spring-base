@@ -1,25 +1,24 @@
 package io.github.spring.middleware.error;
 
-import io.github.spring.middleware.resolver.HttpStatusCodeResolver;
-import io.github.spring.middleware.resolver.ThrowableErrorResolver;
+import io.github.spring.middleware.resolver.CompositeHttpStatusCodeResolver;
+import io.github.spring.middleware.resolver.CompositeThrowableErrorResolver;
 import io.github.spring.middleware.utils.ExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
 public class ErrorMessageFactory {
 
-    private final List<HttpStatusCodeResolver> statusResolvers;
-    private final List<ThrowableErrorResolver> throwableResolvers;
+    private final CompositeHttpStatusCodeResolver statusCodeResolver;
+    private final CompositeThrowableErrorResolver throwableResolvers;
 
-    public ErrorMessageFactory(List<ThrowableErrorResolver> throwableResolvers,
-                               List<HttpStatusCodeResolver> statusResolvers) {
+    public ErrorMessageFactory(CompositeHttpStatusCodeResolver statusCodeResolver,
+                               CompositeThrowableErrorResolver throwableResolvers) {
         this.throwableResolvers = throwableResolvers;
-        this.statusResolvers = statusResolvers;
+        this.statusCodeResolver = statusCodeResolver;
     }
 
     public ErrorMessage from(Throwable t) {
@@ -66,23 +65,11 @@ public class ErrorMessageFactory {
     }
 
     private ErrorDescriptor resolveDescriptor(Throwable t) {
-        for (ThrowableErrorResolver r : throwableResolvers) {
-            Optional<ErrorDescriptor> out = r.resolve(t);
-            if (out.isPresent()) return out.get();
-        }
-        // En teoría nunca llegas aquí si tienes UnknownErrorResolver
-        return FrameworkErrorCodes.UNKNOWN_ERROR;
+        return throwableResolvers.resolve(t).orElse(FrameworkErrorCodes.UNKNOWN_ERROR);
     }
 
     private int resolveStatusCode(ErrorDescriptor error) {
-
-        for (HttpStatusCodeResolver resolver : statusResolvers) {
-            Optional<Integer> resolved = resolver.resolve(error);
-            if (resolved.isPresent()) {
-                return resolved.get();
-            }
-        }
-        return HttpStatus.INTERNAL_SERVER_ERROR.value();
+        return statusCodeResolver.resolve(error).orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
     private String safeMessage(ErrorDescriptor d) {

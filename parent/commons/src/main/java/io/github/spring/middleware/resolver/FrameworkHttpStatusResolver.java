@@ -15,7 +15,7 @@ public class FrameworkHttpStatusResolver implements HttpStatusCodeResolver {
     private final Map<String, Integer> statusByCode;
 
     public FrameworkHttpStatusResolver(FrameworkErrorProperties properties) {
-        this.statusByCode = properties.getHttpStatus();
+        this.statusByCode = properties.getErrors();
     }
 
     @Override

@@ -6,11 +6,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class CompositeHttpStatusCodeResolver extends
-        CompositeAbstractResolver<ErrorDescriptor, Integer> {
+public class CompositeThrowableErrorResolver extends CompositeAbstractResolver<Throwable, ErrorDescriptor> {
 
-
-    public CompositeHttpStatusCodeResolver(List<? extends Resolver<ErrorDescriptor, Integer>> resolvers) {
+    public CompositeThrowableErrorResolver(List<ThrowableErrorResolver> resolvers) {
         super(resolvers);
     }
 }

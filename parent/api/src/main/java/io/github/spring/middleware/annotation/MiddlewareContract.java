@@ -11,6 +11,8 @@ public @interface MiddlewareContract {
 
     String name();
 
+    String enabled() default "true";
+
     MiddlewareContractConnection connection() default @MiddlewareContractConnection;
 
 }
