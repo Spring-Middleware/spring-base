@@ -115,7 +115,7 @@ Example:
 ```java
 @MiddlewareContract(name = "product")
 public interface ProductsApi {
-    Product getProduct(String id);
+  Product getProduct(String id);
 }
 ```
 
@@ -209,6 +209,73 @@ middleware:
 Protected endpoints are evaluated dynamically during security configuration.
 
 Authorization rules are translated into Spring Security `requestMatchers`.
+
+### Authorization Model
+
+Spring Middleware uses a unified authorization model across all authentication types.
+
+Protected paths are declared under:
+
+`middleware.security.protected-paths`
+
+Each rule contains:
+
+- `path`
+- `enabled`
+- `methods`
+- `allowed-roles`
+
+Important behavior:
+
+- rules are evaluated in declaration order
+- the first matching rule wins
+- more specific paths must appear before broader ones
+
+### Protected Path Resolution
+
+Protected paths are resolved internally through a dedicated resolver component.
+
+Main component:
+
+`ProtectedPathRuleResolver`
+
+Responsibilities:
+
+- evaluate rules in declaration order
+- ignore disabled rules
+- match HTTP method
+- match path patterns
+- return the first matching rule
+
+This resolver allows authentication filters (API Key, JWT, OIDC) to determine whether a request requires authentication.
+
+### Authentication vs Authorization Responses
+
+Spring Middleware distinguishes between authentication failures and authorization failures.
+
+Authentication failures return **401 Unauthorized**.
+
+Authorization failures return **403 Forbidden**.
+
+Typical scenarios:
+
+- missing credentials on a protected path → **401**
+- invalid credentials → **401**
+- valid credentials but insufficient roles → **403**
+
+Authentication failures are handled through a custom Spring Security `AuthenticationEntryPoint`.
+
+### Security Error Integration
+
+Security errors are integrated with the framework error handling infrastructure.
+
+Authentication and authorization exceptions are resolved through the same error resolution pipeline used by the rest of the framework:
+
+- `ErrorMessageFactory`
+- `CompositeThrowableErrorResolver`
+- `CompositeHttpStatusCodeResolver`
+
+This guarantees that security failures produce the same structured error response format as application errors.
 
 ---
 
@@ -355,6 +422,13 @@ Handled exceptions:
 - `LazyInitializationException` (ignored)
 - fallback → `FrameworkErrorCodes.UNKNOWN_ERROR`
 
+Security improvements:
+
+- unified authorization model across authentication types
+- introduction of `ProtectedPathRuleResolver`
+- API Key authentication infrastructure
+- integration of Spring Security exceptions with `ErrorMessageFactory`
+
 ---
 
 ## Current Status
@@ -380,6 +454,18 @@ Current capabilities:
 
 ---
 
+# Context Maintenance Rules
+
+When the user asks to **add something to the context** ("añadir al contexto"), the following rules apply:
+
+- The assistant must return the **entire context document**, not only the added section.
+- Existing sections **must not be modified, reordered, or removed** unless explicitly requested.
+- New information should be **appended in the most relevant section** or added as a new subsection.
+- The goal is to **extend the context while preserving stability of the document structure**.
+- The resulting document must remain **fully copy-paste safe**.
+
+---
+
 # Documentation Output Rules
 
 When generating Markdown documentation for this project:
@@ -388,8 +474,9 @@ When generating Markdown documentation for this project:
 - This avoids breaking nested code blocks that contain triple backticks, for example XML, YAML, JSON, or Java examples.
 - The content inside the block must be valid Markdown and safe to copy directly into `.md` files.
 - This rule applies whenever documentation is requested for:
-    - README files
-    - architecture documentation
-    - AI_CONTEXT updates
-    - examples or guides
-    - any `.md` content
+  - README files
+  - architecture documentation
+  - AI_CONTEXT updates
+  - examples or guides
+  - any `.md` content
+~~~~markdown

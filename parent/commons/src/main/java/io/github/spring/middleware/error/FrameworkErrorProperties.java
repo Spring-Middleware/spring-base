@@ -19,6 +19,9 @@ public class FrameworkErrorProperties {
         errors.putIfAbsent("PROXY_CLIENT_ERROR", 502);
         errors.putIfAbsent("FRAMEWORK:UNKNOWN_ERROR", 500);
         errors.putIfAbsent("FRAMEWORK:VALIDATION_ERROR", 400);
+        errors.putIfAbsent("MISSING_CREDENTIALS", 401);
+        errors.putIfAbsent("INVALID_CREDENTIALS", 401);
+        errors.putIfAbsent("AUTHENTICATION_FAILED", 403);
     }
 
 }

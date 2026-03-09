@@ -50,4 +50,5 @@ public class MiddlewareSecurityConfiguration {
         configurer.configure(http);
         return http.build();
     }
+
 }
