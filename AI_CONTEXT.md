@@ -340,6 +340,93 @@ Example GraphQL error:
 
 ---
 
+## Messaging Infrastructure (RabbitMQ)
+
+Spring Middleware provides a **JMS-style abstraction layer on top of RabbitMQ**.
+
+The messaging module supports:
+
+- annotation-driven producers and consumers
+- automatic destination creation
+- exchange and binding management
+- durable and transient queues
+- topic-based event propagation
+- distributed event delivery across cluster nodes
+
+Messaging resources are defined through annotations such as:
+
+```java
+@JmsDestination
+@JmsProducer
+@JmsConsumer
+```
+
+The framework automatically:
+
+- resolves exchange names
+- creates bindings
+- configures queue arguments
+- manages consumer lifecycle
+
+Queues may include RabbitMQ arguments such as:
+
+- `x-expires` (auto-delete inactive queues)
+- `durable`
+- `autoDelete`
+
+This allows **ephemeral node-level messaging infrastructure** that automatically cleans up when a node leaves the cluster.
+
+---
+
+## Cluster Event Propagation
+
+Cluster nodes synchronize their state through **RabbitMQ topic exchanges**.
+
+Each node creates its own **node-specific queue** and binds it to the cluster event exchange.
+
+Example queue name pattern:
+
+```text
+client-events-{cluster}-{nodeId}
+```
+
+Queues typically use expiration arguments such as:
+
+```text
+x-expires = 60000
+```
+
+This ensures that:
+
+- node queues disappear automatically when a node stops
+- no manual cleanup is required
+- cluster messaging remains consistent
+
+Events propagated across the cluster include:
+
+- client configuration refresh
+- service availability changes
+- registry updates
+- topology refresh signals
+
+Example event flow:
+
+```text
+Node A
+  │
+  │ publish event
+  ▼
+RabbitMQ Topic Exchange
+  │
+  ├── Node B queue
+  ├── Node C queue
+  └── Node D queue
+```
+
+This enables **distributed coordination without direct node-to-node communication**.
+
+---
+
 ## Modules
 
 Spring Middleware is composed of multiple modules organized as a multi-module Maven repository.
@@ -429,6 +516,13 @@ Security improvements:
 - API Key authentication infrastructure
 - integration of Spring Security exceptions with `ErrorMessageFactory`
 
+Cluster improvements:
+
+- RabbitMQ-based cluster event propagation
+- node-scoped event queues with automatic expiration
+- asynchronous client reconfiguration signals across nodes
+- distributed registry consistency through event messaging
+
 ---
 
 ## Current Status
@@ -451,6 +545,7 @@ Current capabilities:
 - centralized error handling
 - configurable security module
 - BOM distribution via Maven Central
+- RabbitMQ-based cluster messaging
 
 ---
 
