@@ -68,7 +68,7 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
 
                 if (!exists) {
                     SchemaLocationNode node = new SchemaLocationNode();
-                    node.setId(UUID.randomUUID());
+                    node.setId(params.getNodeId());
                     node.setNamespace(namespace);
                     node.setLocation(nodeLocation);
                     node.setLastAliveCheckDate(new Timestamp(System.currentTimeMillis()));

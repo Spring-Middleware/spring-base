@@ -12,8 +12,8 @@ import io.github.spring.middleware.rabbitmq.core.resource.producer.JmsProducerRe
 import io.github.spring.middleware.rabbitmq.message.TestingMessage;
 import org.apache.commons.pool2.ObjectPool;
 
-@JmsProducer(bindings = {@JmsBinding(routingKey = "news.uk", destinationQueue = "information-uk"), @JmsBinding(routingKey = "news.es", destinationQueue = "information-es")})
-@JmsDestination(name = "amq.topic", schema = "topic", exchange = "amq.topic", destinationType = DestinationType.TOPIC)
+@JmsProducer(bindings = {@JmsBinding(routingKey = "news.uk"), @JmsBinding(routingKey = "news.es")})
+@JmsDestination(name = "amq.topic", exchange = "amq.topic", destinationType = DestinationType.TOPIC)
 public class JmsProducerNewsWorld extends JmsProducerResource<TestingMessage> {
 
     public JmsProducerNewsWorld(String routingKey, ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters, JmsResourceDestination jmsResourceDestination, Class<TestingMessage> clazz) {

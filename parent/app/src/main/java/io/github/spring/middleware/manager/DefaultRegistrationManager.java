@@ -1,6 +1,7 @@
 package io.github.spring.middleware.manager;
 
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.register.graphql.GraphQLAutoRegistrar;
 import io.github.spring.middleware.register.graphql.GraphQLRegisterProperties;
@@ -8,8 +9,6 @@ import io.github.spring.middleware.register.resource.ResourceAutoRegistrar;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.net.InetAddress;
 
 @Slf4j
 @Component
@@ -20,18 +19,21 @@ public class DefaultRegistrationManager implements RegistrationManager {
     private final GraphQLRegisterProperties graphQLRegisterProperties;
     private final RegistryClient registryClient;
     private final ServerPortProvider serverPortProvider;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
     public DefaultRegistrationManager(@Value("${server.port:8080}") final int port,
                                       final GraphQLAutoRegistrar graphQLAutoRegistrar,
                                       final ResourceAutoRegistrar resourceAutoRegistrar,
                                       final GraphQLRegisterProperties graphQLRegisterProperties,
                                       final RegistryClient registryClient,
-                                      final ServerPortProvider serverPortProvider) {
+                                      final ServerPortProvider serverPortProvider,
+                                      final NodeInfoRetriever nodeInfoRetriever) {
         this.graphQLAutoRegistrar = graphQLAutoRegistrar;
         this.resourceAutoRegistrar = resourceAutoRegistrar;
         this.graphQLRegisterProperties = graphQLRegisterProperties;
         this.registryClient = registryClient;
         this.serverPortProvider = serverPortProvider;
+        this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
 
@@ -70,7 +72,7 @@ public class DefaultRegistrationManager implements RegistrationManager {
     public boolean isSchemaNodeRegistered() {
         try {
             if (!hasSchemasToRegister()) return true; // si no hay schemas, no aplica
-            String me = STR."\{InetAddress.getLocalHost().getHostAddress()}:\{this.serverPortProvider.getPort()}";
+            String me = STR."\{nodeInfoRetriever.getAddress()}:\{this.serverPortProvider.getPort()}";
 
             var schemaLocation = registryClient.getSchemaLocation(graphQLRegisterProperties.getNamespace());
             if (schemaLocation == null || schemaLocation.getSchemaLocationNodes() == null) return false;

@@ -15,4 +15,6 @@ public @interface MiddlewareContract {
 
     MiddlewareContractConnection connection() default @MiddlewareContractConnection;
 
+    MiddlewareCircuitBreaker circuitBreaker() default @MiddlewareCircuitBreaker;
+
 }

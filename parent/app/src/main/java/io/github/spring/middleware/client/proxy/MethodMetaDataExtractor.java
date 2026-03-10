@@ -1,18 +1,35 @@
 package io.github.spring.middleware.client.proxy;
 
+import io.github.spring.middleware.annotation.MiddlewareCircuitBreaker;
 import io.github.spring.middleware.annotation.NoCacheSession;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 
+@Component
 public class MethodMetaDataExtractor {
 
-    private MethodMetaDataExtractor() {
+    private final Environment environment;
+
+    public MethodMetaDataExtractor(Environment environment) {
+        this.environment = environment;
     }
 
-    public static MethodMetaData extractMetaData(Method method) {
+    public MethodMetaData extractMetaData(Method method) {
 
         MethodMetaData md = new MethodMetaData();
 
@@ -20,6 +37,7 @@ public class MethodMetaDataExtractor {
         md.setHttpMethod(resolveHttpMethod(method));
         md.setPath(resolvePath(method));
         md.setCacheable(resolveCacheable(method));
+        md.setCircuitBreakerParameters(createCircuitBreakerParameters(method));
 
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
@@ -46,7 +64,30 @@ public class MethodMetaDataExtractor {
         return md;
     }
 
-    private static boolean resolveCacheable(Method method) {
+
+    private MiddlewareCircuitBreakerParameters createCircuitBreakerParameters(Method method) {
+        if (method.isAnnotationPresent(MiddlewareCircuitBreaker.class)) {
+            final MiddlewareCircuitBreakerParameters circuitBreakerParameters = new MiddlewareCircuitBreakerParameters();
+            MiddlewareCircuitBreaker circuitBreaker = method.getAnnotation(MiddlewareCircuitBreaker.class);
+            circuitBreakerParameters.setEnanbled(Boolean.valueOf(environment.resolvePlaceholders(circuitBreaker.enabled())));
+            circuitBreakerParameters.setFailureRateThreshold(Float.valueOf(environment.resolvePlaceholders(circuitBreaker.failureRateThreshold())));
+            circuitBreakerParameters.setMinimumNumberOfCalls(Integer.valueOf(environment.resolvePlaceholders(circuitBreaker.minimumNumberOfCalls())));
+            circuitBreakerParameters.setSlidingWindowSize(Integer.valueOf(environment.resolvePlaceholders(circuitBreaker.slidingWindowSize())));
+            circuitBreakerParameters.setWaitDurationInOpenStateMs(Long.valueOf(environment.resolvePlaceholders(circuitBreaker.waitDurationInOpenStateMs())));
+            circuitBreakerParameters.setPermittedNumberOfCallsInHalfOpenState(Integer.valueOf(environment.resolvePlaceholders(circuitBreaker.permittedNumberOfCallsInHalfOpenState())));
+            Arrays.stream(circuitBreaker.statusShouldOpenBreaker()).forEach(expresion -> {
+                circuitBreakerParameters.getOpenCircuitBreakerStatusExpressions().add(environment.resolvePlaceholders(expresion));
+            });
+            Arrays.stream(circuitBreaker.statusShouldIgnoreBreaker()).forEach(expresion -> {
+                circuitBreakerParameters.getIgnoreCircuitBreakerStatusExpressions().add(environment.resolvePlaceholders(expresion));
+            });
+            return circuitBreakerParameters;
+        }
+        return null;
+    }
+
+
+    private boolean resolveCacheable(Method method) {
         // regla equivalente a la que tenías:
         // cacheable si no es delete y no tiene NoCacheSession (y además body == null lo decides en runtime)
         return !method.isAnnotationPresent(DeleteMapping.class)
@@ -54,7 +95,7 @@ public class MethodMetaDataExtractor {
     }
 
 
-    private static HttpMethod resolveHttpMethod(Method method) {
+    private HttpMethod resolveHttpMethod(Method method) {
         if (method.isAnnotationPresent(GetMapping.class)) return HttpMethod.GET;
         if (method.isAnnotationPresent(PostMapping.class)) return HttpMethod.POST;
         if (method.isAnnotationPresent(PutMapping.class)) return HttpMethod.PUT;
@@ -67,7 +108,7 @@ public class MethodMetaDataExtractor {
         throw new IllegalArgumentException("Method must be annotated with a mapping annotation");
     }
 
-    private static String resolveClassLevelPath(Method method) {
+    private String resolveClassLevelPath(Method method) {
         RequestMapping classRequestMapping = method.getDeclaringClass().getAnnotation(RequestMapping.class);
         if (classRequestMapping == null) {
             return "";
@@ -75,7 +116,7 @@ public class MethodMetaDataExtractor {
         return firstNonEmpty(classRequestMapping.path(), classRequestMapping.value());
     }
 
-    private static String resolveMethodLevelPath(Method method) {
+    private String resolveMethodLevelPath(Method method) {
 
         // value y path son aliases: cubrimos ambos y el caso vacío.
         if (method.isAnnotationPresent(GetMapping.class)) {
@@ -106,7 +147,7 @@ public class MethodMetaDataExtractor {
         throw new IllegalArgumentException("Method must be annotated with a mapping annotation");
     }
 
-    private static String resolvePath(Method method) {
+    private String resolvePath(Method method) {
         String classPath = resolveClassLevelPath(method);
         String methodPath = resolveMethodLevelPath(method);
         return joinPaths(classPath, methodPath);
@@ -145,4 +186,5 @@ public class MethodMetaDataExtractor {
         if (b != null && b.length > 0 && b[0] != null) return b[0];
         return "";
     }
+
 }

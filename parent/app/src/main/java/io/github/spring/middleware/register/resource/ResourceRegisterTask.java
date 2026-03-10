@@ -2,12 +2,11 @@ package io.github.spring.middleware.register.resource;
 
 import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.params.ResourceRegisterParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetAddress;
 
 public class ResourceRegisterTask implements Runnable {
 
@@ -16,11 +15,13 @@ public class ResourceRegisterTask implements Runnable {
     private final RegistryClient registryClient;
     private final Class<?> clazz;
     private final ResourceRegister resourceRegister;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
-    public ResourceRegisterTask(RegistryClient registryClient, Class<?> clazz, ResourceRegister resourceRegister) {
+    public ResourceRegisterTask(RegistryClient registryClient, Class<?> clazz, ResourceRegister resourceRegister, NodeInfoRetriever nodeInfoRetriever) {
         this.registryClient = registryClient;
         this.clazz = clazz;
         this.resourceRegister = resourceRegister;
+        this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
     @Override
@@ -41,7 +42,7 @@ public class ResourceRegisterTask implements Runnable {
                     resourceRegister.getClusterName(),
                     resourceRegister.getPort(),
                     params.getPath(),
-                    InetAddress.getLocalHost().getHostName()
+                    nodeInfoRetriever.getAddress()
             );
         } catch (Exception ex) {
             logger.error("Error registering resource: {}", clazz.getSimpleName(), ex);
@@ -55,7 +56,8 @@ public class ResourceRegisterTask implements Runnable {
         params.setResourceName(register.name());
         params.setCluster(resourceRegister.getClusterName());
         params.setPort(resourceRegister.getPort());
-        params.setNode(InetAddress.getLocalHost().getHostAddress());
+        params.setNode(nodeInfoRetriever.getAddress());
+        params.setNodeId(nodeInfoRetriever.getNodeId());
         String path = register.path();
         if (path == null) path = "/";
         if (!path.startsWith("/")) path = STR."/\{path}";

@@ -1,6 +1,7 @@
 package io.github.spring.middleware.register.graphql;
 
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.params.SchemaRegisterParameters;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.net.InetAddress;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,15 +20,18 @@ public class GraphQLSchemaRegister {
     private final RegistryClient registryClient;
     private final GraphQLRegisterProperties props;
     private final ServerPortProvider serverPortProvider;
+    private final NodeInfoRetriever nodeInfoRetriever;
     @Value("${server.servlet.context-path:}")
     private String contextPath;
 
     public GraphQLSchemaRegister(final RegistryClient registryClient,
                                  final ServerPortProvider serverPortProvider,
-                                 final GraphQLRegisterProperties props) {
+                                 final GraphQLRegisterProperties props,
+                                 final NodeInfoRetriever nodeInfoRetriever) {
         this.registryClient = registryClient;
         this.props = props;
         this.serverPortProvider = serverPortProvider;
+        this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
     public void register(Set<Class<?>> endpoints) {
@@ -78,7 +81,8 @@ public class GraphQLSchemaRegister {
         SchemaRegisterParameters p = new SchemaRegisterParameters();
         p.setNamespace(props.getNamespace());
         p.setLocation(STR."\{props.getClusterName()}:\{this.serverPortProvider.getPort()}");
-        p.setNodeLocation(STR."\{InetAddress.getLocalHost().getHostAddress()}:\{this.serverPortProvider.getPort()}");
+        p.setNodeId(nodeInfoRetriever.getNodeId());
+        p.setNodeLocation(STR."\{nodeInfoRetriever.getAddress()}:\{this.serverPortProvider.getPort()}");
         p.setPathApi(path);
         p.setContextPath(contextPath);
         return p;

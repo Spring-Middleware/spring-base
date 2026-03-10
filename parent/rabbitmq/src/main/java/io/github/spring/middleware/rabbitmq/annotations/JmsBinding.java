@@ -11,6 +11,4 @@ public @interface JmsBinding {
 
     String routingKey() default "";
 
-    String destinationQueue() default "";
-
 }

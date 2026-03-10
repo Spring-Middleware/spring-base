@@ -2,6 +2,7 @@ package io.github.spring.middleware.rabbitmq.annotations;
 
 import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationSuffix;
 import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationType;
+import org.springframework.stereotype.Component;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,14 +19,15 @@ public @interface JmsDestination {
 
     String exchange() default "amq.direct";
 
-    String schema() default "direct";
-
     String id() default "";
 
     DestinationType destinationType() default DestinationType.QUEUE;
 
     boolean durable() default true;
 
+    long expires() default 0;
+
+    @Component
     class DefaultDestinationSuffix implements DestinationSuffix {
 
         @Override

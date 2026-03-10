@@ -17,4 +17,11 @@ public class ProxyClientRegistry {
         return Collections.unmodifiableSet(proxyClients);
     }
 
+    public static ProxyClient<?> getByName(String clientName) {
+        return proxyClients.stream()
+                .filter(client -> client.getRegistryEntry() != null && client.getRegistryEntry().getName().equals(clientName))
+                .findFirst()
+                .orElse(null);
+    }
+
 }

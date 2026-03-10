@@ -17,6 +17,7 @@ public class ErrorRequest {
 
     private UUID uuid;
     private LocalDateTime dateTime;
+    private UUID nodeId;
     private String hostname;
     private String serviceName;
     private String clazzName;

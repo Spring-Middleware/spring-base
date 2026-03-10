@@ -9,23 +9,24 @@ public class RegistryEntry implements Serializable {
 
     private String name;
     private String clusterEndpoint;
-    private Set<String> nodeEndpoints;
+    private Set<NodeEndpoint> nodeEndpoints;
     private String publicEndpoint;
     private LocalDateTime dateTime;
 
     public RegistryEntry() {
     }
 
-    public RegistryEntry(String clusterEndpoint) {
+    public RegistryEntry(String clusterEndpoint, String name) {
+        this.name = name;
         this.clusterEndpoint = clusterEndpoint;
         this.nodeEndpoints = new HashSet<>();
     }
 
-    public void addNodeEndpoint(String nodeEndpoint) {
+    public void addNodeEndpoint(NodeEndpoint nodeEndpoint) {
         this.nodeEndpoints.add(nodeEndpoint);
     }
 
-    public Set<String> getNodeEndpoints() {
+    public Set<NodeEndpoint> getNodeEndpoints() {
         return this.nodeEndpoints;
     }
 
@@ -37,7 +38,7 @@ public class RegistryEntry implements Serializable {
         this.clusterEndpoint = clusterEndpoint;
     }
 
-    public void setNodeEndpoints(Set<String> nodeEndpoints) {
+    public void setNodeEndpoints(Set<NodeEndpoint> nodeEndpoints) {
         this.nodeEndpoints = nodeEndpoints;
     }
 
@@ -50,7 +51,7 @@ public class RegistryEntry implements Serializable {
     }
 
     public void removeNodeEndpoint(String nodeEndpoint) {
-        this.nodeEndpoints.removeIf(name -> name.startsWith(nodeEndpoint));
+        this.nodeEndpoints.removeIf(n -> n.getNodeEndpoint().startsWith(nodeEndpoint));
     }
 
     public void setDateTime(LocalDateTime dateTime) {

@@ -2,7 +2,13 @@ package io.github.spring.middleware.rabbitmq.core;
 
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
 import com.rabbitmq.jms.admin.RMQDestination;
-import io.github.spring.middleware.rabbitmq.annotations.*;
+import io.github.spring.middleware.rabbitmq.annotations.JmsBinding;
+import io.github.spring.middleware.rabbitmq.annotations.JmsConsumer;
+import io.github.spring.middleware.rabbitmq.annotations.JmsDestination;
+import io.github.spring.middleware.rabbitmq.annotations.JmsErrorHandler;
+import io.github.spring.middleware.rabbitmq.annotations.JmsHandler;
+import io.github.spring.middleware.rabbitmq.annotations.JmsListener;
+import io.github.spring.middleware.rabbitmq.annotations.JmsProducer;
 import io.github.spring.middleware.rabbitmq.annotations.listener.JmsAll;
 import io.github.spring.middleware.rabbitmq.annotations.listener.JmsAllConsumers;
 import io.github.spring.middleware.rabbitmq.annotations.listener.JmsAllProducers;
@@ -22,7 +28,6 @@ import jakarta.jms.JMSException;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +36,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,7 +59,6 @@ public class JmsResourceFactory implements ApplicationContextAware {
     private Logger logger = LoggerFactory.getLogger(JmsResourceFactory.class);
     private GenericObjectPoolConfig genericObjectPoolConfig;
     private GenericObjectPool<JmsConnection> connectionPool;
-    private static ApplicationContext applicationContext;
 
     public JmsResourceFactory() {
 
@@ -173,6 +182,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
             try {
                 Class<?> genericType = (Class) ((ParameterizedType) getJmsResourceClazz(clazz).getGenericSuperclass())
                         .getActualTypeArguments()[0];
+                ApplicationContext applicationContext = ApplicationContextProvider.getApplicationContext();
                 if (applicationContext == null) {
                     jmsProducerResource = (JmsProducerResource) clazz
                             .getConstructor(String.class, ObjectPool.class, JmsSessionParameters.class,
@@ -228,7 +238,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
             try {
                 jmsResourceDestination = dicoverJmsResourceDestination(clazz, JmsConsumer.class, null);
             } catch (Exception ex) {
-                logger.error("Error discovering detination jms for: " + clazz.getSimpleName(), ex);
+                logger.error(STR."Error discovering detination jms for: \{clazz.getSimpleName()}", ex);
             }
             try {
                 JmsSessionParameters jmsSessionParameters = new JmsSessionParameters(jmsConsumer.transacted(),
@@ -236,6 +246,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
                 Class<?> genericType = (Class) ((ParameterizedType) getJmsResourceClazz(clazz).getGenericSuperclass())
                         .getActualTypeArguments()[0];
 
+                ApplicationContext applicationContext = ApplicationContextProvider.getApplicationContext();
                 if (applicationContext == null) {
                     jmsConsumerResource = (JmsConsumerResource) clazz
                             .getConstructor(ObjectPool.class, JmsSessionParameters.class, JmsResourceDestination.class,
@@ -252,7 +263,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
                 jmsConsumerResource.setDurabilityFunctionExecutor(destinationTypeFunctionExecutor);
                 jmsConsumerResource.setId(id);
             } catch (Exception ex) {
-                logger.error("Error creating consumer for class " + clazz.getSimpleName());
+                logger.error(STR."Error creating consumer for class \{clazz.getSimpleName()}");
             }
             return jmsConsumerResource;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
@@ -274,37 +285,34 @@ public class JmsResourceFactory implements ApplicationContextAware {
                         getDestinationSuffixName(jmsDestination), routingKey);
             }
         } else {
-            throw new JMSException("Missing @JmsDestination in " + clazzJMS.getSimpleName());
+            throw new JMSException(STR."Missing @JmsDestination in \{clazzJMS.getSimpleName()}");
         }
         return new JmsResourceDestination(destination, jmsDestination);
     }
 
-    private <T extends JmsResource> Destination getDestinationQueue(
-            JmsDestination jmsDestination)  {
+    private <T extends JmsResource> Destination getDestinationQueue(JmsDestination jmsDestination) {
 
-        RMQDestination destination = new RMQDestination();
-        destination.setQueue(true);
-
-        // 1. Normalizamos el Exchange (Default Exchange si es vacío/null)
         String exchange = (jmsDestination.exchange() == null) ? "" : jmsDestination.exchange();
         String queueName = getDestinationSuffixName(jmsDestination);
         String routingKey = getDestinationSuffixName(jmsDestination);
-
-        // 2. FORZAMOS LOS SETTERS INTERNOS (Esto soluciona el 'exchange must be non-null')
+        var queueDeclareArguments = new HashMap<String, Object>();
+        if (jmsDestination.expires() != 0) {
+            queueDeclareArguments.put("x-expires", jmsDestination.expires());
+        }
+        RMQDestination destination = new RMQDestination(
+                queueName,
+                true,
+                false,
+                queueDeclareArguments
+        );
         destination.setAmqpExchangeName(exchange);
         destination.setAmqpRoutingKey(routingKey);
         destination.setAmqpQueueName(queueName);
-
-        // 3. Montamos la Address String por compatibilidad con el motor de JMS
-        String address = String.format("%s/%s?queue=%s&durable=%b",
-                exchange, routingKey, queueName, jmsDestination.durable());
-
         destination.setDestinationName(queueName);
-
         return destination;
     }
 
-    private Destination getDestinationTopic(String topicName, String routingKey) throws JMSException {
+    private Destination getDestinationTopic(String topicName, String routingKey) throws JMSException, NamingException {
         RMQDestination destination = new RMQDestination();
 
         // Normalizamos nombres (amq.topic, etc)
@@ -315,13 +323,14 @@ public class JmsResourceFactory implements ApplicationContextAware {
         destination.setAmqpRoutingKey(rKey);
         // --- LÓGICA PRODUCTOR ---
         // El productor NUNCA debe declarar una cola
-        destination.setDestinationName(exchange + "/" + rKey);
+        destination.setDestinationName(STR."\{exchange}/\{rKey}");
         destination.setQueue(false);
+
         return destination;
     }
 
     private <T> T getInstance(Class<T> clazz) {
-
+        ApplicationContext applicationContext = ApplicationContextProvider.getApplicationContext();
         return Optional.ofNullable(applicationContext).map(ctx -> {
             return ctx.getBean(clazz);
         }).orElseGet(() -> {
@@ -329,15 +338,14 @@ public class JmsResourceFactory implements ApplicationContextAware {
             try {
                 t = clazz.newInstance();
             } catch (Exception ex) {
-                logger.error("Can't get instance for " + clazz);
+                logger.error(STR."Can't get instance for \{clazz}");
             }
             return t;
         });
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext myApplicationContext) throws BeansException {
-
-        applicationContext = myApplicationContext;
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        ApplicationContextProvider.setApplicationContext(applicationContext);
     }
 }

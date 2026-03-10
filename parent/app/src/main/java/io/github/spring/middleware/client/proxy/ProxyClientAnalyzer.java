@@ -1,6 +1,7 @@
 package io.github.spring.middleware.client.proxy;
 
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -8,7 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class ProxyClientAnalyzer {
+
+    private final MethodMetaDataExtractor methodMetaDataExtractor;
 
     public Map<Method, MethodMetaData> analize(Class<?> proxyClientInterface) {
         Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
@@ -16,7 +20,7 @@ public class ProxyClientAnalyzer {
             if (method.getDeclaringClass() == Object.class) {
                 continue;
             }
-            methodMethodMetaDataMap.putIfAbsent(method, MethodMetaDataExtractor.extractMetaData(method));
+            methodMethodMetaDataMap.putIfAbsent(method, methodMetaDataExtractor.extractMetaData(method));
         }
         return methodMethodMetaDataMap;
     }

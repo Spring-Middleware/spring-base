@@ -31,8 +31,9 @@ public class ProxyClient<T> implements ClientConfigurable {
     private ProxyConnectionErrorHandler errorHandler;
     @JsonIgnore
     private ClusterBulkheadRegistry bulkheadRegistry;
-    private MiddlewareClientConnectionParameters connectionParameters;
+    private MiddlewareClientConfigParameters clientConfigParameters;
     private Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
+    private ClusterCircuitBreakerRegistry circuitBreakerRegistry;
     private ObjectMapper objectMapper;
 
 
@@ -44,15 +45,21 @@ public class ProxyClient<T> implements ClientConfigurable {
     }
 
     public void configureHttpClient() {
+        var connectionParameters = clientConfigParameters != null ? clientConfigParameters.getConnectionParameters() : MiddlewareClientConnectionParameters.defaultParameters();
         webClient = WebClientUtils.reconfigureWebClient(webClient, connectionParameters.getTimeout(), connectionParameters.getMaxConnections());
     }
 
     public void recreateHttpClient() {
+        var connectionParameters = clientConfigParameters != null ? clientConfigParameters.getConnectionParameters() : MiddlewareClientConnectionParameters.defaultParameters();
         webClient = WebClientUtils.createWebClient(connectionParameters.getTimeout(), connectionParameters.getMaxConnections());
     }
 
     public void setBulkheadRegistry(final ClusterBulkheadRegistry clusterBulkheadRegistry) {
         this.bulkheadRegistry = clusterBulkheadRegistry;
+    }
+
+    public void setCircuitBreakerRegistry(final ClusterCircuitBreakerRegistry circuitBreakerRegistry) {
+        this.circuitBreakerRegistry = circuitBreakerRegistry;
     }
 
     public void setObjectMapper(final ObjectMapper objectMapper) {
@@ -73,8 +80,8 @@ public class ProxyClient<T> implements ClientConfigurable {
         return this.registryEntry;
     }
 
-    public void setMiddlewareClientConnectionParameters(MiddlewareClientConnectionParameters connectionParameters) {
-        this.connectionParameters = connectionParameters;
+    public void setMiddlewareClientConfigParameters(MiddlewareClientConfigParameters clientConfigParameters) {
+        this.clientConfigParameters = clientConfigParameters;
     }
 
     public void setErrorHandler(ProxyConnectionErrorHandler errorHandler) {
@@ -145,35 +152,59 @@ public class ProxyClient<T> implements ClientConfigurable {
                     }
 
                     if (returned == null) {
+                        var connectionParameters = clientConfigParameters != null ? clientConfigParameters.getConnectionParameters() : MiddlewareClientConnectionParameters.defaultParameters();
                         Object body = extractedParams.getBody();
+
                         ProxyConnectionTaskParameters params = new ProxyConnectionTaskParameters(webClient, url, method, body, connectionParameters, errorHandler, methodMetaData, objectMapper);
                         ProxyConnectionTask<T> task = new ProxyConnectionTask<>(params);
                         task.setContext(Context.get());
 
-                        if (bulkheadRegistry == null) {
-                            logger.warn("No bulkhead registry configured for proxy {}, executing call without bulkhead protection", getName());
-                            returned = task.call();
-                        } else {
-                            int max = connectionParameters.getMaxConcurrentCalls();
-                            var sem = bulkheadRegistry.getOrCreate(getName(), max);
+                        MiddlewareCircuitBreakerParameters circuitBreakerParameters =
+                                methodMetaData.getCircuitBreakerParameters() != null
+                                        ? methodMetaData.getCircuitBreakerParameters()
+                                        : clientConfigParameters != null ? clientConfigParameters.getCircuitBreakerParameters() : null;
 
-                            sem.acquire();
-                            try {
-                                returned = task.call();
-                            } finally {
-                                sem.release();
-                            }
+                        if (circuitBreakerParameters == null || !circuitBreakerParameters.isEnanbled()) {
+                            logger.warn("Proxy client {} method {} is not configured with circuit breaker parameters, executing call without circuit breaker protection", getName(), method.getName());
+                            returned = executeCall(connectionParameters.getMaxConcurrentCalls(), task);
+                        } else {
+                            var circuitBreaker = circuitBreakerRegistry.getOrCreate(methodMetaData.getCircuitBreakerKey(registryEntry.getName()), circuitBreakerParameters);
+                            returned = circuitBreaker.executeCallable(() ->
+                                    executeCall(connectionParameters.getMaxConcurrentCalls(), task)
+                            );
                         }
                     }
                     return returned;
                 } else {
-                    throw new ProxyClientException(STR."ProxyClient for \{interf.getSimpleName()} is not configured");
+                    ProxyClientUnavailableException ex =
+                            new ProxyClientUnavailableException(STR."ProxyClient for \{interf.getSimpleName()} is not configured");
+                    ex.addExtension("client.name", getName());
+                    ex.addExtension("client.interface", interf.getName());
+                    ex.addExtension("registry.entry", registryEntry != null ? registryEntry.getName() : null);
+                    throw ex;
                 }
 
             }
         };
         return (T) proxyClass.getConstructor(new Class[]{InvocationHandler.class}).newInstance(invocationHandler);
     }
+
+
+    private T executeCall(int maxConcurrentCalls, ProxyConnectionTask<T> task) throws Exception {
+        if (bulkheadRegistry == null) {
+            logger.warn("No bulkhead registry configured for proxy {}, executing call without bulkhead protection", getName());
+            return task.call();
+        } else {
+            var sem = bulkheadRegistry.getOrCreate(getName(), maxConcurrentCalls);
+            sem.acquire();
+            try {
+                return task.call();
+            } finally {
+                sem.release();
+            }
+        }
+    }
+
 
     @Override
     @JsonIgnore

@@ -1,16 +1,26 @@
 package io.github.spring.middleware.client.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.spring.middleware.annotation.MiddlewareCircuitBreaker;
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotation.MiddlewareContractConnection;
 import io.github.spring.middleware.client.RegistryClient;
-import io.github.spring.middleware.client.proxy.*;
+import io.github.spring.middleware.client.proxy.ClusterBulkheadRegistry;
+import io.github.spring.middleware.client.proxy.ClusterCircuitBreakerRegistry;
+import io.github.spring.middleware.client.proxy.MiddlewareCircuitBreakerParameters;
+import io.github.spring.middleware.client.proxy.MiddlewareClientConfigParameters;
+import io.github.spring.middleware.client.proxy.MiddlewareClientConnectionParameters;
+import io.github.spring.middleware.client.proxy.ProxyClient;
+import io.github.spring.middleware.client.proxy.ProxyClientAnalyzer;
+import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
+import io.github.spring.middleware.client.proxy.ProxyConnectionErrorHandler;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -29,6 +39,7 @@ public class ProxyClientResilienceConfigurator {
     private final Environment environment;
     private final ProxyClientAnalyzer proxyClientAnalyzer;
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
+    private final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry;
     private final ObjectMapper objectMapper;
 
     public ProxyClientResilienceConfigurator(final RegistryClient registryClient,
@@ -38,6 +49,7 @@ public class ProxyClientResilienceConfigurator {
                                              final Environment environment,
                                              final ProxyClientAnalyzer proxyClientAnalyzer,
                                              final ClusterBulkheadRegistry clusterBulkheadRegistry,
+                                             final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry,
                                              final ObjectMapper objectMapper) {
         this.registryEndpoint = registryEndpoint;
         this.registryClient = registryClient;
@@ -47,6 +59,7 @@ public class ProxyClientResilienceConfigurator {
         this.environment = environment;
         this.proxyClientAnalyzer = proxyClientAnalyzer;
         this.clusterBulkheadRegistry = clusterBulkheadRegistry;
+        this.clusterCircuitBreakerRegistry = clusterCircuitBreakerRegistry;
         this.objectMapper = objectMapper;
     }
 
@@ -56,12 +69,13 @@ public class ProxyClientResilienceConfigurator {
     public void configureProxies(Set<ProxyClient<?>> proxyClients) {
         // Primero configuramos el RegistryClient
         proxyClients.stream()
-                .filter(pc -> pc.getInterf().equals(RegistryClient.class))
+                .filter(pc -> pc.getInterf().equals(RegistryClient.class) && pc.getRegistryEntry() == null)
                 .forEach(pc -> {
-                    MiddlewareClientConnectionParameters clientConnectionParameters = createConnectionParameters(pc);
-                    pc.setRegistryEntry(new RegistryEntry(registryEndpoint));
-                    pc.setMiddlewareClientConnectionParameters(clientConnectionParameters);
+                    MiddlewareClientConfigParameters clientConfigParameters = createClientConfigParameters(pc);
+                    pc.setRegistryEntry(new RegistryEntry(registryEndpoint,"registry"));
+                    pc.setMiddlewareClientConfigParameters(clientConfigParameters);
                     pc.setBulkheadRegistry(clusterBulkheadRegistry);
+                    pc.setCircuitBreakerRegistry(clusterCircuitBreakerRegistry);
                     pc.setObjectMapper(objectMapper);
                     pc.setErrorHandler(errorHandler);
                     pc.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(pc.getInterf()));
@@ -72,23 +86,62 @@ public class ProxyClientResilienceConfigurator {
         // Configuramos el resto de proxies de forma asíncrona
         configurationTasks.clear();
         for (ProxyClient<?> proxyClient : proxyClients) {
-            MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
-            boolean enabled = Boolean.valueOf(environment.resolvePlaceholders(middlewareContract.enabled()));
-            if (!proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf()) && enabled) {
-                MiddlewareClientConnectionParameters clientConnectionParameters = createConnectionParameters(proxyClient);
-                ProxyClientConfigurationTask task = new ProxyClientConfigurationTask(proxyClient,
-                        registryClient,
-                        clientConnectionParameters,
-                        taskConfigProperties,
-                        errorHandler,
-                        proxyClientAnalyzer,
-                        clusterBulkheadRegistry,
-                        objectMapper);
-                configurationTasks.add(task);
-                runAsyncTask(task);
-            }
+            configureProxy(proxyClient);
         }
     }
+
+    public void configureProxy(ProxyClient<?> proxyClient) {
+        if (canConfigureProxy(proxyClient)) {
+            MiddlewareClientConfigParameters clientConfigParameters = createClientConfigParameters(proxyClient);
+            ProxyClientConfigurationTask task = new ProxyClientConfigurationTask(proxyClient,
+                    registryClient,
+                    clientConfigParameters,
+                    taskConfigProperties,
+                    errorHandler,
+                    proxyClientAnalyzer,
+                    clusterBulkheadRegistry,
+                    clusterCircuitBreakerRegistry,
+                    objectMapper);
+            configurationTasks.add(task);
+            runAsyncTask(task);
+        }
+    }
+
+    private boolean canConfigureProxy(ProxyClient<?> proxyClient) {
+        MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
+        boolean enabled = Boolean.valueOf(environment.resolvePlaceholders(middlewareContract.enabled()));
+        return !proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf())
+                && enabled && (proxyClient.getRegistryEntry() == null || proxyClient.getRegistryEntry().getClusterEndpoint() == null);
+    }
+
+
+    private MiddlewareClientConfigParameters createClientConfigParameters(ProxyClient<?> proxyClient) {
+        MiddlewareClientConfigParameters clientConfigParameters = new MiddlewareClientConfigParameters();
+        clientConfigParameters.setConnectionParameters(createConnectionParameters(proxyClient));
+        clientConfigParameters.setCircuitBreakerParameters(clientCircuitBreakerParameters(proxyClient));
+        return clientConfigParameters;
+    }
+
+
+    private MiddlewareCircuitBreakerParameters clientCircuitBreakerParameters(ProxyClient<?> proxyClient) {
+        MiddlewareCircuitBreakerParameters circuitBreakerParameters = new MiddlewareCircuitBreakerParameters();
+        MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
+        MiddlewareCircuitBreaker contractCircuitBreaker = middlewareContract.circuitBreaker();
+        circuitBreakerParameters.setEnanbled(Boolean.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.enabled())));
+        circuitBreakerParameters.setFailureRateThreshold(Float.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.failureRateThreshold())));
+        circuitBreakerParameters.setMinimumNumberOfCalls(Integer.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.minimumNumberOfCalls())));
+        circuitBreakerParameters.setSlidingWindowSize(Integer.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.slidingWindowSize())));
+        circuitBreakerParameters.setWaitDurationInOpenStateMs(Long.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.waitDurationInOpenStateMs())));
+        circuitBreakerParameters.setPermittedNumberOfCallsInHalfOpenState(Integer.valueOf(environment.resolvePlaceholders(contractCircuitBreaker.permittedNumberOfCallsInHalfOpenState())));
+        Arrays.stream(contractCircuitBreaker.statusShouldOpenBreaker()).forEach(expresion -> {
+            circuitBreakerParameters.getOpenCircuitBreakerStatusExpressions().add(environment.resolvePlaceholders(expresion));
+        });
+        Arrays.stream(contractCircuitBreaker.statusShouldIgnoreBreaker()).forEach(expresion -> {
+            circuitBreakerParameters.getIgnoreCircuitBreakerStatusExpressions().add(environment.resolvePlaceholders(expresion));
+        });
+        return circuitBreakerParameters;
+    }
+
 
     private MiddlewareClientConnectionParameters createConnectionParameters(ProxyClient<?> proxyClient) {
         MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
@@ -102,17 +155,23 @@ public class ProxyClientResilienceConfigurator {
         return parameters;
     }
 
-
-    private void runAsyncTask(Runnable task) {
-        taskExecutor.execute(task);
+    public void desconfigureClient(String clientName) {
+        ProxyClientRegistry.getAll().stream().filter(p -> clientName.equals(p.getRegistryEntry().getName()) && p.getRegistryEntry().getClusterEndpoint() != null)
+                .forEach(proxyClient -> {
+                    proxyClient.getRegistryEntry().setClusterEndpoint(null);
+                    log.info(STR."Desconfigured proxy client for \{proxyClient.getInterf().getSimpleName()}");
+                });
     }
 
-    public boolean isConfigured(Class<?> clazz) {
-        return configurationTasks.stream()
-                .filter(task -> task.getProxyClient().getInterf().equals(clazz))
-                .findFirst()
-                .map(task -> task.getProxyClient().getRegistryEntry() != null)
-                .orElse(Boolean.FALSE);
+
+    private void runAsyncTask(Runnable task) {
+        taskExecutor.execute(() -> {
+            try {
+                task.run();
+            } finally {
+                configurationTasks.remove(task);
+            }
+        });
     }
 
     public boolean isConfiguring(Class<?> clazz) {

@@ -1,6 +1,9 @@
 package io.github.spring.middleware.registry.service.impl;
 
-import io.github.spring.middleware.registry.exceptions.PathInvalidException;
+import io.github.spring.middleware.jms.client.ProxyClientEvent;
+import io.github.spring.middleware.jms.client.ProxyClientEventType;
+import io.github.spring.middleware.registry.jms.ProxyClientEventResourceProducer;
+import io.github.spring.middleware.registry.model.NodeEndpoint;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
@@ -16,9 +19,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static io.github.spring.middleware.registry.util.EndpointUtils.*;
+import static io.github.spring.middleware.registry.util.EndpointUtils.joinUrl;
+import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeContextPath;
+import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeResourcePath;
 
 
 @Slf4j
@@ -28,9 +34,11 @@ public class RegistryServiceImpl implements RegistryService {
     private RMap<String, RegistryEntry> registryEntryMap;
 
     private final RedissonClient redissonClient;
+    private final ProxyClientEventResourceProducer proxyClientEventResourceProducer;
 
-    public RegistryServiceImpl(RedissonClient redissonClient) {
+    public RegistryServiceImpl(RedissonClient redissonClient, ProxyClientEventResourceProducer proxyClientEventResourceProducer) {
         this.redissonClient = redissonClient;
+        this.proxyClientEventResourceProducer = proxyClientEventResourceProducer;
     }
 
     @PostConstruct
@@ -43,13 +51,14 @@ public class RegistryServiceImpl implements RegistryService {
         registerResource(resourceRegisterParameters.getResourceName(),
                 resourceRegisterParameters.getCluster(),
                 resourceRegisterParameters.getNode(),
+                resourceRegisterParameters.getNodeId(),
                 resourceRegisterParameters.getPort(),
                 resourceRegisterParameters.getPublicServer(),
                 resourceRegisterParameters.getPath(),
                 resourceRegisterParameters.getContextPath());
     }
 
-    private void registerResource(String name, String cluster, String node, int port, PublicServer publicServer,
+    private void registerResource(String name, String cluster, String node, UUID nodeId, int port, PublicServer publicServer,
                                   String path, String contextPath) {
 
         contextPath = normalizeContextPath(contextPath);      // "" o "/product"
@@ -70,10 +79,16 @@ public class RegistryServiceImpl implements RegistryService {
         RegistryEntry registryEntry = registryEntryMap.get(name);
         if (registryEntry == null) {
             registryEntry = createRegistryEntry(name, clusterEndpoint);
+            ProxyClientEvent event = new ProxyClientEvent(name, ProxyClientEventType.CLIENT_AVAILABLE);
+            try {
+                proxyClientEventResourceProducer.send(event);
+            } catch (Exception ex) {
+                log.error(STR."Error sending ProxyClientEvent for resource \{name}", ex);
+            }
         }
 
         registryEntry.setName(name);
-        registryEntry.addNodeEndpoint(nodeEndpoint);
+        registryEntry.addNodeEndpoint(new NodeEndpoint(nodeId, nodeEndpoint));
         registryEntry.setClusterEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);
         registryEntry.setDateTime(LocalDateTime.now());
@@ -82,7 +97,7 @@ public class RegistryServiceImpl implements RegistryService {
     }
 
     private RegistryEntry createRegistryEntry(String name, String endpoint) {
-        return registryEntryMap.computeIfAbsent(name, k -> new RegistryEntry(endpoint));
+        return registryEntryMap.computeIfAbsent(name, k -> new RegistryEntry(endpoint, name));
     }
 
 
@@ -127,13 +142,22 @@ public class RegistryServiceImpl implements RegistryService {
 
                     // borra cualquier nodeEndpoint cuyo host:port sea el muerto (da igual el "/product")
                     re.getNodeEndpoints().removeIf(ne ->
-                            EndpointUtils.extractHostPort(ne).equalsIgnoreCase(deadHostPort)
+                            EndpointUtils.extractHostPort(ne.getNodeEndpoint()).equalsIgnoreCase(deadHostPort)
                     );
 
                     if (re.getNodeEndpoints().isEmpty()) keysRemove.add(e.getKey());
                     else registryEntryMap.put(e.getKey(), re);
                 });
 
-        keysRemove.forEach(registryEntryMap::remove);
+        keysRemove.forEach(key -> {
+            registryEntryMap.remove(key);
+            ProxyClientEvent proxyClientEvent = new ProxyClientEvent(key, ProxyClientEventType.CLIENT_UNAVAILABLE);
+            try {
+                proxyClientEventResourceProducer.send(proxyClientEvent);
+            } catch (Exception e) {
+                log.error("Error sending ProxyClientEvent for resource {}: {}", key, e.getMessage());
+            }
+        });
     }
+
 }

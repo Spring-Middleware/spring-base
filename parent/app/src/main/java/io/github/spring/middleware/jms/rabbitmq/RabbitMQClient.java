@@ -2,15 +2,14 @@ package io.github.spring.middleware.jms.rabbitmq;
 
 import io.github.spring.middleware.config.JmsConfiguration;
 import io.github.spring.middleware.http.AbstractWebClient;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -20,10 +19,10 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jms.rabbitmq.baseUrl")
+@ConditionalOnProperty(prefix = "middleware.jms.rabbitmq", name = "base-url")
 public class RabbitMQClient extends AbstractWebClient {
 
-    @Value("${jms.rabbitmq.baseUrl:#{null}}")
+    @Value("${middleware.jms.rabbitmq.base-url:#{null}}")
     private String baseUrl;
 
     private final JmsConfiguration jmsConfiguration;
@@ -49,7 +48,7 @@ public class RabbitMQClient extends AbstractWebClient {
                 .retrieve()
                 .bodyToFlux(RabbitConsumerData.class)
                 .doOnError(ex -> log.error("Can't connect with {}", baseUrl, ex))
-                .onErrorResume(this::emptyOnConnectErrorFlux);
+                .onErrorResume(this::emptyOnClientErrorFlux);
     }
 
     public Flux<RabbitBindingData> getBindingsForExchange(String exchangeName) {
@@ -62,7 +61,7 @@ public class RabbitMQClient extends AbstractWebClient {
                 .retrieve()
                 .bodyToFlux(RabbitBindingData.class)
                 .doOnError(ex -> log.error("Can't connect with {} for read binding exchange={}", baseUrl, exchangeName, ex))
-                .onErrorResume(this::emptyOnConnectErrorFlux);
+                .onErrorResume(this::emptyOnClientErrorFlux);
     }
 
     public Mono<ExchangeData> getExchange(String exchangeName) {
@@ -75,7 +74,8 @@ public class RabbitMQClient extends AbstractWebClient {
                 .retrieve()
                 .bodyToMono(ExchangeData.class)
                 .doOnError(ex -> log.error("Can't connect with {} for read exchange={}", baseUrl, exchangeName, ex))
-                .onErrorResume(this::emptyOnConnectErrorMono);
+                .doOnSuccess(v -> log.info("Read exchange {} exchangeName={}", baseUrl, exchangeName))
+                .onErrorResume(this::emptyOnClientErrorMono);
     }
 
     public Mono<Void> createExchange(String exchangeName, CreateExchangeRequest createExchangeRequest) {
@@ -89,7 +89,23 @@ public class RabbitMQClient extends AbstractWebClient {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .doOnError(ex -> log.error("Can't create exchange {} exchangeName={}", baseUrl, exchangeName, ex))
-                .onErrorResume(this::emptyOnConnectErrorMono);
+                .doOnSuccess(v -> log.info("Created exchange {} exchangeName={}", baseUrl, exchangeName))
+                .onErrorResume(this::emptyOnClientErrorMono);
+    }
+
+    public Mono<Void> deleteQueue(String queueName) {
+
+        return client()
+                .delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/queues/{vhost}/{queueName}")
+                        .build("/", queueName))
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnError(ex -> log.error("Can't delete queue {} queueName={}", baseUrl, queueName, ex))
+                .doOnSuccess(v -> log.info("Deleted queue {} queueName={}", baseUrl, queueName))
+                .onErrorResume(this::emptyOnClientErrorMono);
+
     }
 
     public Mono<Void> createBinding(String exchangeName, String detinationQueue, CreateBindingRequest bindingRequest) {
@@ -104,19 +120,26 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyToMono(Void.class)
                 .doOnError(ex -> log.error("Can't create binding {} exchangeName={} destinationQueue={}",
                         baseUrl, exchangeName, detinationQueue, ex))
-                .onErrorResume(this::emptyOnConnectErrorMono);
+                .onErrorResume(this::emptyOnClientErrorMono);
     }
 
-    private boolean isConnectError(Throwable ex) {
-        return Optional.ofNullable(ex.getCause()).map(c -> c instanceof ConnectException).orElse(false);
+    private boolean isClientError(Throwable ex) {
+
+        if (ex instanceof WebClientResponseException wcre) {
+            return wcre.getStatusCode().value() == 404;
+        }
+
+        return Optional.ofNullable(ex.getCause())
+                .map(c -> c instanceof ConnectException)
+                .orElse(false);
     }
 
-    private <T> Mono<T> emptyOnConnectErrorMono(Throwable ex) {
-        return isConnectError(ex) ? Mono.empty() : Mono.error(ex);
+    private <T> Mono<T> emptyOnClientErrorMono(Throwable ex) {
+        return isClientError(ex) ? Mono.empty() : Mono.error(ex);
     }
 
-    private <T> Flux<T> emptyOnConnectErrorFlux(Throwable ex) {
-        return isConnectError(ex) ? Flux.empty() : Flux.error(ex);
+    private <T> Flux<T> emptyOnClientErrorFlux(Throwable ex) {
+        return isClientError(ex) ? Flux.empty() : Flux.error(ex);
     }
 
 }

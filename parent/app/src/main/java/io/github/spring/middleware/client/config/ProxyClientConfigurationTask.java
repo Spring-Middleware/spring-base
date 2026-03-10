@@ -21,11 +21,12 @@ public class ProxyClientConfigurationTask implements Runnable {
 
     private final ProxyClient<?> proxyClient;
     private final RegistryClient registryClient;
-    private final MiddlewareClientConnectionParameters connectionParameters;
+    private final MiddlewareClientConfigParameters clientConfigParameters;
     private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
     private final ProxyConnectionErrorHandler errorHandler;
     private final ProxyClientAnalyzer proxyClientAnalyzer;
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
+    private final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry;
     private final ObjectMapper objectMapper;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -36,20 +37,22 @@ public class ProxyClientConfigurationTask implements Runnable {
     public ProxyClientConfigurationTask(
             final ProxyClient<?> proxyClient,
             final RegistryClient registryClient,
-            final MiddlewareClientConnectionParameters connectionParameters,
+            final MiddlewareClientConfigParameters clientConfigParameters,
             final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
             final ProxyConnectionErrorHandler proxyConnectionErrorHandler,
             final ProxyClientAnalyzer proxyClientAnalyzer,
             final ClusterBulkheadRegistry clusterBulkheadRegistry,
+            final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry,
             final ObjectMapper objectMapper
     ) {
         this.proxyClient = Objects.requireNonNull(proxyClient, "proxyClient");
         this.registryClient = Objects.requireNonNull(registryClient, "registryClient");
-        this.connectionParameters = Objects.requireNonNull(connectionParameters, "connectionParameters");
+        this.clientConfigParameters = Objects.requireNonNull(clientConfigParameters, "clientConfigParameters");
         this.taskConfigProperties = Objects.requireNonNull(taskConfigProperties, "taskConfigProperties");
         this.errorHandler = Objects.requireNonNull(proxyConnectionErrorHandler, "proxyConnectionErrorHandler");
         this.proxyClientAnalyzer = Objects.requireNonNull(proxyClientAnalyzer, "proxyClientAnalyzer");
         this.clusterBulkheadRegistry = Objects.requireNonNull(clusterBulkheadRegistry, "clusterBulkheadRegistry");
+        this.clusterCircuitBreakerRegistry = Objects.requireNonNull(clusterCircuitBreakerRegistry, "clusterCircuitBreakerRegistry");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
 
@@ -116,8 +119,9 @@ public class ProxyClientConfigurationTask implements Runnable {
 
                     // Configura SOLO cuando hay entry
                     proxyClient.setRegistryEntry(entry);
-                    proxyClient.setMiddlewareClientConnectionParameters(connectionParameters);
+                    proxyClient.setMiddlewareClientConfigParameters(clientConfigParameters);
                     proxyClient.setBulkheadRegistry(clusterBulkheadRegistry);
+                    proxyClient.setCircuitBreakerRegistry(clusterCircuitBreakerRegistry);
                     proxyClient.setErrorHandler(errorHandler);
                     proxyClient.setObjectMapper(objectMapper);
                     proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(proxyClient.getInterf()));

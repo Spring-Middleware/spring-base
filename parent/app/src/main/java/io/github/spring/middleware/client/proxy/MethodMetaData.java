@@ -22,9 +22,14 @@ public class MethodMetaData {
     private List<ParameterBindingName> parameterNames = new ArrayList<>();
     private Integer bodyParamIndex;
     private boolean cacheable;
+    private MiddlewareCircuitBreakerParameters circuitBreakerParameters;
 
     public void addBinding(final ParameterType parameterType, int order, Annotation annotation) {
         parameterNames.add(new ParameterBindingName(parameterType, order, annotation));
+    }
+
+    public String getCircuitBreakerKey(String clientName) {
+        return STR."\{clientName}#\{method.getName()}";
     }
 
     public ExtractedParams extractedParams(Object[] args) {

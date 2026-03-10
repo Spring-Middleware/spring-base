@@ -101,7 +101,7 @@ public class JmsController {
     }
 
     @GetMapping("/rabbitmq/consumers")
-    public void checkRabbitMQConsumers() throws Exception {
+    public void checkRabbitMQConsumers() {
 
         rabbitMQChecker.checkConsumers();
     }

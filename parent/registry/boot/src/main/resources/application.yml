@@ -13,6 +13,19 @@ middleware:
     responseTime:
       enabled: ${LOG_RESPONSE_TIME_ENABLED:false}
 
+  jms:
+    base-packages: io.github.spring.middleware.registry.jms
+    profile: ${JMS_PROFILE:LOCAL}
+    host: ${JMS_HOST:amqp://rabbitmq:5672}
+    user: ${JMS_USER:admin}
+    password: ${JMS_PASSWORD}
+    max-pool-size: ${JMS_MAX_POOL_SIZE:10}
+    min-idle: ${JMS_MIN_IDLE:5}
+    max-idle: ${JMS_MAX_IDLE:10}
+    rabbitmq:
+      base-url: ${JMS_RABBITMQ_BASE_URL:http://rabbitmq:15672}
+
+
   client:
     # When running in Docker compose the registry service is reachable at hostname `registry` on port 8080
     registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8080/registry}

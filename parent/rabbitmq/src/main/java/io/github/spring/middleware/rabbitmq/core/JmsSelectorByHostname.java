@@ -4,10 +4,12 @@ package io.github.spring.middleware.rabbitmq.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.util.Properties;
 
+@Component
 public class JmsSelectorByHostname implements JmsSelector {
 
     private final Logger logger = LoggerFactory.getLogger(JmsSelectorByHostname.class);

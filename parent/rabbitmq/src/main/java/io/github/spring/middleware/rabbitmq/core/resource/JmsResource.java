@@ -100,7 +100,7 @@ public abstract class JmsResource<T> {
             JmsConnection jmsConnection = null;
             jmsConnection = connectionPool.borrowObject();
             logger.debug(
-                    "Get connection " + jmsConnection + " from connection pool " + this.getClass().getSimpleName());
+                    STR."Get connection \{jmsConnection} from connection pool \{this.getClass().getSimpleName()}");
             return jmsConnection;
         } catch (Exception ex) {
             throw new JMSException("Can't get connection from connection pool ");

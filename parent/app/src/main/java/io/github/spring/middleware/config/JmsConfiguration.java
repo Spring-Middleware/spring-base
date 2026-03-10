@@ -15,21 +15,22 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
 @Configuration
 @EnableScheduling
-@ConfigurationProperties(prefix = "jms")
+@ConfigurationProperties(prefix = "middleware.jms")
 public class JmsConfiguration {
 
-    private List<String> basePackages;
+    private List<String> basePackages = new ArrayList<>();
     private String profile;
-    private String tcpHost;
+    private String host;
     private String user;
     private String password;
-    private Integer maxPool;
+    private Integer maxPoolSize;
     private Integer minIdle;
     private Integer maxIdle;
     private JmsResources jmsResources;
@@ -45,29 +46,24 @@ public class JmsConfiguration {
     @Bean
     @DependsOn({"JmsActiveProfile", "JmsActiveProfileSuffix","JmsResourceFactory"})
     public JmsResources configJms() throws Exception {
-
-        if (basePackages != null) {
-            JmsFactory jmsFactory = JmsFactory.newInstance();
-            JmsConnectionConfiguration jmsConnectionConfiguration = getJmsConnectionConfiguration();
-            basePackages.add("com.commons.jms");
-            basePackages.add("com.commons.event");
-            jmsResources = jmsFactory.createJmsResources(basePackages, jmsConnectionConfiguration);
-
-        }
+        JmsFactory jmsFactory = JmsFactory.newInstance();
+        JmsConnectionConfiguration jmsConnectionConfiguration = getJmsConnectionConfiguration();
+        basePackages.add("io.github.spring.middleware.jms");
+        jmsResources = jmsFactory.createJmsResources(basePackages, jmsConnectionConfiguration);
         return jmsResources;
     }
 
     private JmsConnectionConfiguration getJmsConnectionConfiguration() {
 
         JmsConnectionConfiguration jmsConnectionConfiguration = new JmsConnectionConfiguration();
-        jmsConnectionConfiguration.setTcpHost(tcpHost);
+        jmsConnectionConfiguration.setTcpHost(host);
         JmsConnectionCredentials jmsConnectionCredentials = new JmsConnectionCredentials();
         jmsConnectionCredentials.setUsername(user);
         jmsConnectionCredentials.setPassword(password);
         JmsConnectionPoolConfiguration jmsConnectionPoolConfiguration = new JmsConnectionPoolConfiguration();
         jmsConnectionPoolConfiguration.setMinIdle(minIdle);
         jmsConnectionPoolConfiguration.setMaxIdle(maxIdle);
-        jmsConnectionPoolConfiguration.setMaxTotal(maxPool);
+        jmsConnectionPoolConfiguration.setMaxTotal(maxPoolSize);
         jmsConnectionConfiguration.setJmsConnectionCredentials(jmsConnectionCredentials);
         jmsConnectionConfiguration.setJmsConnectionPoolConfiguration(jmsConnectionPoolConfiguration);
         return jmsConnectionConfiguration;

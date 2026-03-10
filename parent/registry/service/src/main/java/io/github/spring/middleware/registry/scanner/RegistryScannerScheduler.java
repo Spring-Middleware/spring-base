@@ -1,5 +1,6 @@
 package io.github.spring.middleware.registry.scanner;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.model.RegistryEntry;
@@ -12,12 +13,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class RegistryScannerScheduler {
     private final ServerPortProvider serverPortProvider;
     private final PublicServer publicServer;
     private final RegistryScannerClient scannerClient;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
     // contador por nodeLocation (ip:port)
     private final ConcurrentHashMap<String, AtomicInteger> noAvailCounters = new ConcurrentHashMap<>();
@@ -150,6 +152,22 @@ public class RegistryScannerScheduler {
             if (!all.containsKey("registry")) {
                 ResourceRegisterParameters resourceRegisterParameters = getResourceRegisterParameters();
                 registryService.registerResourceWithParams(resourceRegisterParameters);
+            } else {
+                RegistryEntry registryEntry = all.get("registry");
+                Flux.fromIterable(registryEntry.getNodeEndpoints())
+                        .filter(n -> !n.getId().equals(nodeInfoRetriever.getNodeId()))
+                        .flatMap(n -> scannerClient.isAlive(n.getNodeEndpoint())
+                                .filter(alive -> !alive)
+                                .doOnNext(alive -> {
+                                    log.info("Removing not alive registry node endpoint {} with id {}", n.getNodeEndpoint(), n.getId());
+                                    registryService.removeRegistryEntryNodeEndpoint(
+                                            registryEntry.getClusterEndpoint(),
+                                            n.getNodeEndpoint()
+                                    );
+                                })
+                        )
+                        .then()
+                        .subscribe();
             }
         } catch (Exception ex) {
             log.warn("Error ensuring core registry resources", ex);
@@ -160,7 +178,8 @@ public class RegistryScannerScheduler {
         ResourceRegisterParameters resourceRegisterParameters = new ResourceRegisterParameters();
         resourceRegisterParameters.setResourceName("registry");
         resourceRegisterParameters.setCluster("registry");
-        resourceRegisterParameters.setNode(InetAddress.getLocalHost().getHostAddress());
+        resourceRegisterParameters.setNodeId(nodeInfoRetriever.getNodeId());
+        resourceRegisterParameters.setNode(nodeInfoRetriever.getAddress());
         resourceRegisterParameters.setContextPath("/registry");
         resourceRegisterParameters.setPath("/");
         resourceRegisterParameters.setPort(serverPortProvider.getPort());

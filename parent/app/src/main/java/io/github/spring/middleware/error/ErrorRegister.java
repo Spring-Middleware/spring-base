@@ -1,14 +1,15 @@
 package io.github.spring.middleware.error;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.exception.ExceptionUtils;
 import io.github.spring.middleware.jms.JmsErrorProducer;
 import io.github.spring.middleware.error.api.ErrorRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,12 +19,13 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ErrorRegister {
 
-    @Autowired
-    private JmsErrorProducer jmsErrorProducer;
-    @Autowired
-    private ApplicationContext applicationContext;
+
+    private final JmsErrorProducer jmsErrorProducer;
+    private final ApplicationContext applicationContext;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
     public void registryErrorAsync(Throwable exception, String operationName, String clazzName,
                                    Map<String, String> data,
@@ -42,8 +44,9 @@ public class ErrorRegister {
                     .data(data)
                     .recoverable(recoverable)
                     .serviceName(applicationContext.getId())
+                    .nodeId(nodeInfoRetriever.getNodeId())
                     .hostname(Optional.ofNullable(System.getenv("MY_POD_NAME"))
-                            .orElse(InetAddress.getLocalHost().getHostName()))
+                            .orElse(nodeInfoRetriever.getAddress()))
                     .stackTrace(ExceptionUtils.getStackTrace(exception, 10))
                     .dateTime(LocalDateTime.now())
                     .clazzName(clazzName)

@@ -113,16 +113,16 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
 
         try {
             if (started || force) {
-                logger.info("Stopping consumer " + this.toString());
+                logger.info(STR."Stopping consumer \{this.toString()}");
                 messageConsumer.close();
                 close(session);
                 invalidate(jmsConnection);
                 started = false;
             }
         } catch (RuntimeException rex) {
-            logger.error("Error stopping consumer " + this.toString(), rex);
+            logger.error(STR."Error stopping consumer \{this.toString()}", rex);
         } catch (Exception ex) {
-            logger.error("Error stopping consumer " + this.toString(), ex);
+            logger.error(STR."Error stopping consumer \{this.toString()}", ex);
         }
     }
 
@@ -226,7 +226,7 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
         try {
             process((T) handlerParameters.getMessage(), handlerParameters.getProperties());
         } catch (Throwable exception) {
-            logger.error("Error processing message " + this.getClass().getSimpleName(), exception);
+            logger.error(STR."Error processing message \{this.getClass().getSimpleName()}", exception);
             if (handlerParameters.isHandlerError()) {
                 handleError(exception, (T) handlerParameters.getMessage(), handlerParameters.getProperties());
             } else {

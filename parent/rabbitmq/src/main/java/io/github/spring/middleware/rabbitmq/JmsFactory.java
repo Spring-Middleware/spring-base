@@ -61,18 +61,15 @@ public class JmsFactory {
                         if (!validTopicID.isValid()) {
                             throw new JMSException("Missing topicID in @JmsDestination for @JmsConsumer DURABLE");
                         }
-                        destinationProperties.put(jmsDestination.destinationType().getReference() + "." +
-                                DestinationNamer.getDestinationSuffixName(jmsDestination), getBindingUrlForConsumer(jmsDestination));
+                        destinationProperties.put(STR."\{jmsDestination.destinationType().getReference()}.\{DestinationNamer.getDestinationSuffixName(jmsDestination)}", getBindingUrlForConsumer(jmsDestination));
                     } else if (annotation.isAssignableFrom(JmsProducer.class)) {
                         JmsProducer jmsProducer = (JmsProducer) clazz.getAnnotation(JmsProducer.class);
                         Arrays.stream(jmsProducer.bindings()).forEach(binding -> {
                             try {
-                                destinationProperties.put(jmsDestination.destinationType().getReference() + "." +
-                                                getDestinationName(jmsDestination, binding.routingKey()),
+                                destinationProperties.put(STR."\{jmsDestination.destinationType().getReference()}.\{getDestinationName(jmsDestination, binding.routingKey())}",
                                         getBindingUrlForProducer(jmsDestination, binding.routingKey()));
                             } catch (JMSException ex) {
-                                logger.error("Can't create producer destination for " +
-                                        getRoutingKey(jmsDestination, binding.routingKey()));
+                                logger.error(STR."Can't create producer destination for \{getRoutingKey(jmsDestination, binding.routingKey())}");
                             }
                         });
                     }
@@ -106,7 +103,7 @@ public class JmsFactory {
                     DestinationNamer.getDestinationSuffixName(jmsDestination)
             );
         } catch (Exception ex) {
-            throw new JMSException("Error construyendo el Address String del productor: " + ex.getMessage());
+            throw new JMSException(STR."Error construyendo el Address String del productor: \{ex.getMessage()}");
         }
     }
 
@@ -123,7 +120,7 @@ public class JmsFactory {
                     jmsDestination.durable()
             );
         } catch (Exception ex) {
-            throw new JMSException("Error construyendo el Address String del consumidor: " + ex.getMessage());
+            throw new JMSException(STR."Error construyendo el Address String del consumidor: \{ex.getMessage()}");
         }
     }
 

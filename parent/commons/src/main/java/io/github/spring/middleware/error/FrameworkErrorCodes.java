@@ -7,7 +7,8 @@ public enum FrameworkErrorCodes implements ErrorDescriptor {
     NOT_FOUND("FRAMEWORK:NOT_FOUND", "The requested resource was not found"),
     ALREADY_EXISTS("FRAMEWORK:ALREADY_EXISTS", "The resource already exists"),
     BAD_REQUEST("FRAMEWORK:BAD_REQUEST", "The request was invalid"),
-    DATABASE_CONSTRAINT_ERROR("FRAMEWORK:DATABASE_CONSTRAINT", "An unknown database constraint was violated");
+    DATABASE_CONSTRAINT_ERROR("FRAMEWORK:DATABASE_CONSTRAINT", "An unknown database constraint was violated"),
+    CALL_NOT_PERMITTED("FRAMEWORK:CALL_NOT_PERMITTED", "The service is currently unavailable");
 
     private String code;
     private String message;
