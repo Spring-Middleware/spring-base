@@ -27,4 +27,8 @@ public class Context {
 
         return contextThreadLocal.get();
     }
+
+    public static void clear() {
+        contextThreadLocal.remove();
+    }
 }

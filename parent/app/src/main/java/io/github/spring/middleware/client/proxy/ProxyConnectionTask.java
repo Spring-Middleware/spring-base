@@ -1,6 +1,8 @@
 package io.github.spring.middleware.client.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.spring.middleware.client.proxy.security.config.SecurityClientConfiguration;
+import io.github.spring.middleware.client.proxy.security.SecurityHeaderApplier;
 import io.github.spring.middleware.config.PropertyNames;
 import io.github.spring.middleware.filter.Context;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +35,8 @@ public class ProxyConnectionTask<T> implements Callable<T> {
     private final ProxyConnectionErrorHandler errorHandler;
     private MethodMetaData methodMetaData;
     private final ObjectMapper objectMapper;
-
+    private final SecurityHeaderApplier securityHeaderApplier;
+    private final SecurityClientConfiguration securityClientConfiguration;
 
 
     public ProxyConnectionTask(final ProxyConnectionTaskParameters params) {
@@ -45,6 +48,8 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         this.errorHandler = params.getErrorHandler();
         this.methodMetaData = params.getMethodMetaData();
         this.objectMapper = params.getObjectMapper();
+        this.securityHeaderApplier = params.getSecurityHeaderApplier();
+        this.securityClientConfiguration = params.getSecurityClientConfiguration();
     }
 
     public void setContext(Map<String, Object> context) {
@@ -107,10 +112,11 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         }
     }
 
-    private WebClient.RequestHeadersSpec<?> buildRequest(final MethodMetaData methodMetaData) throws ProxyClientException {
+    private WebClient.RequestHeadersSpec<?> buildRequest(final MethodMetaData methodMetaData)
+            throws ProxyClientException {
+
         WebClient.RequestHeadersSpec<?> specHeaders;
 
-        // Determinar método HTTP
         HttpMethod httpMethod = methodMetaData.getHttpMethod();
 
         if (httpMethod == HttpMethod.GET) {
@@ -128,9 +134,7 @@ public class ProxyConnectionTask<T> implements Callable<T> {
                     STR."Unsupported HTTP method for method: \{methodMetaData.getMethod().getName()}");
         }
 
-        // Body (si aplica)
         if (body != null && specHeaders instanceof WebClient.RequestBodySpec spec) {
-            // try to stringify body for debug without breaking on non-serializable objects
             if (logger.isDebugEnabled()) {
                 try {
                     String debugBody = objectMapper.writeValueAsString(body);
@@ -142,29 +146,39 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             specHeaders = spec.contentType(MediaType.APPLICATION_JSON).bodyValue(body);
         }
 
-        // Headers context
         if (context != null) {
-            List<String> headerNames = (List<String>) context.get(PropertyNames.HEADERS);
+            List<String> headerNames = (List<String>) context.get(PropertyNames.HEADERS_TO_COPY);
             if (headerNames != null) {
                 for (String headerName : headerNames) {
                     Object value = Context.get(headerName);
                     if (value != null && StringUtils.isNotBlank(value.toString())) {
-                        specHeaders.header(headerName, value.toString());
+                        specHeaders = specHeaders.header(headerName, value.toString());
                     }
                 }
             }
         }
 
-        // Accept type
         String accept = MediaType.APPLICATION_JSON_VALUE;
         if (method.isAnnotationPresent(RequestMapping.class)) {
-            String[] produces = method.getAnnotation(RequestMapping.class)
-                    .produces();
+            String[] produces = method.getAnnotation(RequestMapping.class).produces();
             if (produces.length > 0) {
                 accept = produces[0];
             }
         }
+
         specHeaders = specHeaders.accept(MediaType.valueOf(accept));
+
+        Map<String, String> requestHeaders =
+                context != null
+                        ? (Map<String, String>) context.get(PropertyNames.REQUEST_HEADERS)
+                        : null;
+
+        specHeaders = securityHeaderApplier.applySecurityHeaders(
+                securityClientConfiguration,
+                requestHeaders != null ? requestHeaders : Map.of(),
+                specHeaders
+        );
+
         return specHeaders;
     }
 

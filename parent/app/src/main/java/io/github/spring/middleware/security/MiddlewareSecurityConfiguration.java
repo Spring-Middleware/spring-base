@@ -35,9 +35,9 @@ public class MiddlewareSecurityConfiguration {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityConfigProperties properties) throws Exception {
+        http.csrf(csrf -> csrf.disable());
         if (properties.getType() == null || properties.getType() == SecurityType.NONE) {
-            http.csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }
 

@@ -14,7 +14,7 @@ public class ProxyClientAnalyzer {
 
     private final MethodMetaDataExtractor methodMetaDataExtractor;
 
-    public Map<Method, MethodMetaData> analize(Class<?> proxyClientInterface) {
+    public Map<Method, MethodMetaData> analyze(Class<?> proxyClientInterface) {
         Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
         for (Method method : proxyClientInterface.getMethods()) {
             if (method.getDeclaringClass() == Object.class) {

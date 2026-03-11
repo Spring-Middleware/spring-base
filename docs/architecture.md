@@ -129,6 +129,55 @@ This process is transparent to the service; you activate it by including the rel
 
 ---
 
+## 3.1 Control Plane Convergence and Self-Healing
+
+Spring Middleware is designed so that the **control plane always converges to the real state of the cluster**.
+
+The Registry is not treated as a permanently correct source of truth.  
+Instead, services continuously **reconcile their presence and metadata** through periodic consistency checks.
+
+This mechanism allows the platform to recover automatically from situations such as:
+
+- lost registry entries
+- registry restarts
+- node crashes or restarts
+- missing resource registrations
+- missing GraphQL schema nodes
+- missing messaging infrastructure
+
+Each service periodically verifies that:
+
+- its **node endpoint** exists in the Registry
+- its **REST resources** are registered
+- its **GraphQL schema node** is registered
+- required **messaging infrastructure** exists
+
+If inconsistencies are detected, the service automatically performs corrective actions:
+
+- re-registering REST resources
+- re-registering GraphQL schemas
+- restoring node endpoints in the registry
+- recreating node-scoped messaging resources (queues, bindings)
+
+Conversely, when nodes disappear:
+
+- their `nodeEndpoints` are removed from the registry
+- node-scoped messaging queues are removed
+- cluster topology is updated
+- clients fail fast if no nodes are available
+
+This design guarantees that the platform **eventually converges to a consistent topology without manual intervention**, even after partial failures of the control plane.
+
+In practice this means:
+
+- destroying the registry state does not permanently break the system
+- restarting nodes automatically reconstructs platform metadata
+- the registry topology remains clean without orphan nodes
+- messaging resources are recreated automatically when nodes return
+- services resume operation automatically when capacity becomes available again
+
+---
+
 ## 4. Service Communication Flow
 
 At runtime, services communicate through `@MiddlewareClient` interfaces.
@@ -198,31 +247,31 @@ Spring Middleware is split into multiple modules published under the `io.github.
 
 **Core**
 
-- `commons` – shared utilities used across modules
-- `api` – shared API contracts
-- `app` – application-level middleware components (registry integration, clients, error handling)
-- `model-api`, `model-core` – domain model helpers and auditing
-- `view-api`, `view-core` – view-layer abstractions
+- `commons`
+- `api`
+- `app`
+- `model-api`, `model-core`
+- `view-api`, `view-core`
 
 **Data**
 
-- `mongo-api`, `mongo-core`, `mongo-core-commons`, `mongo-core-react` – MongoDB integration and dynamic search
-- `jpa-api`, `jpa-core` – JPA/Hibernate dynamic search
-- `redis-api`, `redis-core`, `redis-core-react` – Redis utilities and distributed locks
-- `cache` – Spring Cache integration on top of Redis
+- `mongo-*`
+- `jpa-*`
+- `redis-*`
+- `cache`
 
 **Messaging**
 
-- `rabbitmq` – RabbitMQ-based messaging framework
+- `rabbitmq`
 
 **Platform**
 
-- `registry-model`, `registry-service`, `registry-boot` – Registry data model and boot application
-- `graphql` – GraphQL infrastructure and centralized error handling
+- `registry-*`
+- `graphql`
 
 ### 6.2 Infrastructure module structure
 
-Most infrastructure modules follow this structure in the repository:
+Most infrastructure modules follow this structure:
 
 ```
 module
@@ -241,13 +290,7 @@ core
 api
 ```
 
-In practice this means:
-
-- **api** – shared DTOs, interfaces and contracts; minimal dependencies so other modules can depend on them safely.
-- **core** – synchronous/blocking Spring Boot integration.
-- **core-react** – reactive (WebFlux) integration where applicable.
-
-Application services usually depend on `*-core` (and optionally `*-core-react`) along with the top-level `app` module.
+Application services usually depend on `*-core` modules together with the main `app` module.
 
 ---
 
@@ -255,27 +298,25 @@ Application services usually depend on `*-core` (and optionally `*-core-react`) 
 
 The Git repository is organized as a Maven multi-module project:
 
-- Root project: **BOM** (`io.github.spring-middleware:bom`) that manages versions of all modules.
-- `parent/` project: internal multi-module build that contains the implementation modules (`api`, `app`, `mongo`, `jpa`, `redis`, `cache`, `registry`, `graphql`, `rabbitmq`, etc.).
+- Root project: **BOM** (`io.github.spring-middleware:bom`)
+- `parent/` project: implementation modules (`api`, `app`, `mongo`, `jpa`, `redis`, `cache`, `registry`, `graphql`, `rabbitmq`)
 
 For **library consumers**:
 
-- You depend only on the **BOM** and individual modules from Maven Central.
-- See the root `README.md` and `docs/getting-started.md` for concrete `pom.xml` snippets.
+- depend on the **BOM** and specific modules from Maven Central.
 
 For **contributors**:
 
-- You work inside the `parent/` project and run Maven from the repository root.
-- Build and release details can be documented in a dedicated contributor guide.
+- work inside the `parent/` project and build using Maven from the repository root.
 
 ---
 
 ## 8. Related Documentation
 
-- `README.md` – project overview and quick start
+- `README.md` – project overview
 - `AI_CONTEXT.md` – condensed machine-readable project summary
-- `docs/communication.md` – declarative service clients and context propagation
-- `docs/errors.md` – error model and propagation
-- `docs/graphql.md` – GraphQL architecture and federation
-- `docs/registry.md` – Registry data model and flows
-- `docs/getting-started.md` – practical onboarding guide for new services (to be added)
+- `docs/communication.md`
+- `docs/errors.md`
+- `docs/graphql.md`
+- `docs/registry.md`
+- `docs/getting-started.md`

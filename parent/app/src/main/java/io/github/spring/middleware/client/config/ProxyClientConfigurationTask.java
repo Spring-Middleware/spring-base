@@ -124,7 +124,7 @@ public class ProxyClientConfigurationTask implements Runnable {
                     proxyClient.setCircuitBreakerRegistry(clusterCircuitBreakerRegistry);
                     proxyClient.setErrorHandler(errorHandler);
                     proxyClient.setObjectMapper(objectMapper);
-                    proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analize(proxyClient.getInterf()));
+                    proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analyze(proxyClient.getInterf()));
                     proxyClient.configureHttpClient();
 
                     return Mono.just(entry);

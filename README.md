@@ -46,10 +46,6 @@ The framework emerged from real production microservices and aims to remove recu
 - [GraphQL Support](#graphql-support)
 - [Security configuration](#security-configuration)
 - [Modules](#modules)
-  - [Redis Module](#redis-module)
-  - [Mongo Search Engine](#mongo-search-engine)
-  - [JPA Search Engine](#jpa-search-engine)
-  - [RabbitMQ Integration](#rabbitmq-integration)
 - [Installation](#installation)
 - [Requirements](#requirements)
 - [Design Patterns](#design-patterns)
@@ -109,23 +105,6 @@ Instead of hiding infrastructure behind heavy frameworks, Spring Middleware focu
 - **discoverable service topology**
 
 This allows teams to build microservices that are easier to operate, debug, and evolve.
-
-### A Platform That Evolves
-
-Spring Middleware is designed as an **evolving microservice platform**.  
-Current capabilities already provide a solid infrastructure foundation, but additional platform features are planned.
-
-Future capabilities include:
-
-- **declarative security for service clients**
-- **advanced resilience and retry strategies**
-- **improved GraphQL federation**
-- **observability and tracing integration**
-- **Kubernetes-native service discovery**
-- **API governance and metadata evolution**
-
-The goal is to progressively build a **cohesive platform for Spring Boot microservices**, reducing infrastructure complexity while preserving flexibility and architectural clarity.
-
 
 ---
 
@@ -236,8 +215,6 @@ The framework automatically handles:
 - context propagation
 - retry strategies
 
-See `docs/communication.md` for more details on declarative clients and context propagation.
-
 ---
 
 # Request Context Propagation
@@ -249,7 +226,7 @@ Each request carries two identifiers:
 | `X-Request-ID` | Global request identifier across services |
 | `X-Span-ID` | Local span identifier inside the service |
 
-### Example propagation
+Example propagation:
 
 ```
 Client Request
@@ -264,25 +241,13 @@ spanId = A12F...
 Service B
 requestId = 4C7F...
 spanId = B992...
-
-   │
-   ▼
-Service C
-requestId = 4C7F...
-spanId = C11A...
 ```
-
-The same identifiers are forwarded across middleware clients so that logs and errors can be correlated end-to-end.
-
-For more details, see `docs/communication.md` and `docs/errors.md`.
 
 ---
 
 # Error Propagation
 
 Spring Middleware standardizes **how errors are represented and propagated** across services.
-
-All HTTP and GraphQL errors share a common JSON structure represented by the `ErrorMessage` type.
 
 Example:
 
@@ -296,118 +261,60 @@ Example:
 }
 ```
 
-When a service calls another service via a middleware client, remote errors are mapped to `RemoteServerException` and
-preserve metadata such as:
-
-- `remote.url`
-- `remote.method`
-- `remote.service`
-- `requestId`
-- `spanId`
-- `callChain`
-
-See `docs/errors.md` for a complete description of the error model and propagation rules.
-
 ---
 
 # GraphQL Support
 
 Spring Middleware provides infrastructure for **GraphQL schema registration and federation**.
 
-Each service can register its GraphQL schemas in the Registry, including:
+Services can register:
 
 - schema namespace
 - schema location
 - context path
 - API path
 
-The Registry stores this metadata so that a separate GraphQL gateway can later compose a federated schema (for example
-using tools like Braid).
-
-Errors raised by GraphQL resolvers are mapped into the same error codes and messages documented in `docs/errors.md`,
-using centralized exception handling.
-
-See `docs/graphql.md` for more details.
+The registry stores this metadata so that a federated GraphQL gateway can compose schemas.
 
 ---
 
 # Security configuration
 
-Spring Middleware includes a pluggable HTTP security layer built on Spring Security 6.
+Spring Middleware includes a pluggable HTTP security layer built on Spring Security.
 
-Security is configured per service through the `middleware.security.*` properties and supports multiple modes via the
-`SecurityType` enum:
+Supported modes:
 
-- `NONE` – security disabled, all requests are permitted.
-- `BASIC_AUTH` – HTTP Basic authentication backed by configuration or a `UserApi`.
-- `JWT` – stateless JWT resource server.
-- `OIDC` – OIDC-based resource server backed by an external identity provider.
-- `API_KEY` – header-based API key authentication with role-based access control.
+- `NONE`
+- `BASIC_AUTH`
+- `JWT`
+- `OIDC`
+- `API_KEY`
 
-All modes share a common authorization model based on **public** and **protected** paths, so you can configure which
-endpoints are open and which require specific roles.
-
-For a detailed guide and configuration examples (including API key security), see `docs/security.md`.
+All modes share a unified authorization model for public and protected endpoints.
 
 ---
 
 # Modules
 
-Spring Middleware is split into focused Maven modules so you can depend only on what you need.
+Spring Middleware is split into focused Maven modules.
 
 ## Redis Module
-
-The Redis module provides **high-level abstractions for Redis** using Redisson.
-
-Features include:
-
-- distributed locks
-- shared maps and caches
-- queue abstractions
-
-See `parent/redis/README.md` for module-specific details.
-
----
+Provides distributed locks, shared maps and caches.
 
 ## Mongo Search Engine
-
-The Mongo module provides **dynamic search capabilities** on top of MongoDB.
-
-It allows services to build flexible query APIs without exposing raw query languages.
-
-See `parent/mongo/README.md` for more information.
-
----
+Dynamic search capabilities on top of MongoDB.
 
 ## JPA Search Engine
-
-The JPA module provides **dynamic search capabilities** using JPA / Hibernate.
-
-It mirrors the Mongo search engine so services can offer consistent search APIs regardless of the underlying datastore.
-
-See `parent/jpa/README.md` for more information.
-
----
+Dynamic search capabilities for relational databases.
 
 ## RabbitMQ Integration
-
-The RabbitMQ module provides **opinionated integration** with RabbitMQ.
-
-It focuses on:
-
-- simplified configuration
-- standard patterns for producers and consumers
-- integration with the error and tracing model
-
-See `parent/rabbitmq/README.md` for module-specific documentation.
+Opinionated RabbitMQ integration for producers and consumers.
 
 ---
 
 # Installation
 
 Spring Middleware is distributed via Maven Central using a BOM.
-
-Add the BOM to your project:
 
 ```xml
 <dependencyManagement>
@@ -423,40 +330,58 @@ Add the BOM to your project:
 </dependencyManagement>
 ```
 
-Then add the modules you need, for example the `app` module:
-
-```xml
-<dependencies>
-  <dependency>
-    <groupId>io.github.spring-middleware</groupId>
-    <artifactId>app</artifactId>
-  </dependency>
-</dependencies>
-```
-
 ---
 
 # Requirements
 
-- Java 21 (with preview features enabled)
+- Java 21
 - Spring Boot 3.4.x
 - Maven
 
-Some modules require additional infrastructure (Redis, MongoDB, RabbitMQ, etc.).
+Some modules require Redis, MongoDB or RabbitMQ.
 
 ---
 
 # Design Patterns
 
-Spring Middleware embraces several design patterns:
+Spring Middleware embraces several architectural patterns:
 
-- **Registry-driven architecture** – a central Registry stores service topology and API metadata.
-- **Declarative clients** – service communication is described via annotated interfaces.
-- **Annotation-driven registration** – `@Register` marks resources that should be registered automatically.
-- **Unified error model** – the same error representation is used across REST and GraphQL.
-- **Context propagation** – request and span identifiers are propagated across service boundaries.
+- **Registry-driven architecture**
+- **Declarative clients**
+- **Annotation-driven registration**
+- **Unified error model**
+- **Context propagation**
 
-These patterns keep services explicit, observable, and easier to maintain.
+### Self-Healing Infrastructure
+
+Spring Middleware is designed so that **platform state converges automatically to the real state of the cluster**.
+
+The system does not rely on the Registry always containing correct information.  
+Instead, services continuously reconcile the desired state of the platform.
+
+This enables automatic recovery scenarios such as:
+
+- loss of registry entries
+- node crashes or restarts
+- missing resource registrations
+- missing GraphQL schema nodes
+- missing messaging infrastructure
+
+When inconsistencies are detected, services automatically:
+
+- re-register their REST resources
+- re-register GraphQL schemas
+- restore node endpoints in the registry
+- recreate node-scoped messaging resources
+
+Conversely, when nodes disappear:
+
+- their `nodeEndpoints` are removed from the registry
+- node-scoped queues are cleaned up
+- cluster metadata is updated
+- services fail fast if no nodes remain available
+
+This guarantees that the platform **eventually converges to a consistent topology without manual intervention**.
 
 ---
 
@@ -464,25 +389,24 @@ These patterns keep services explicit, observable, and easier to maintain.
 
 Planned improvements include:
 
-- richer GraphQL federation and tooling
-- advanced resilience and retry strategies for clients
-- extended security features for middleware clients
-- tighter integration with observability stacks (metrics, tracing, logging)
+- richer GraphQL federation
+- advanced client resilience strategies
+- extended security for middleware clients
+- observability integration
 
 ---
 
 # Where to go next
 
-- `docs/architecture.md` – high-level platform architecture.
-- `docs/registry.md` – Registry model and registration flows.
-- `docs/communication.md` – declarative service communication.
-- `docs/errors.md` – unified error model.
-- `docs/graphql.md` – GraphQL support and federation.
-- `docs/security.md` – HTTP security configuration and examples.
+- `docs/architecture.md`
+- `docs/registry.md`
+- `docs/communication.md`
+- `docs/errors.md`
+- `docs/graphql.md`
+- `docs/security.md`
 
 ---
 
 # License
 
-Spring Middleware is released under the MIT License. See `LICENSE` for details.
-
+Spring Middleware is released under the MIT License.

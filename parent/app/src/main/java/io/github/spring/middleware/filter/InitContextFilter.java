@@ -19,70 +19,86 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.spring.middleware.config.PropertyNames.*;
+import static io.github.spring.middleware.config.PropertyNames.CONTENT_LANGUAGE;
+import static io.github.spring.middleware.config.PropertyNames.LOGGING_KEY;
+import static io.github.spring.middleware.config.PropertyNames.REQUEST_HEADERS;
+import static io.github.spring.middleware.config.PropertyNames.REQUEST_ID;
+import static io.github.spring.middleware.config.PropertyNames.RESPONSE_TIME_LOG;
 
 @Component
 @Order(value = Ordered.HIGHEST_PRECEDENCE + 1)
 public class InitContextFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+    protected void doFilterInternal(HttpServletRequest httpServletRequest,
+                                    HttpServletResponse httpServletResponse,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        initContext(getContextProperties(httpServletRequest, null));
-        filterChain.doFilter(httpServletRequest, httpServletResponse);
+        try {
+            initContext(getContextProperties(httpServletRequest, null));
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
+        } finally {
+            Context.clear();
+        }
     }
 
     public static void initContext() {
-
         initContext(null);
     }
 
     public static void initContext(Map<String, Object> propertyNamesObjectMap) {
+        Map<String, Object> myContext = new HashMap<>(
+                Optional.ofNullable(propertyNamesObjectMap).orElseGet(HashMap::new)
+        );
 
-        Map<String, Object> myContext = new HashMap<>();
-        propertyNamesObjectMap = Optional.ofNullable(propertyNamesObjectMap).orElse(new HashMap<>());
-        myContext.put(REQUEST_ID,
-                Optional.ofNullable(propertyNamesObjectMap.get(REQUEST_ID))
-                        .orElse(StringUtils.EMPTY));
-        myContext.put(PropertyNames.LOGGING_KEY,
-                Optional.ofNullable(propertyNamesObjectMap.get(PropertyNames.LOGGING_KEY))
-                        .orElse(Boolean.FALSE));
-        myContext.put(PropertyNames.CONTENT_LANGUAGE,
-                Optional.ofNullable(propertyNamesObjectMap.get(PropertyNames.CONTENT_LANGUAGE))
-                        .orElse("en-GB"));
+        myContext.putIfAbsent(REQUEST_ID, StringUtils.EMPTY);
+        myContext.putIfAbsent(PropertyNames.LOGGING_KEY, Boolean.FALSE);
+        myContext.putIfAbsent(PropertyNames.RESPONSE_TIME_LOG, Boolean.FALSE);
+        myContext.putIfAbsent(PropertyNames.CONTENT_LANGUAGE, "en-GB");
+        myContext.putIfAbsent(PropertyNames.HEADERS_TO_COPY,
+                List.of(LOGGING_KEY, RESPONSE_TIME_LOG, REQUEST_ID, CONTENT_LANGUAGE));
+        myContext.putIfAbsent(REQUEST_HEADERS, new HashMap<String, String>());
+
         Context.set(myContext);
     }
 
     public static Map<String, Object> getContextProperties(HttpServletRequest httpServletRequest, String locale) {
+        Map<String, Object> contextProperties = new HashMap<>();
 
-        HashMap<String, Object> contextProperties = new HashMap<>();
         Optional.ofNullable(MDC.get(REQUEST_ID))
                 .ifPresent(reqId -> contextProperties.put(REQUEST_ID, reqId));
 
         contextProperties.put(PropertyNames.LOGGING_KEY, isRequestLogEnabled(httpServletRequest));
         contextProperties.put(PropertyNames.RESPONSE_TIME_LOG, isResponseTimeLogEnabled(httpServletRequest));
-        contextProperties.put(PropertyNames.CONTENT_LANGUAGE, Optional.ofNullable(locale).orElse(getContentLanguage(httpServletRequest)));
-        contextProperties.put(PropertyNames.HEADERS, List.of(LOGGING_KEY, RESPONSE_TIME_LOG, REQUEST_ID, CONTENT_LANGUAGE));
+        contextProperties.put(PropertyNames.CONTENT_LANGUAGE,
+                Optional.ofNullable(locale).orElse(getContentLanguage(httpServletRequest)));
+        contextProperties.put(PropertyNames.HEADERS_TO_COPY,
+                List.of(LOGGING_KEY, RESPONSE_TIME_LOG, REQUEST_ID, CONTENT_LANGUAGE));
+
+        final Map<String, String> currentHeaders = new HashMap<>();
+        httpServletRequest.getHeaderNames().asIterator().forEachRemaining(headerName ->
+                currentHeaders.put(headerName.toLowerCase(), httpServletRequest.getHeader(headerName))
+        );
+
+        contextProperties.put(REQUEST_HEADERS, currentHeaders);
+
         return contextProperties;
     }
 
     private static boolean isRequestLogEnabled(HttpServletRequest request) {
-
-        return Optional.ofNullable((String) request.getHeader(HttpHeaderNames.LogRequestEnabled))
-                .map(s -> s.equalsIgnoreCase(Boolean.TRUE.toString())).orElse(Boolean.FALSE);
+        return Optional.ofNullable(request.getHeader(HttpHeaderNames.LogRequestEnabled))
+                .map(s -> s.equalsIgnoreCase(Boolean.TRUE.toString()))
+                .orElse(Boolean.FALSE);
     }
 
     private static boolean isResponseTimeLogEnabled(HttpServletRequest request) {
-
-        return Optional.ofNullable((String) request.getHeader(HttpHeaderNames.LogResponseTime))
-                .map(s -> s.equalsIgnoreCase(Boolean.TRUE.toString())).orElse(Boolean.FALSE);
+        return Optional.ofNullable(request.getHeader(HttpHeaderNames.LogResponseTime))
+                .map(s -> s.equalsIgnoreCase(Boolean.TRUE.toString()))
+                .orElse(Boolean.FALSE);
     }
 
     private static String getContentLanguage(HttpServletRequest request) {
-
         return Optional.ofNullable(request.getHeader(HttpHeaderNames.ContentLanguage))
                 .orElse(request.getLocale().toLanguageTag());
     }
-
 }

@@ -60,6 +60,14 @@ public class SecurityConfigProperties {
         private String path;
         private List<HttpMethod> methods = new ArrayList<>();
         private List<String> allowedRoles = new ArrayList<>();
+        private List<QueryParamRule> queryParams = new ArrayList<>();
+    }
+
+    @Data
+    public static class QueryParamRule {
+        private String name;
+        private List<String> values = new ArrayList<>();
+        private boolean required = true;
     }
 
     @Data

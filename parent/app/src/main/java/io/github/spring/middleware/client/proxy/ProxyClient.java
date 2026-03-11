@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.NoCacheSession;
+import io.github.spring.middleware.client.proxy.security.SecurityHeaderApplier;
 import io.github.spring.middleware.filter.Context;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.util.WebClientUtils;
@@ -35,6 +36,7 @@ public class ProxyClient<T> implements ClientConfigurable {
     private Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
     private ClusterCircuitBreakerRegistry circuitBreakerRegistry;
     private ObjectMapper objectMapper;
+    private SecurityHeaderApplier securityHeaderApplier;
 
 
     private Logger logger = LoggerFactory.getLogger(ProxyClient.class);
@@ -60,6 +62,10 @@ public class ProxyClient<T> implements ClientConfigurable {
 
     public void setCircuitBreakerRegistry(final ClusterCircuitBreakerRegistry circuitBreakerRegistry) {
         this.circuitBreakerRegistry = circuitBreakerRegistry;
+    }
+
+    public void setSecurityHeaderApplier(SecurityHeaderApplier securityHeaderApplier) {
+        this.securityHeaderApplier = securityHeaderApplier;
     }
 
     public void setObjectMapper(final ObjectMapper objectMapper) {
@@ -155,7 +161,17 @@ public class ProxyClient<T> implements ClientConfigurable {
                         var connectionParameters = clientConfigParameters != null ? clientConfigParameters.getConnectionParameters() : MiddlewareClientConnectionParameters.defaultParameters();
                         Object body = extractedParams.getBody();
 
-                        ProxyConnectionTaskParameters params = new ProxyConnectionTaskParameters(webClient, url, method, body, connectionParameters, errorHandler, methodMetaData, objectMapper);
+                        ProxyConnectionTaskParameters params = new ProxyConnectionTaskParameters(webClient,
+                                url,
+                                method,
+                                body,
+                                connectionParameters,
+                                errorHandler,
+                                methodMetaData,
+                                objectMapper,
+                                securityHeaderApplier,
+                                clientConfigParameters.getSecurityClientConfiguration());
+
                         ProxyConnectionTask<T> task = new ProxyConnectionTask<>(params);
                         task.setContext(Context.get());
 

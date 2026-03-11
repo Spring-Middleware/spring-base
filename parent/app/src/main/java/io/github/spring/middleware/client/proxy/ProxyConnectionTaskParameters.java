@@ -1,6 +1,8 @@
 package io.github.spring.middleware.client.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.spring.middleware.client.proxy.security.config.SecurityClientConfiguration;
+import io.github.spring.middleware.client.proxy.security.SecurityHeaderApplier;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.lang.reflect.Method;
@@ -18,15 +20,19 @@ public final class ProxyConnectionTaskParameters {
     private final ProxyConnectionErrorHandler errorHandler;
     private final MethodMetaData methodMetaData;
     private final ObjectMapper objectMapper;
+    private final SecurityHeaderApplier securityHeaderApplier;
+    private final SecurityClientConfiguration securityClientConfiguration;
 
     public ProxyConnectionTaskParameters(final WebClient webClient,
-                                        final String url,
-                                        final Method method,
-                                        final Object body,
-                                        final MiddlewareClientConnectionParameters connectionParameters,
-                                        final ProxyConnectionErrorHandler errorHandler,
-                                        final MethodMetaData methodMetaData,
-                                        final ObjectMapper objectMapper) {
+                                         final String url,
+                                         final Method method,
+                                         final Object body,
+                                         final MiddlewareClientConnectionParameters connectionParameters,
+                                         final ProxyConnectionErrorHandler errorHandler,
+                                         final MethodMetaData methodMetaData,
+                                         final ObjectMapper objectMapper,
+                                         final SecurityHeaderApplier securityHeaderApplier,
+                                         final SecurityClientConfiguration securityClientConfiguration) {
         this.webClient = webClient;
         this.url = url;
         this.method = method;
@@ -35,6 +41,8 @@ public final class ProxyConnectionTaskParameters {
         this.errorHandler = errorHandler;
         this.methodMetaData = methodMetaData;
         this.objectMapper = objectMapper;
+        this.securityHeaderApplier = securityHeaderApplier;
+        this.securityClientConfiguration = securityClientConfiguration;
     }
 
     public WebClient getWebClient() {
@@ -67,6 +75,14 @@ public final class ProxyConnectionTaskParameters {
 
     public ObjectMapper getObjectMapper() {
         return objectMapper;
+    }
+
+    public SecurityHeaderApplier getSecurityHeaderApplier() {
+        return securityHeaderApplier;
+    }
+
+    public SecurityClientConfiguration getSecurityClientConfiguration() {
+        return securityClientConfiguration;
     }
 
 }
