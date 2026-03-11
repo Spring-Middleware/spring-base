@@ -4,8 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "middleware.registry-scanner")
-public class RegistryScannerProperties {
+@ConfigurationProperties(prefix = "middleware.registry-topology-reconciler")
+public class RegistryTopologyReconcilerProperties {
 
     private boolean enabled = true;
     private String cron = "*/30 * * * * *";
@@ -15,7 +15,7 @@ public class RegistryScannerProperties {
     private String healthPath = "/actuator/health";          // default: "/actuator/health"
     private String registerResourcePath = "/resource/register";  // default: "/resource/register"
 
-    public RegistryScannerProperties() {
+    public RegistryTopologyReconcilerProperties() {
         // defaults set via field initializers
     }
 

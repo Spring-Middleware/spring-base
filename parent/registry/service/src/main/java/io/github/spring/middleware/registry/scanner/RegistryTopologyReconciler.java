@@ -2,6 +2,7 @@ package io.github.spring.middleware.registry.scanner;
 
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
+import io.github.spring.middleware.registry.model.NodeEndpoint;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -31,12 +31,12 @@ import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeP
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "middleware.registry-scanner.enabled", havingValue = "true", matchIfMissing = true)
-public class RegistryScannerScheduler {
+@ConditionalOnProperty(name = "middleware.registry-topology-reconciler.enabled", havingValue = "true", matchIfMissing = true)
+public class RegistryTopologyReconciler {
 
     private final SchemaRegistryService schemaRegistryService;
     private final RegistryService registryService;
-    private final RegistryScannerProperties props;
+    private final RegistryTopologyReconcilerProperties props;
     private final ServerPortProvider serverPortProvider;
     private final PublicServer publicServer;
     private final RegistryScannerClient scannerClient;
@@ -45,11 +45,17 @@ public class RegistryScannerScheduler {
     // contador por nodeLocation (ip:port)
     private final ConcurrentHashMap<String, AtomicInteger> noAvailCounters = new ConcurrentHashMap<>();
 
-    @Scheduled(cron = "${middleware.registry-scanner.cron:*/30 * * * * *}")
+    @Scheduled(cron = "${middleware.registry-topology-reconciler.cron:*/30 * * * * *}")
     public void tick() {
         log.info("Registry scanner: checking schema nodes & core resources");
+        checkSchemaLocations();
+        checkRegistryNodeEnpoints();
+    }
 
+
+    private void checkSchemaLocations() {
         // 1) scan schema nodes
+        log.info("Scanning schema locations...");
         List<SchemaLocation> schemaLocations = schemaRegistryService.getSchemaLocations();
         if (schemaLocations == null || schemaLocations.isEmpty()) {
             ensureCoreRegistryResources();
@@ -66,7 +72,6 @@ public class RegistryScannerScheduler {
             ensureCoreRegistryResources();
             return;
         }
-
         // 2) check alive concurrently, but bounded
         // (sin Reactor también se puede, pero así queda muy limpio)
         Flux.fromIterable(nodes)
@@ -75,6 +80,33 @@ public class RegistryScannerScheduler {
                 .doFinally(sig -> ensureCoreRegistryResources())
                 .blockLast();
     }
+
+    private void checkRegistryNodeEnpoints() {
+        log.info("Checking registry node endpoints...");
+        List<NodeEndpoint> nodeEndpoints = registryService.getRegistryMap().registryMap().values().stream()
+                .flatMap(re -> re.getNodeEndpoints().stream())
+                .toList();
+
+        nodeEndpoints.stream().filter(n -> !n.getId().equals(nodeInfoRetriever.getNodeId()))
+                .forEach(n -> scannerClient.isAlive(getRegistryNodeEndpoint(n.getNodeEndpoint()))
+                        .filter(alive -> !alive)
+                        .doOnNext(alive -> {
+                            log.info("Removing not alive registry node endpoint {} with id {}", n.getNodeEndpoint(), n.getId());
+                            registryService.removeRegistryEntryNodeEndpoint(
+                                    registryService.getRegistryEnry("registry").getClusterEndpoint(),
+                                    n.getNodeEndpoint()
+                            );
+                        })
+                        .subscribe()
+                );
+
+    }
+
+    private String getRegistryNodeEndpoint(String nodeEndpoint) {
+        String registryClusterEndpoint = nodeEndpoint.substring(0, nodeEndpoint.indexOf("/")); // "product:8080"
+        return joinUrl(registryClusterEndpoint, "/registry");
+    }
+
 
     private Mono<AliveResult> checkAlive(NodeRef ref) {
         String nodeLocation = joinUrl(ref.node().getLocation(), ref.schemaLocation().getContextPath());

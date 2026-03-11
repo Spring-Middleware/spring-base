@@ -17,10 +17,10 @@ import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeP
 public class RegistryScannerClient {
 
     private final WebClient webClient;
-    private final RegistryScannerProperties props;
+    private final RegistryTopologyReconcilerProperties props;
 
     public Mono<Boolean> isAlive(String nodeLocation) {
-        String uri = joinUrl("http://" + nodeLocation, normalizePath(props.getHealthPath()));
+        String uri = joinUrl(STR."http://\{nodeLocation}", normalizePath(props.getHealthPath()));
 
         return webClient.get()
                 .uri(uri)
@@ -34,7 +34,7 @@ public class RegistryScannerClient {
     }
 
     public Mono<Void> triggerRegisterResource(String nodeLocation) {
-        String uri = joinUrl("http://" + nodeLocation, normalizePath(props.getRegisterResourcePath()));
+        String uri = joinUrl(STR."http://\{nodeLocation}", normalizePath(props.getRegisterResourcePath()));
 
         return webClient.get()
                 .uri(uri)

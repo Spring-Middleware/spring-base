@@ -20,14 +20,13 @@ public class SchemaLocationNode {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SchemaLocationNode other)) return false;
-        return Objects.equals(location, other.location);
+        if (o == null || getClass() != o.getClass()) return false;
+        SchemaLocationNode that = (SchemaLocationNode) o;
+        return Objects.equals(location, that.location) && Objects.equals(namespace, that.namespace);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(location);
+        return Objects.hash(location, namespace);
     }
-
 }

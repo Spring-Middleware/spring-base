@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public class RegistryEntry implements Serializable {
 
@@ -22,12 +23,17 @@ public class RegistryEntry implements Serializable {
         this.nodeEndpoints = new HashSet<>();
     }
 
-    public void addNodeEndpoint(NodeEndpoint nodeEndpoint) {
+    public void upsertNodeEndpoint(NodeEndpoint nodeEndpoint) {
+        this.nodeEndpoints.remove(nodeEndpoint);
         this.nodeEndpoints.add(nodeEndpoint);
     }
 
+    public void removeNodeEndpointsIf(Predicate<NodeEndpoint> predicate) {
+        this.nodeEndpoints.removeIf(predicate);
+    }
+
     public Set<NodeEndpoint> getNodeEndpoints() {
-        return this.nodeEndpoints;
+        return Set.copyOf(this.nodeEndpoints);
     }
 
     public String getClusterEndpoint() {
@@ -48,10 +54,6 @@ public class RegistryEntry implements Serializable {
 
     public void setPublicEndpoint(String publicEndpoint) {
         this.publicEndpoint = publicEndpoint;
-    }
-
-    public void removeNodeEndpoint(String nodeEndpoint) {
-        this.nodeEndpoints.removeIf(n -> n.getNodeEndpoint().startsWith(nodeEndpoint));
     }
 
     public void setDateTime(LocalDateTime dateTime) {

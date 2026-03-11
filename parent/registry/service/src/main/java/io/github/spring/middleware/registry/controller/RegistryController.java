@@ -68,7 +68,7 @@ public class RegistryController {
      * Simple liveness endpoint used by health checks and docker-compose checks.
      * Returns a minimal JSON body so it's easy to assert UP from scripts.
      */
-    @GetMapping("/isAlive")
+    @GetMapping("/_alive")
     public Map<String, String> isAlive() {
         log.debug("isAlive called");
         return Map.of("status", "UP");

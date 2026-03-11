@@ -1,6 +1,8 @@
 package io.github.spring.middleware.manager;
 
-import java.net.UnknownHostException;
+import io.github.spring.middleware.annotation.Register;
+
+import java.util.Set;
 
 public interface RegistrationManager {
 
@@ -14,9 +16,13 @@ public interface RegistrationManager {
 
     void registerSchemas();         // equivalente a graphQLAutoRegistrar.reRegister()
 
-    void registerResourcesNotRegistered(); // equivalente a resourceAutoRegistrar.registerResourcesNotRegistered()
-
     /** true si el registry ya conoce este nodo como schema location para el namespace */
     boolean isSchemaNodeRegistered();
+
+    boolean isEndpointRegistered(Register register);
+
+    Set<Class<?>> getResourcesToRegister();
+
+    void registerResources(Set<Class<?>> resourcesClasses);
 
 }

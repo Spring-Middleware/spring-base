@@ -1,5 +1,6 @@
 package io.github.spring.middleware.scheduler;
 
+import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.manager.ProxyConfigurationClientManager;
 import io.github.spring.middleware.manager.RegistrationManager;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -40,7 +42,6 @@ public class RegistryConsistencyScheduler {
     @Scheduled(cron = "${middleware.registry-consistency-scheduler.cron:*/30 * * * * *}")
     public void tick() {
         log.info("Checking registry consistency (clients/resources/schemas)");
-
         // 1) Registry alive?
         if (!isRegistryAlive()) {
             int fails = consecutiveRegistryFailures.incrementAndGet();
@@ -69,48 +70,78 @@ public class RegistryConsistencyScheduler {
                 hasSchemas, consecutiveNodeNotRegistered.get());
 
         if (hasSchemas) {
-            boolean nodeRegistered;
-            try {
-                nodeRegistered = registrationManager.isSchemaNodeRegistered();
-            } catch (Exception ex) {
-                log.warn("Could not determine if schema node is registered; treating as NOT registered", ex);
-                nodeRegistered = false;
-            }
-
-            log.info("Schema check: nodeRegistered={}", nodeRegistered);
-
-            if (!nodeRegistered) {
-                int n = consecutiveNodeNotRegistered.incrementAndGet();
-                log.warn("Schema node is NOT registered yet (fails={}/{})", n, MAX_NODE_NOT_REGISTERED);
-
-                if (n >= MAX_NODE_NOT_REGISTERED) {
-                    log.info("Attempting to register resources + schemas (node was not registered)");
-                    try {
-                        registrationManager.registerEverything();
-                        log.info("registerEverything executed");
-                    } catch (Exception ex) {
-                        log.warn("Error registering everything", ex);
-                        proxyConfigurationClientManager.stopAll();
-                        return;
-                    }
-                } else {
-                    log.info("Node not yet stable, stopping proxy configuration tasks");
-                    proxyConfigurationClientManager.stopAll();
-                }
-                return;
-            }
-
-            log.info("Schema node already registered. Resetting counter.");
-            consecutiveNodeNotRegistered.set(0);
-
+            checkRegisterSchemas();
         } else {
             log.info("Schema check skipped: hasSchemasToRegister=false");
         }
 
-        // 4) Resources self-heal
-        log.debug("Checking resources not registered");
-        registrationManager.registerResourcesNotRegistered();
+        boolean hasResources = registrationManager.hasResourcesToRegister();
+        log.info("Resource check: hasResourcesToRegister={}", hasResources);
+
+        if (hasResources) {
+            checkRegisterEndpoints();
+        } else {
+            log.info("Resource check skipped: hasResourcesToRegister=false");
+        }
     }
+
+    private void checkRegisterEndpoints() {
+        log.debug("Checking registry endpoints consistency");
+
+        var resourcesMissingEndpoint = registrationManager.getResourcesToRegister().stream()
+                .filter(clazz -> {
+                    Register register = clazz.getAnnotation(Register.class);
+                    return !registrationManager.isEndpointRegistered(register);
+                })
+                .collect(Collectors.toSet());
+
+        if (resourcesMissingEndpoint.isEmpty()) {
+            log.debug("All resource endpoints are registered");
+            return;
+        }
+
+        log.info("Found {} resource endpoints not registered", resourcesMissingEndpoint.size());
+        registrationManager.registerResources(resourcesMissingEndpoint);
+    }
+
+
+    private void checkRegisterSchemas() {
+        log.debug("Checking registry schemas consistency");
+        boolean nodeRegistered;
+        try {
+            nodeRegistered = registrationManager.isSchemaNodeRegistered();
+        } catch (Exception ex) {
+            log.warn("Could not determine if schema node is registered; treating as NOT registered", ex);
+            nodeRegistered = false;
+        }
+
+        log.info("Schema check: nodeRegistered={}", nodeRegistered);
+
+        if (!nodeRegistered) {
+            int n = consecutiveNodeNotRegistered.incrementAndGet();
+            log.warn("Schema node is NOT registered yet (fails={}/{})", n, MAX_NODE_NOT_REGISTERED);
+
+            if (n >= MAX_NODE_NOT_REGISTERED) {
+                log.info("Attempting to register resources + schemas (node was not registered)");
+                try {
+                    registrationManager.registerEverything();
+                    log.info("registerEverything executed");
+                } catch (Exception ex) {
+                    log.warn("Error registering everything", ex);
+                    proxyConfigurationClientManager.stopAll();
+                    return;
+                }
+            } else {
+                log.info("Node not yet stable, stopping proxy configuration tasks");
+                proxyConfigurationClientManager.stopAll();
+            }
+            return;
+        }
+
+        log.info("Schema node already registered. Resetting counter.");
+        consecutiveNodeNotRegistered.set(0);
+    }
+
 
     private boolean isRegistryAlive() {
         try {

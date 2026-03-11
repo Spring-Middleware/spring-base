@@ -1,5 +1,6 @@
 package io.github.spring.middleware.manager;
 
+import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
@@ -10,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.UnknownHostException;
+import java.util.Set;
+
 @Slf4j
 @Component
 public class DefaultRegistrationManager implements RegistrationManager {
@@ -18,8 +22,6 @@ public class DefaultRegistrationManager implements RegistrationManager {
     private final ResourceAutoRegistrar resourceAutoRegistrar;
     private final GraphQLRegisterProperties graphQLRegisterProperties;
     private final RegistryClient registryClient;
-    private final ServerPortProvider serverPortProvider;
-    private final NodeInfoRetriever nodeInfoRetriever;
 
     public DefaultRegistrationManager(@Value("${server.port:8080}") final int port,
                                       final GraphQLAutoRegistrar graphQLAutoRegistrar,
@@ -32,8 +34,6 @@ public class DefaultRegistrationManager implements RegistrationManager {
         this.resourceAutoRegistrar = resourceAutoRegistrar;
         this.graphQLRegisterProperties = graphQLRegisterProperties;
         this.registryClient = registryClient;
-        this.serverPortProvider = serverPortProvider;
-        this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
 
@@ -63,16 +63,12 @@ public class DefaultRegistrationManager implements RegistrationManager {
         graphQLAutoRegistrar.reRegister();
     }
 
-    @Override
-    public void registerResourcesNotRegistered() {
-        resourceAutoRegistrar.registerResourcesNotRegistered();
-    }
 
     @Override
     public boolean isSchemaNodeRegistered() {
         try {
             if (!hasSchemasToRegister()) return true; // si no hay schemas, no aplica
-            String me = STR."\{nodeInfoRetriever.getAddress()}:\{this.serverPortProvider.getPort()}";
+            String me = graphQLAutoRegistrar.getSchemaLocationNodeName();
 
             var schemaLocation = registryClient.getSchemaLocation(graphQLRegisterProperties.getNamespace());
             if (schemaLocation == null || schemaLocation.getSchemaLocationNodes() == null) return false;
@@ -83,5 +79,42 @@ public class DefaultRegistrationManager implements RegistrationManager {
             return false;
         }
     }
+
+    @Override
+    public boolean isEndpointRegistered(Register register) {
+
+        var registryEntry = registryClient.getRegistryEntry(register.name());
+        if (registryEntry == null || registryEntry.getNodeEndpoints() == null) return false;
+        String me;
+        try {
+            me = resourceAutoRegistrar.getNodeEndpointName(register.path());
+        } catch (UnknownHostException e) {
+            log.warn("Error retrieving local host address", e);
+            return false;
+        }
+
+        boolean endpointRegistered = registryEntry.getNodeEndpoints().stream()
+                .anyMatch(e -> me.equalsIgnoreCase(e.getNodeEndpoint()));
+        if (!endpointRegistered) {
+            log.warn("Endpoint for resource {} is NOT registered", register.name());
+        } else {
+            log.info("Endpoint for resource {} is registered", register.name());
+        }
+        return endpointRegistered;
+    }
+
+    @Override
+    public Set<Class<?>> getResourcesToRegister() {
+        return resourceAutoRegistrar.getResourcesToRegister();
+    }
+
+    @Override
+    public void registerResources(Set<Class<?>> resourcesClasses) {
+        resourceAutoRegistrar.registerResources(resourcesClasses);
+    }
 }
+
+
+
+
 

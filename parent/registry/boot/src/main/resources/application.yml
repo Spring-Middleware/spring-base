@@ -24,6 +24,7 @@ middleware:
     max-idle: ${JMS_MAX_IDLE:10}
     rabbitmq:
       base-url: ${JMS_RABBITMQ_BASE_URL:http://rabbitmq:15672}
+      check-interval-seconds: ${JMS_RABBITMQ_CHECK_INTERVAL_MS:10000}
 
 
   client:
@@ -51,14 +52,14 @@ middleware:
   registryConsistencyScheduler:
     enabled: ${REGISTRY_CONSISTENCY_SCHEDULER_ENABLED:false}
 
-  registryScanner:
-    enabled: ${REGISTRY_SCANNER_ENABLED:true}
-    cron: ${REGISTRY_SCANNER_CRON:*/30 * * * * *}
-    timeoutMillis: ${REGISTRY_SCANNER_TIMEOUT_MILLIS:500}
-    maxNoAvail: ${REGISTRY_SCANNER_MAX_NO_AVIL:5}
-    concurrency: ${REGISTRY_SCANNER_CONCURRENCY:20}
-    healthPath: ${REGISTRY_SCANNER_HEALTH_PATH:/_alive}
-    registerResourcePath: ${REGISTRY_SCANNER_REGISTER_RESOURCE_PATH:/registry/resources}
+  registry-topology-reconciler:
+    enabled: ${REGISTRY_TOPOLOGY_RECONCILER_ENABLED:false}
+    cron: ${REGISTRY_TOPOLOGY_RECONCILER_CRON:*/30 * * * * *}
+    timeoutMillis: ${REGISTRY_TOPOLOGY_RECONCILER_TIMEOUT_MILLIS:500}
+    maxNoAvail: ${REGISTRY_TOPOLOGY_RECONCILER_MAX_NO_AVAIL:3}
+    concurrency: ${REGISTRY_TOPOLOGY_RECONCILER_CONCURRENCY:20}
+    healthPath: ${REGISTRY_TOPOLOGY_RECONCILER_HEALTH_PATH:/_alive}
+    registerResourcePath: ${REGISTRY_TOPOLOGY_RECONCILER_REGISTER_RESOURCE_PATH:/registry/resources}
 
 redisson:
   # In Docker compose Redis service should be named `redis`

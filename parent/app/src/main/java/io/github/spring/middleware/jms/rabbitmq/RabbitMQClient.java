@@ -40,6 +40,37 @@ public class RabbitMQClient extends AbstractWebClient {
         );
     }
 
+
+    public Mono<RabbitQueueData> getDestinationQueue(String queueName) {
+
+        return client()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/queues/{vhost}/{queueName}")
+                        .build("/", queueName))
+                .retrieve()
+                .bodyToMono(RabbitQueueData.class)
+                .doOnError(ex -> log.error("Can't connect with {} for read queue={}", baseUrl, queueName, ex))
+                .doOnSuccess(v -> log.info("Read queue {} queueName={}", baseUrl, queueName))
+                .onErrorResume(this::emptyOnClientErrorMono);
+    }
+
+    public Mono<Void> createQueue(String queueName, CreateQueueRequest createQueueRequest) {
+
+        return client()
+                .put()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/queues/{vhost}/{queueName}")
+                        .build("/", queueName))
+                .bodyValue(createQueueRequest)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnError(ex -> log.error("Can't create queue {} queueName={}", baseUrl, queueName, ex))
+                .doOnSuccess(v -> log.info("Created queue {} queueName={}", baseUrl, queueName))
+                .onErrorResume(this::emptyOnClientErrorMono);
+    }
+
+
     public Flux<RabbitConsumerData> getConsumers() {
 
         return client()
@@ -51,7 +82,7 @@ public class RabbitMQClient extends AbstractWebClient {
                 .onErrorResume(this::emptyOnClientErrorFlux);
     }
 
-    public Flux<RabbitBindingData> getBindingsForExchange(String exchangeName) {
+    public Mono<RabbitBindingData> getBindingForExchange(String exchangeName, String destinationQueue) {
 
         return client()
                 .get()
@@ -60,9 +91,20 @@ public class RabbitMQClient extends AbstractWebClient {
                         .build("/", exchangeName))
                 .retrieve()
                 .bodyToFlux(RabbitBindingData.class)
-                .doOnError(ex -> log.error("Can't connect with {} for read binding exchange={}", baseUrl, exchangeName, ex))
-                .onErrorResume(this::emptyOnClientErrorFlux);
+                .filter(binding -> destinationQueue.equals(binding.getDestination()))
+                .next()
+                .doOnError(ex -> log.error("Can't connect with {} for read binding exchange={} destinationQueue={}",
+                        baseUrl, exchangeName, destinationQueue, ex))
+                .doOnSuccess(v -> {
+                    if (v != null) {
+                        log.info("Read binding {} exchangeName={} destinationQueue={}",
+                                baseUrl, exchangeName, destinationQueue);
+                    }
+                })
+                .onErrorResume(this::emptyOnClientErrorMono);
     }
+
+
 
     public Mono<ExchangeData> getExchange(String exchangeName) {
 

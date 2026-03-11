@@ -43,7 +43,7 @@ public class ProxyClientResilienceConfigurator {
     private final ObjectMapper objectMapper;
 
     public ProxyClientResilienceConfigurator(final RegistryClient registryClient,
-                                             @Value("${middleware.client.registryEndpoint}") final String registryEndpoint,
+                                             @Value("${middleware.client.registry-endpoint}") final String registryEndpoint,
                                              final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
                                              final ProxyConnectionErrorHandler proxyConnectionErrorHandler,
                                              final Environment environment,

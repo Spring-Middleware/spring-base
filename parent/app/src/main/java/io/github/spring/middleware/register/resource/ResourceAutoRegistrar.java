@@ -2,6 +2,8 @@ package io.github.spring.middleware.register.resource;
 
 import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.component.NodeInfoRetriever;
+import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,10 +30,15 @@ public class ResourceAutoRegistrar implements ApplicationListener<ApplicationRea
     private Set<Class<?>> resourcesToRegister = Set.of();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final RegistryClient registryClient;
+    private final ServerPortProvider serverPortProvider;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
-    public ResourceAutoRegistrar(final ResourceRegister resourceRegister, final RegistryClient registryClient) {
+    public ResourceAutoRegistrar(final ResourceRegister resourceRegister, final RegistryClient registryClient,
+                                 final NodeInfoRetriever nodeInfoRetriever, final ServerPortProvider serverPortProvider) {
         this.resourceRegister = resourceRegister;
         this.registryClient = registryClient;
+        this.nodeInfoRetriever = nodeInfoRetriever;
+        this.serverPortProvider = serverPortProvider;
     }
 
     @Override
@@ -55,6 +63,23 @@ public class ResourceAutoRegistrar implements ApplicationListener<ApplicationRea
 
     public Set<Class<?>> getResourcesToRegister() {
         return resourcesToRegister;
+    }
+
+    public void registerResources(Set<Class<?>> resources) {
+        resourceRegister.register(resources);
+    }
+
+    public String getNodeEndpointName(String path) throws UnknownHostException {
+
+        String hostPort = STR."\{nodeInfoRetriever.getAddress()}:\{serverPortProvider.getPort()}";
+
+        String context = resourceRegister.getContextPath().startsWith("/")
+                ? resourceRegister.getContextPath()
+                : STR."/\{resourceRegister.getContextPath()}";
+
+        String normalizedPath = path.startsWith("/") ? path : STR."/\{path}";
+
+        return hostPort + context + normalizedPath;
     }
 
     public void registerResourcesNotRegistered() {

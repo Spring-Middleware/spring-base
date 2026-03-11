@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class StopJmsListener {
+public class ClusterMessagingShutdown {
 
     private final JmsResources jmsResources;
     private final RabbitMQClient rabbitMQClient;

@@ -1,6 +1,8 @@
 package io.github.spring.middleware.register.graphql;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.graphql.annotations.GraphQLEndpoint;
+import io.github.spring.middleware.provider.ServerPortProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -9,6 +11,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -19,12 +22,16 @@ import java.util.stream.Collectors;
 public class GraphQLAutoRegistrar implements ApplicationListener<ApplicationReadyEvent> {
 
     private final GraphQLSchemaRegister graphQLSchemaRegister;
+    private final ServerPortProvider serverPortProvider;
+    private final NodeInfoRetriever nodeInfoRetriever;
 
     private volatile Set<Class<?>> schemasToRegister = Set.of();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    public GraphQLAutoRegistrar(GraphQLSchemaRegister graphQLSchemaRegister) {
+    public GraphQLAutoRegistrar(final GraphQLSchemaRegister graphQLSchemaRegister, final ServerPortProvider serverPortProvider, final NodeInfoRetriever nodeInfoRetriever) {
         this.graphQLSchemaRegister = graphQLSchemaRegister;
+        this.serverPortProvider = serverPortProvider;
+        this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
     @Override
@@ -48,6 +55,10 @@ public class GraphQLAutoRegistrar implements ApplicationListener<ApplicationRead
                 schemasToRegister.stream().map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));
 
         graphQLSchemaRegister.register(schemasToRegister);
+    }
+
+    public String getSchemaLocationNodeName() throws UnknownHostException {
+        return STR."\{nodeInfoRetriever.getAddress()}:\{this.serverPortProvider.getPort()}";
     }
 
     public void reRegister() {

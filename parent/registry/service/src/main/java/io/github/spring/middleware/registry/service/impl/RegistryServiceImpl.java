@@ -88,7 +88,7 @@ public class RegistryServiceImpl implements RegistryService {
         }
 
         registryEntry.setName(name);
-        registryEntry.addNodeEndpoint(new NodeEndpoint(nodeId, nodeEndpoint));
+        registryEntry.upsertNodeEndpoint(new NodeEndpoint(nodeId, nodeEndpoint));
         registryEntry.setClusterEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);
         registryEntry.setDateTime(LocalDateTime.now());
@@ -141,7 +141,7 @@ public class RegistryServiceImpl implements RegistryService {
                     RegistryEntry re = e.getValue();
 
                     // borra cualquier nodeEndpoint cuyo host:port sea el muerto (da igual el "/product")
-                    re.getNodeEndpoints().removeIf(ne ->
+                    re.removeNodeEndpointsIf(ne ->
                             EndpointUtils.extractHostPort(ne.getNodeEndpoint()).equalsIgnoreCase(deadHostPort)
                     );
 

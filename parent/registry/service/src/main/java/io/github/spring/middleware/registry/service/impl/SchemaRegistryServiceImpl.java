@@ -10,7 +10,10 @@ import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Stores GraphQL schema locations in Redis (Redisson).
@@ -63,25 +66,13 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
             // Node location (pod/instance), ensure uniqueness
             String nodeLocation = params.getNodeLocation();
             if (nodeLocation != null && !nodeLocation.isBlank()) {
-                boolean exists = schemaLocation.getSchemaLocationNodes().stream()
-                        .anyMatch(n -> nodeLocation.equalsIgnoreCase(n.getLocation()));
-
-                if (!exists) {
-                    SchemaLocationNode node = new SchemaLocationNode();
-                    node.setId(params.getNodeId());
-                    node.setNamespace(namespace);
-                    node.setLocation(nodeLocation);
-                    node.setLastAliveCheckDate(new Timestamp(System.currentTimeMillis()));
-                    schemaLocation.getSchemaLocationNodes().add(node);
-                } else {
-                    // Refresh last alive for existing node
-                    Timestamp now = new Timestamp(System.currentTimeMillis());
-                    schemaLocation.getSchemaLocationNodes().stream()
-                            .filter(n -> nodeLocation.equalsIgnoreCase(n.getLocation()))
-                            .forEach(n -> n.setLastAliveCheckDate(now));
-                }
+                SchemaLocationNode node = new SchemaLocationNode();
+                node.setId(params.getNodeId());
+                node.setNamespace(namespace);
+                node.setLocation(nodeLocation);
+                node.setLastAliveCheckDate(new Timestamp(System.currentTimeMillis()));
+                schemaLocation.upsertSchemaLocationNode(node);
             }
-
             return schemaLocation;
         });
     }
@@ -108,8 +99,7 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
 
         schemaLocationsMap.computeIfPresent(ns, (k, schemaLocation) -> {
             if (schemaLocation.getSchemaLocationNodes() != null) {
-                schemaLocation.getSchemaLocationNodes()
-                        .removeIf(n -> nodeLoc.equalsIgnoreCase(n.getLocation()));
+                schemaLocation.removeSchemaLocationNodeByLocation(nodeLoc);
             }
             return schemaLocation;
         });
@@ -117,10 +107,7 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
 
     @Override
     public void refreshNodeLastAliveCheckDate(SchemaLocation schemaLocation, String location) {
-
-        schemaLocation.getSchemaLocationNodes().stream().filter(sln -> sln.getLocation().equals(location))
-                .forEach(sln -> sln.setLastAliveCheckDate(new Timestamp(System.currentTimeMillis())));
-
+        schemaLocation.refreshSchemaLocationNodeLastAliveCheckDate(location);
         schemaLocationsMap.put(schemaLocation.getNamespace(), schemaLocation);
     }
 
