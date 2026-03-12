@@ -131,11 +131,11 @@ middleware:
   security:
     type: API_KEY
     protected-paths:
-      - enabled: true
+      - type: ROLES
         path: /api/*/catalogs/*/products
         methods: [ GET ]
         allowed-roles: [ LIST_PRODUCTS, ADMIN ]
-      - enabled: true
+      - type: ROLES
         path: /api/*/catalogs/**
         methods: [ GET ]
         allowed-roles: [ GET_CATALOG, ADMIN ]
@@ -143,16 +143,21 @@ middleware:
 
 Each rule supports:
 
-- `enabled` – whether the rule is active.
+- `type` – strategy of the rule. Controls how the path is protected:
+  - `NONE` – the rule marks the path as **public** (no authentication required).
+  - `AUTHENTICATED` – the path requires the user to be **authenticated**, but no specific role is enforced.
+  - `ROLES` – the path requires the user to be **authenticated** and to have at least one of the roles in `allowed-roles`.
 - `path` – Ant-style path pattern.
 - `methods` – list of HTTP methods (e.g. `GET`, `POST`). Empty means "all methods".
-- `allowed-roles` – list of logical roles authorized for this rule.
+- `allowed-roles` – list of logical roles authorized for this rule. Only used when `type = ROLES`.
 
 At runtime:
 
 - A request is matched against **public paths** first (permit all).
-- Then it is evaluated against all **enabled protected rules**.
-- If the request matches a protected rule, the user must be authenticated and have at least one of the configured roles.
+- Then it is evaluated against all protected rules according to their `type`:
+  - If a rule with `type = NONE` matches, the request is treated as public (`permitAll`).
+  - If a rule with `type = AUTHENTICATED` matches, the request requires authentication (`authenticated()`), but no role check is done.
+  - If a rule with `type = ROLES` matches, the user must be authenticated and have at least one of the configured roles.
 - Roles are mapped to Spring Security authorities with the `ROLE_` prefix (e.g. `ADMIN` -> `ROLE_ADMIN`).
 
 Any request that is not public and does not match a protected rule falls back to `authenticated()` semantics in the configured mode.
@@ -243,11 +248,11 @@ middleware:
       - /swagger-ui.html
       - /swagger-ui/**
     protected-paths:
-      - enabled: true
+      - type: ROLES
         path: /api/*/catalogs/*/products
         methods: [ GET ]
         allowed-roles: [ LIST_PRODUCTS, ADMIN ]
-      - enabled: true
+      - type: ROLES
         path: /api/*/catalogs/**
         methods: [ GET ]
         allowed-roles: [ GET_CATALOG, ADMIN ]

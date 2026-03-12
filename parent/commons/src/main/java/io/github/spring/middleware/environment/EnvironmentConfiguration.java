@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class EnvironmentConfiguration {
 
-    @Value("${spring.profiles.active:}")
+    @Value("${spring.profiles.active:LOCAL}")
     private String activeProfile;
 
 }

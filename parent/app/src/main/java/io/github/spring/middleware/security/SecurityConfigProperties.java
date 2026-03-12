@@ -56,7 +56,7 @@ public class SecurityConfigProperties {
 
     @Data
     public static class ProtectedPathRule {
-        private boolean enabled = false;
+        private SecurityPathType type = SecurityPathType.NONE;
         private String path;
         private List<HttpMethod> methods = new ArrayList<>();
         private List<String> allowedRoles = new ArrayList<>();

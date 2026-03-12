@@ -12,5 +12,4 @@ public @interface MiddlewareClientCredentials {
     String tokenUri();
     String clientId();
     String clientSecret();
-    String[] scopes() default {""};
 }

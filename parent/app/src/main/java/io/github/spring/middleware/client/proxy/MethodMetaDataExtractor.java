@@ -2,6 +2,11 @@ package io.github.spring.middleware.client.proxy;
 
 import io.github.spring.middleware.annotation.MiddlewareCircuitBreaker;
 import io.github.spring.middleware.annotation.NoCacheSession;
+import io.github.spring.middleware.annotation.security.MiddlewareApiKeyValue;
+import io.github.spring.middleware.annotation.security.MiddlewareRequiredScopes;
+import io.github.spring.middleware.client.proxy.security.method.ApiKeyMethodSecurityConfiguration;
+import io.github.spring.middleware.client.proxy.security.method.ClientCredentialsMethodSecurityConfiguration;
+import io.github.spring.middleware.client.proxy.security.method.VoidMethodSecurityConfiguration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -19,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class MethodMetaDataExtractor {
@@ -61,7 +67,56 @@ public class MethodMetaDataExtractor {
                 md.setBodyParamIndex(i);
             }
         }
+
+        List<String> requiredScopes = resolveRequiredScopes(method);
+        String apiKeyValue = resolveApiKey(method);
+
+        if (!requiredScopes.isEmpty() && apiKeyValue != null) {
+            throw new IllegalArgumentException(
+                    "Method '%s' cannot declare both @MiddlewareRequiredScopes and @MiddlewareApiKeyValue"
+                            .formatted(method.getName())
+            );
+        }
+
+        if (!requiredScopes.isEmpty()) {
+            md.setMethodSecurityConfiguration(new ClientCredentialsMethodSecurityConfiguration(requiredScopes));
+        } else if (apiKeyValue != null) {
+            md.setMethodSecurityConfiguration(new ApiKeyMethodSecurityConfiguration(apiKeyValue));
+        } else {
+            md.setMethodSecurityConfiguration(new VoidMethodSecurityConfiguration());
+        }
+
         return md;
+    }
+
+
+    private List<String> resolveRequiredScopes(Method method) {
+        if (!method.isAnnotationPresent(MiddlewareRequiredScopes.class)) {
+            return List.of();
+        }
+
+        MiddlewareRequiredScopes requiredScopes = method.getAnnotation(MiddlewareRequiredScopes.class);
+
+        return Arrays.stream(requiredScopes.value())
+                .map(environment::resolvePlaceholders)
+                .map(String::trim)
+                .filter(scope -> !scope.isEmpty())
+                .distinct()
+                .toList();
+    }
+
+    private String resolveApiKey(Method method) {
+        if (!method.isAnnotationPresent(MiddlewareApiKeyValue.class)) {
+            return null;
+        }
+
+        MiddlewareApiKeyValue apiKeyAnnotation = method.getAnnotation(MiddlewareApiKeyValue.class);
+        String apiKeyValue = environment.resolvePlaceholders(apiKeyAnnotation.value()).trim();
+
+        if (apiKeyValue.isEmpty()) {
+            throw new IllegalArgumentException("@MiddlewareApiKeyValue value cannot be empty");
+        }
+        return apiKeyValue;
     }
 
 

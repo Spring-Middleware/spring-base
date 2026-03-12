@@ -1,8 +1,8 @@
 package io.github.spring.middleware.client.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.client.proxy.security.config.SecurityClientConfiguration;
-import io.github.spring.middleware.client.proxy.security.SecurityHeaderApplier;
 import io.github.spring.middleware.config.PropertyNames;
 import io.github.spring.middleware.filter.Context;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +35,7 @@ public class ProxyConnectionTask<T> implements Callable<T> {
     private final ProxyConnectionErrorHandler errorHandler;
     private MethodMetaData methodMetaData;
     private final ObjectMapper objectMapper;
-    private final SecurityHeaderApplier securityHeaderApplier;
+    private final SecurityManagerApplier securityManagerApplier;
     private final SecurityClientConfiguration securityClientConfiguration;
 
 
@@ -48,7 +48,7 @@ public class ProxyConnectionTask<T> implements Callable<T> {
         this.errorHandler = params.getErrorHandler();
         this.methodMetaData = params.getMethodMetaData();
         this.objectMapper = params.getObjectMapper();
-        this.securityHeaderApplier = params.getSecurityHeaderApplier();
+        this.securityManagerApplier = params.getSecurityManagerApplier();
         this.securityClientConfiguration = params.getSecurityClientConfiguration();
     }
 
@@ -97,13 +97,12 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             return responseMono.block(); // Bloqueamos hasta obtener la respuesta
         } catch (WebClientResponseException ex) {
             // Manejo de errores HTTP
-            String content = ex.getResponseBodyAsString();
-            logger.error("WebClientResponseException calling {} {} -> status: {}, body: {}",
-                    method.getName(), url, ex.getStatusCode(), content);
-
-            errorHandler.processError(content, ex.getStatusCode().value(), url, method.getName(), context);
-            return null;
+            processWebClientResponseException(ex);
+            return null; // o lanzar una excepción personalizada si prefieres
         } catch (Exception ex) {
+            if (ex.getCause() != null && ex.getCause() instanceof WebClientResponseException wcre) {
+                processWebClientResponseException(wcre);
+            }
             logger.warn("Error connecting to {}: {}", url, ex.getMessage(), ex);
             ProxyClientException pce = new ProxyClientException(STR."Error connecting to \{url}", ex);
             pce.addExtension("remote.url", url);
@@ -111,6 +110,15 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             throw pce;
         }
     }
+
+    private void processWebClientResponseException(WebClientResponseException ex) throws Exception {
+        String content = ex.getResponseBodyAsString();
+        logger.error("WebClientResponseException calling {} {} -> status: {}, body: {}",
+                method.getName(), url, ex.getStatusCode(), content);
+
+        errorHandler.processError(content, ex.getStatusCode().value(), url, method.getName(), context);
+    }
+
 
     private WebClient.RequestHeadersSpec<?> buildRequest(final MethodMetaData methodMetaData)
             throws ProxyClientException {
@@ -173,8 +181,9 @@ public class ProxyConnectionTask<T> implements Callable<T> {
                         ? (Map<String, String>) context.get(PropertyNames.REQUEST_HEADERS)
                         : null;
 
-        specHeaders = securityHeaderApplier.applySecurityHeaders(
+        specHeaders = securityManagerApplier.applySecurity(
                 securityClientConfiguration,
+                methodMetaData.getMethodSecurityConfiguration(),
                 requestHeaders != null ? requestHeaders : Map.of(),
                 specHeaders
         );

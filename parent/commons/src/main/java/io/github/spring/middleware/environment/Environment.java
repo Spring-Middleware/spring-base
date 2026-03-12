@@ -5,15 +5,14 @@ import java.util.Arrays;
 public enum Environment {
 
     LOCAL,
-    DEVC,
-    ODIN,
+    DEV,
     STAGE,
     PROD;
 
     public static Environment getEnvironment(String env) {
 
         return Arrays.stream(Environment.values()).filter(e -> e.toString().equalsIgnoreCase(env)).findFirst()
-                .orElse(null);
+                .orElse(Environment.LOCAL);
     }
 
 }

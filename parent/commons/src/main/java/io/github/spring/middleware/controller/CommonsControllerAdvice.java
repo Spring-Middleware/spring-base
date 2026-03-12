@@ -1,6 +1,8 @@
 package io.github.spring.middleware.controller;
 
 import io.github.spring.middleware.config.PropertyNames;
+import io.github.spring.middleware.environment.Environment;
+import io.github.spring.middleware.environment.EnvironmentManager;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.ErrorMessageFactory;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,13 +21,21 @@ import java.util.Map;
 public class CommonsControllerAdvice {
 
     private final ErrorMessageFactory errorMessageFactory;
+    private final EnvironmentManager enviromentManage;
 
-    public CommonsControllerAdvice(ErrorMessageFactory errorMessageFactory) {
+    public CommonsControllerAdvice(ErrorMessageFactory errorMessageFactory, EnvironmentManager enviromentManage) {
         this.errorMessageFactory = errorMessageFactory;
+        this.enviromentManage = enviromentManage;
     }
 
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<ErrorMessage> handle(Throwable ex, HttpServletRequest request) {
+        log.error("Unhandled exception processing {} {}. requestId={}, spanId={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                MDC.get("requestId"),
+                MDC.get("spanId"),
+                ex);
 
         ErrorMessage body = errorMessageFactory.from(ex);
 
@@ -51,6 +61,11 @@ public class CommonsControllerAdvice {
         }
         if (spanId != null && StringUtils.isNotBlank(spanId.toString())) {
             ext.putIfAbsent("spanId", spanId.toString());
+        }
+
+        if (enviromentManage.getActiveEnvironment() != Environment.PROD) {
+            ext.putIfAbsent("exception", ex.getClass().getName());
+            ext.putIfAbsent("exceptionMessage", ex.getMessage());
         }
 
         body.setExtensions(ext);

@@ -1,4 +1,4 @@
-package io.github.spring.middleware.environment;
+package io.github.spring.middleware.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;

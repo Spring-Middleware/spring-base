@@ -33,7 +33,7 @@ public class DefaultProtectedPathRuleResolver implements ProtectedPathRuleResolv
 
         for (SecurityConfigProperties.ProtectedPathRule rule : rules) {
 
-            if (!rule.isEnabled()) {
+            if (rule.getType() == null || rule.getType() != SecurityPathType.NONE) {
                 continue;
             }
 

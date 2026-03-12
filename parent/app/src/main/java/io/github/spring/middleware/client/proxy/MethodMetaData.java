@@ -2,6 +2,7 @@ package io.github.spring.middleware.client.proxy;
 
 import io.github.spring.middleware.client.params.PathVariableValue;
 import io.github.spring.middleware.client.params.RequestParamValue;
+import io.github.spring.middleware.client.proxy.security.method.MethodSecurityConfiguration;
 import lombok.Data;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +24,8 @@ public class MethodMetaData {
     private Integer bodyParamIndex;
     private boolean cacheable;
     private MiddlewareCircuitBreakerParameters circuitBreakerParameters;
+    private MethodSecurityConfiguration methodSecurityConfiguration;
+
 
     public void addBinding(final ParameterType parameterType, int order, Annotation annotation) {
         parameterNames.add(new ParameterBindingName(parameterType, order, annotation));

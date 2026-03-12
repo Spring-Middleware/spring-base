@@ -1,6 +1,8 @@
-package io.github.spring.middleware.client.proxy.security.resolver;
+package io.github.spring.middleware.client.proxy.security.applier;
 
 import io.github.spring.middleware.client.proxy.security.config.SecurityClientCredentialsConfiguration;
+import io.github.spring.middleware.client.proxy.security.method.ClientCredentialsMethodSecurityConfiguration;
+import io.github.spring.middleware.client.proxy.security.method.MethodSecurityConfiguration;
 import io.github.spring.middleware.client.proxy.security.oauth2.OAuth2ClientCredentialsClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,13 +14,14 @@ import java.util.Map;
 @Service
 @Qualifier("CLIENT_CREDENTIALS")
 @RequiredArgsConstructor
-public class SecurityClientCredentialsHeaderResolver implements SecurityHeaderResolver<SecurityClientCredentialsConfiguration> {
+public class SecurityClientCredentialsApplier implements SecurityApplier<SecurityClientCredentialsConfiguration, ClientCredentialsMethodSecurityConfiguration> {
 
     private final OAuth2ClientCredentialsClient oAuth2ClientCredentialsClient;
 
     @Override
-    public WebClient.RequestHeadersSpec<?> resolveSecurityHeader(
+    public WebClient.RequestHeadersSpec<?> applySecurity(
             SecurityClientCredentialsConfiguration securityConfiguration,
+            ClientCredentialsMethodSecurityConfiguration methodSecurityConfiguration,
             Map<String, String> currentHeaders,
             WebClient.RequestHeadersSpec<?> specHeaders) {
 
@@ -26,10 +29,15 @@ public class SecurityClientCredentialsHeaderResolver implements SecurityHeaderRe
                 securityConfiguration.getTokenUri(),
                 securityConfiguration.getClientId(),
                 securityConfiguration.getClientSecret(),
-                securityConfiguration.getScopes()
+                methodSecurityConfiguration.requiredScopes()
         );
 
         return specHeaders.header("Authorization", STR."Bearer \{accessToken}");
+    }
+
+    @Override
+    public boolean supports(MethodSecurityConfiguration methodSecurityConfiguration) {
+        return methodSecurityConfiguration instanceof ClientCredentialsMethodSecurityConfiguration;
     }
 
 

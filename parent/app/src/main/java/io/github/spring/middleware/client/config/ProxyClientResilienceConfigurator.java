@@ -15,6 +15,7 @@ import io.github.spring.middleware.client.proxy.ProxyClientAnalyzer;
 import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
 import io.github.spring.middleware.client.proxy.ProxyConnectionErrorHandler;
 import io.github.spring.middleware.client.proxy.security.ProxySecurityAnalyzer;
+import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,7 @@ public class ProxyClientResilienceConfigurator {
     private final Environment environment;
     private final ProxyClientAnalyzer proxyClientAnalyzer;
     private final ProxySecurityAnalyzer proxySecurityAnalyzer;
+    private final SecurityManagerApplier securityManagerApplier;
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
     private final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry;
     private final ObjectMapper objectMapper;
@@ -53,7 +55,8 @@ public class ProxyClientResilienceConfigurator {
                                              final ProxySecurityAnalyzer proxySecurityAnalyzer,
                                              final ClusterBulkheadRegistry clusterBulkheadRegistry,
                                              final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry,
-                                             final ObjectMapper objectMapper) {
+                                             final ObjectMapper objectMapper,
+                                             final SecurityManagerApplier securityManagerApplier) {
         this.registryEndpoint = registryEndpoint;
         this.registryClient = registryClient;
         this.taskConfigProperties = taskConfigProperties;
@@ -65,6 +68,7 @@ public class ProxyClientResilienceConfigurator {
         this.clusterBulkheadRegistry = clusterBulkheadRegistry;
         this.clusterCircuitBreakerRegistry = clusterCircuitBreakerRegistry;
         this.objectMapper = objectMapper;
+        this.securityManagerApplier = securityManagerApplier;
     }
 
     /**
@@ -80,6 +84,7 @@ public class ProxyClientResilienceConfigurator {
                     pc.setMiddlewareClientConfigParameters(clientConfigParameters);
                     pc.setBulkheadRegistry(clusterBulkheadRegistry);
                     pc.setCircuitBreakerRegistry(clusterCircuitBreakerRegistry);
+                    pc.setSecurityManagerApplier(securityManagerApplier);
                     pc.setObjectMapper(objectMapper);
                     pc.setErrorHandler(errorHandler);
                     pc.setMethodMethodMetaDataMap(proxyClientAnalyzer.analyze(pc.getInterf()));
@@ -105,7 +110,8 @@ public class ProxyClientResilienceConfigurator {
                     proxyClientAnalyzer,
                     clusterBulkheadRegistry,
                     clusterCircuitBreakerRegistry,
-                    objectMapper);
+                    objectMapper,
+                    securityManagerApplier);
             configurationTasks.add(task);
             runAsyncTask(task);
         }

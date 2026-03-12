@@ -193,9 +193,9 @@ middleware:
       - /api-docs/**
       - /swagger-ui/**
 
-    protected-endpoints:
+    protected-paths:
       - path: /api/v1/catalogs/**
-        enabled: true
+        type: ROLES
         methods: [GET]
         allowed-roles: [GET_USER, ADMIN]
 
@@ -206,7 +206,7 @@ middleware:
         roles: [ADMIN]
 ```
 
-Protected endpoints are evaluated dynamically during security configuration.
+Protected paths are evaluated dynamically during security configuration.
 
 Authorization rules are translated into Spring Security `requestMatchers`.
 
@@ -221,9 +221,15 @@ Protected paths are declared under:
 Each rule contains:
 
 - `path`
-- `enabled`
+- `type` (one of `NONE`, `AUTHENTICATED`, `ROLES`)
 - `methods`
-- `allowed-roles`
+- `allowed-roles` (only used when `type = ROLES`)
+
+Semantics:
+
+- `NONE` – the rule marks the path as **public** (no authentication required).
+- `AUTHENTICATED` – the path requires the user to be **authenticated**, but no specific role is enforced.
+- `ROLES` – the path requires the user to be **authenticated** and to have at least one of the roles in `allowed-roles`.
 
 Important behavior:
 
@@ -242,12 +248,12 @@ Main component:
 Responsibilities:
 
 - evaluate rules in declaration order
-- ignore disabled rules
 - match HTTP method
 - match path patterns
-- return the first matching rule
+- return the first matching rule along with its `type` and `allowed-roles`
 
-This resolver allows authentication filters (API Key, JWT, OIDC) to determine whether a request requires authentication.
+This resolver allows authentication filters (API Key, JWT, OIDC) to determine whether a request requires authentication
+and, when `type = ROLES`, to verify role-based access.
 
 ### Authentication vs Authorization Responses
 
@@ -259,9 +265,9 @@ Authorization failures return **403 Forbidden**.
 
 Typical scenarios:
 
-- missing credentials on a protected path → **401**
+- missing credentials on a protected path that requires authentication → **401**
 - invalid credentials → **401**
-- valid credentials but insufficient roles → **403**
+- valid credentials but insufficient roles on a `type = ROLES` path → **403**
 
 Authentication failures are handled through a custom Spring Security `AuthenticationEntryPoint`.
 

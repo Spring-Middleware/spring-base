@@ -1,5 +1,5 @@
 # Auto-register EnvironmentPostProcessor for older Spring Boot compatibility
 org.springframework.boot.env.EnvironmentPostProcessor=\
-io.github.spring.middleware.environment.ActuatorDefaultsEnvironmentPostProcessor
+io.github.spring.middleware.config.ActuatorDefaultsEnvironmentPostProcessor
 
 

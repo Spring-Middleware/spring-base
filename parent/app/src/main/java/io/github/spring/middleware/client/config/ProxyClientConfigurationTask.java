@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.client.proxy.*;
+import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -28,6 +29,7 @@ public class ProxyClientConfigurationTask implements Runnable {
     private final ClusterBulkheadRegistry clusterBulkheadRegistry;
     private final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry;
     private final ObjectMapper objectMapper;
+    private final SecurityManagerApplier securityManagerApplier;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final Sinks.One<Void> stopSink = Sinks.one();
@@ -43,7 +45,8 @@ public class ProxyClientConfigurationTask implements Runnable {
             final ProxyClientAnalyzer proxyClientAnalyzer,
             final ClusterBulkheadRegistry clusterBulkheadRegistry,
             final ClusterCircuitBreakerRegistry clusterCircuitBreakerRegistry,
-            final ObjectMapper objectMapper
+            final ObjectMapper objectMapper,
+            final SecurityManagerApplier securityManagerApplier
     ) {
         this.proxyClient = Objects.requireNonNull(proxyClient, "proxyClient");
         this.registryClient = Objects.requireNonNull(registryClient, "registryClient");
@@ -54,6 +57,7 @@ public class ProxyClientConfigurationTask implements Runnable {
         this.clusterBulkheadRegistry = Objects.requireNonNull(clusterBulkheadRegistry, "clusterBulkheadRegistry");
         this.clusterCircuitBreakerRegistry = Objects.requireNonNull(clusterCircuitBreakerRegistry, "clusterCircuitBreakerRegistry");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.securityManagerApplier = Objects.requireNonNull(securityManagerApplier, "securityManagerApplier");
     }
 
     @Override
@@ -122,6 +126,7 @@ public class ProxyClientConfigurationTask implements Runnable {
                     proxyClient.setMiddlewareClientConfigParameters(clientConfigParameters);
                     proxyClient.setBulkheadRegistry(clusterBulkheadRegistry);
                     proxyClient.setCircuitBreakerRegistry(clusterCircuitBreakerRegistry);
+                    proxyClient.setSecurityManagerApplier(securityManagerApplier);
                     proxyClient.setErrorHandler(errorHandler);
                     proxyClient.setObjectMapper(objectMapper);
                     proxyClient.setMethodMethodMetaDataMap(proxyClientAnalyzer.analyze(proxyClient.getInterf()));

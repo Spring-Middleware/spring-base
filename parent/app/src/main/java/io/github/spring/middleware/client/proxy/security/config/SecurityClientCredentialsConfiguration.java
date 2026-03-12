@@ -11,7 +11,6 @@ public final class SecurityClientCredentialsConfiguration implements SecurityCli
     private String tokenUri;
     private String clientId;
     private String clientSecret;
-    private List<String> scopes;
 
     @Override
     public SecurityClientType getType() {

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.annotation.NoCacheSession;
-import io.github.spring.middleware.client.proxy.security.SecurityHeaderApplier;
+import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.filter.Context;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.util.WebClientUtils;
@@ -36,7 +36,7 @@ public class ProxyClient<T> implements ClientConfigurable {
     private Map<Method, MethodMetaData> methodMethodMetaDataMap = new HashMap<>();
     private ClusterCircuitBreakerRegistry circuitBreakerRegistry;
     private ObjectMapper objectMapper;
-    private SecurityHeaderApplier securityHeaderApplier;
+    private SecurityManagerApplier securityManagerApplier;
 
 
     private Logger logger = LoggerFactory.getLogger(ProxyClient.class);
@@ -64,8 +64,8 @@ public class ProxyClient<T> implements ClientConfigurable {
         this.circuitBreakerRegistry = circuitBreakerRegistry;
     }
 
-    public void setSecurityHeaderApplier(SecurityHeaderApplier securityHeaderApplier) {
-        this.securityHeaderApplier = securityHeaderApplier;
+    public void setSecurityManagerApplier(SecurityManagerApplier securityManagerApplier) {
+        this.securityManagerApplier = securityManagerApplier;
     }
 
     public void setObjectMapper(final ObjectMapper objectMapper) {
@@ -169,7 +169,7 @@ public class ProxyClient<T> implements ClientConfigurable {
                                 errorHandler,
                                 methodMetaData,
                                 objectMapper,
-                                securityHeaderApplier,
+                                securityManagerApplier,
                                 clientConfigParameters.getSecurityClientConfiguration());
 
                         ProxyConnectionTask<T> task = new ProxyConnectionTask<>(params);

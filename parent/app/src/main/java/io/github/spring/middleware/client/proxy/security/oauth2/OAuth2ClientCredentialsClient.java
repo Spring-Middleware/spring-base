@@ -1,18 +1,18 @@
 package io.github.spring.middleware.client.proxy.security.oauth2;
 
 import io.github.spring.middleware.client.proxy.ProxyClientException;
+import io.github.spring.middleware.util.WebClientUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.StringUtils;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -22,6 +22,10 @@ public class OAuth2ClientCredentialsClient {
 
     private final WebClient webClient;
     private final Map<String, CachedAccessToken> tokenCache = new ConcurrentHashMap<>();
+
+    public OAuth2ClientCredentialsClient() {
+        this.webClient = WebClientUtils.createWebClient(3000, 5);
+    }
 
     public String getAccessToken(String tokenUri,
                                  String clientId,

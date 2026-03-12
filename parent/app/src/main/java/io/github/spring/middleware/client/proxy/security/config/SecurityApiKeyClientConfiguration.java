@@ -7,7 +7,6 @@ import lombok.Data;
 public final class SecurityApiKeyClientConfiguration implements SecurityClientConfiguration {
 
     private String headerName;
-    private String apiKeyValue;
 
     @Override
     public SecurityClientType getType() {

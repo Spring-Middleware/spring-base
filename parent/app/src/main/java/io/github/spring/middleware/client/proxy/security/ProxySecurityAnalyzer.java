@@ -1,6 +1,7 @@
 package io.github.spring.middleware.client.proxy.security;
 
 import io.github.spring.middleware.annotation.security.MiddlewareApiKey;
+import io.github.spring.middleware.annotation.security.MiddlewareApiKeyValue;
 import io.github.spring.middleware.annotation.security.MiddlewareClientCredentials;
 import io.github.spring.middleware.annotation.security.MiddlewarePassthrough;
 import io.github.spring.middleware.client.proxy.security.config.SecurityApiKeyClientConfiguration;
@@ -14,9 +15,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 public class ProxySecurityAnalyzer implements EnvironmentAware {
@@ -29,7 +27,7 @@ public class ProxySecurityAnalyzer implements EnvironmentAware {
         boolean hasPassthrough =
                 proxyClientInterface.isAnnotationPresent(MiddlewarePassthrough.class);
         boolean hasApiKey =
-                proxyClientInterface.isAnnotationPresent(MiddlewareApiKey.class);
+                proxyClientInterface.isAnnotationPresent(MiddlewareApiKeyValue.class);
 
         int totalAnnotations =
                 countTrue(hasClientCredentials, hasPassthrough, hasApiKey);
@@ -67,14 +65,6 @@ public class ProxySecurityAnalyzer implements EnvironmentAware {
         config.setTokenUri(environment.resolvePlaceholders(annotation.tokenUri()).trim());
         config.setClientId(environment.resolvePlaceholders(annotation.clientId()).trim());
         config.setClientSecret(environment.resolvePlaceholders(annotation.clientSecret()).trim());
-        List<String> scopes = Arrays.stream(annotation.scopes())
-                .map(environment::resolvePlaceholders)
-                .map(String::trim)
-                .filter(StringUtils::hasText)
-                .toList();
-
-        config.setScopes(scopes);
-
         return config;
     }
 
@@ -97,12 +87,10 @@ public class ProxySecurityAnalyzer implements EnvironmentAware {
                 proxyClientInterface.getAnnotation(MiddlewareApiKey.class);
 
         validateRequired(environment.resolvePlaceholders(annotation.headerName()), "headerName", proxyClientInterface);
-        validateRequired(environment.resolvePlaceholders(annotation.value()), "value", proxyClientInterface);
 
         SecurityApiKeyClientConfiguration config =
                 new SecurityApiKeyClientConfiguration();
         config.setHeaderName(environment.resolvePlaceholders(annotation.headerName()).trim());
-        config.setApiKeyValue(environment.resolvePlaceholders(annotation.value()).trim());
 
         return config;
     }
