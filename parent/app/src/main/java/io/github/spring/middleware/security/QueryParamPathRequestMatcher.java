@@ -16,7 +16,7 @@ public class QueryParamPathRequestMatcher implements RequestMatcher {
 
     private final HttpMethod method;
     private final String path;
-    private final List<SecurityConfigProperties.QueryParamRule> queryParams;
+    private final List<SecurityConfigProperties.ProtectedPathRule.QueryParamRule> queryParams;
 
     @Override
     public boolean matches(HttpServletRequest request) {
@@ -32,7 +32,7 @@ public class QueryParamPathRequestMatcher implements RequestMatcher {
             return true;
         }
 
-        for (SecurityConfigProperties.QueryParamRule rule : queryParams) {
+        for (SecurityConfigProperties.ProtectedPathRule.QueryParamRule rule : queryParams) {
             String requestValue = request.getParameter(rule.getName());
 
             if (rule.isRequired() && !StringUtils.hasText(requestValue)) {

@@ -96,7 +96,7 @@ public class ProxyClientConfigurationTask implements Runnable {
                         .subscribe(
                                 entry -> log.info("Configured proxy client {} -> {}",
                                         proxyClient.getInterf().getSimpleName(),
-                                        entry.getClusterEndpoint()),
+                                        entry.getResourceEndpoint()),
                                 ex -> log.error("Configuration task failed for {}",
                                         proxyClient.getInterf().getSimpleName(), ex),
                                 () -> log.info("Configuration task stopped for {}",

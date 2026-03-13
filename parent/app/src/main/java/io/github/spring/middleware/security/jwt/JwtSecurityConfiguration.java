@@ -1,5 +1,6 @@
 package io.github.spring.middleware.security.jwt;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.security.SecurityConfigProperties;
 import io.github.spring.middleware.security.SecurityConfigurer;
 import io.github.spring.middleware.security.SecurityType;
@@ -19,13 +20,15 @@ public class JwtSecurityConfiguration {
     public SecurityConfigurer jwtSecurityConfigurer(
             SecurityConfigProperties properties,
             JwtDecoder jwtDecoder,
-            Converter<Jwt, ? extends AbstractAuthenticationToken> converter) {
+            Converter<Jwt, ? extends AbstractAuthenticationToken> converter,
+            NodeInfoRetriever nodeInfoRetriever) {
 
         return new JwtSecurityConfigurer(
                 SecurityType.JWT,
                 properties,
                 jwtDecoder,
-                converter
+                converter,
+                nodeInfoRetriever
         );
     }
 
@@ -34,13 +37,15 @@ public class JwtSecurityConfiguration {
     public SecurityConfigurer oidcSecurityConfigurer(
             SecurityConfigProperties properties,
             JwtDecoder oidcJwtDecoder,
-            Converter<Jwt, ? extends AbstractAuthenticationToken> converter) {
+            Converter<Jwt, ? extends AbstractAuthenticationToken> converter,
+            NodeInfoRetriever nodeInfoRetriever) {
 
         return new JwtSecurityConfigurer(
                 SecurityType.OIDC,
                 properties,
                 oidcJwtDecoder,
-                converter
+                converter,
+                nodeInfoRetriever
         );
     }
 

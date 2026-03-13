@@ -3,8 +3,6 @@ package io.github.spring.middleware.client.proxy.security.config;
 import io.github.spring.middleware.client.proxy.security.SecurityClientType;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public final class SecurityClientCredentialsConfiguration implements SecurityClientConfiguration {
 
@@ -14,6 +12,6 @@ public final class SecurityClientCredentialsConfiguration implements SecurityCli
 
     @Override
     public SecurityClientType getType() {
-        return SecurityClientType.CLIENT_CREDENTIALS;
+        return SecurityClientType.OAUTH2_CLIENT_CREDENTIALS;
     }
 }

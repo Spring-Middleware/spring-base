@@ -1,5 +1,6 @@
 package io.github.spring.middleware.security.jwt;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.security.AbstractAuthorizationSecurityConfigurer;
 import io.github.spring.middleware.security.SecurityConfigProperties;
 import io.github.spring.middleware.security.SecurityConfigurer;
@@ -22,8 +23,9 @@ public class JwtSecurityConfigurer extends AbstractAuthorizationSecurityConfigur
             SecurityType securityType,
             SecurityConfigProperties configProperties,
             JwtDecoder jwtDecoder,
-            Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter) {
-        super(configProperties);
+            Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
+            NodeInfoRetriever nodeInfoRetriever) {
+        super(configProperties, nodeInfoRetriever);
         this.securityType = securityType;
         this.jwtDecoder = jwtDecoder;
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;

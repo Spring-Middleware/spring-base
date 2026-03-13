@@ -1,6 +1,5 @@
 package io.github.spring.middleware.security;
 
-import io.github.spring.middleware.security.apikey.ApiKeyDetails;
 import io.github.spring.middleware.security.jwt.JwtHmacAlgorithm;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -61,18 +60,26 @@ public class SecurityConfigProperties {
         private List<HttpMethod> methods = new ArrayList<>();
         private List<String> allowedRoles = new ArrayList<>();
         private List<QueryParamRule> queryParams = new ArrayList<>();
-    }
 
-    @Data
-    public static class QueryParamRule {
-        private String name;
-        private List<String> values = new ArrayList<>();
-        private boolean required = true;
+        @Data
+        public static class QueryParamRule {
+            private String name;
+            private List<String> values = new ArrayList<>();
+            private boolean required = true;
+        }
     }
 
     @Data
     public static class ApiKey {
         private String headerName = "X-Api-Key";
         private List<ApiKeyDetails> credentials = new ArrayList<>();
+
+        @Data
+        public static class ApiKeyDetails {
+            private String key;
+            private boolean enabled;
+            private List<String> roles = new ArrayList<>();
+        }
     }
+
 }

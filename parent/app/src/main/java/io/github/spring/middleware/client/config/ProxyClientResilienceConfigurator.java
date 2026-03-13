@@ -121,7 +121,7 @@ public class ProxyClientResilienceConfigurator {
         MiddlewareContract middlewareContract = proxyClient.getInterf().getAnnotation(MiddlewareContract.class);
         boolean enabled = Boolean.valueOf(environment.resolvePlaceholders(middlewareContract.enabled()));
         return !proxyClient.getInterf().equals(RegistryClient.class) && !isConfiguring(proxyClient.getInterf())
-                && enabled && (proxyClient.getRegistryEntry() == null || proxyClient.getRegistryEntry().getClusterEndpoint() == null);
+                && enabled && (proxyClient.getRegistryEntry() == null || proxyClient.getRegistryEntry().getResourceEndpoint() == null);
     }
 
 
@@ -167,9 +167,9 @@ public class ProxyClientResilienceConfigurator {
     }
 
     public void desconfigureClient(String clientName) {
-        ProxyClientRegistry.getAll().stream().filter(p -> clientName.equals(p.getRegistryEntry().getName()) && p.getRegistryEntry().getClusterEndpoint() != null)
+        ProxyClientRegistry.getAll().stream().filter(p -> clientName.equals(p.getRegistryEntry().getName()) && p.getRegistryEntry().getResourceEndpoint() != null)
                 .forEach(proxyClient -> {
-                    proxyClient.getRegistryEntry().setClusterEndpoint(null);
+                    proxyClient.getRegistryEntry().setResourceEndpoint(null);
                     log.info(STR."Desconfigured proxy client for \{proxyClient.getInterf().getSimpleName()}");
                 });
     }

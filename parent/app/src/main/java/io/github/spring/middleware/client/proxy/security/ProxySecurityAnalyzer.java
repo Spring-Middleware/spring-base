@@ -1,7 +1,7 @@
 package io.github.spring.middleware.client.proxy.security;
 
+import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotation.security.MiddlewareApiKey;
-import io.github.spring.middleware.annotation.security.MiddlewareApiKeyValue;
 import io.github.spring.middleware.annotation.security.MiddlewareClientCredentials;
 import io.github.spring.middleware.annotation.security.MiddlewarePassthrough;
 import io.github.spring.middleware.client.proxy.security.config.SecurityApiKeyClientConfiguration;
@@ -15,6 +15,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 @Component
 @RequiredArgsConstructor
 public class ProxySecurityAnalyzer implements EnvironmentAware {
@@ -27,25 +30,38 @@ public class ProxySecurityAnalyzer implements EnvironmentAware {
         boolean hasPassthrough =
                 proxyClientInterface.isAnnotationPresent(MiddlewarePassthrough.class);
         boolean hasApiKey =
-                proxyClientInterface.isAnnotationPresent(MiddlewareApiKeyValue.class);
+                proxyClientInterface.isAnnotationPresent(MiddlewareApiKey.class);
 
-        int totalAnnotations =
-                countTrue(hasClientCredentials, hasPassthrough, hasApiKey);
+        MiddlewareContract middlewareContract = proxyClientInterface.getAnnotation(MiddlewareContract.class);
+        String securityClientTypePlain = environment.resolvePlaceholders(middlewareContract.security());
 
-        if (totalAnnotations > 1) {
+        if (securityClientTypePlain == null || securityClientTypePlain.startsWith("${") && securityClientTypePlain.endsWith("}")) {
             throw new IllegalStateException(
-                    STR."Only one middleware security annotation is allowed on proxy client interface: \{proxyClientInterface.getName()}");
+                    STR."Security client type is not defined in @MiddlewareContract annotation on proxy client interface: \{proxyClientInterface.getName()}");
         }
 
-        if (hasClientCredentials) {
+        SecurityClientType securityClientType = null;
+        try {
+            securityClientType = SecurityClientType.valueOf(securityClientTypePlain.trim());
+        } catch (Exception ex) {
+            String expectedValues = Arrays.stream(SecurityClientType.values())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+
+            throw new IllegalStateException(
+                    STR."Invalid security client type '\{securityClientTypePlain}' defined in @MiddlewareContract annotation on proxy client interface: \{proxyClientInterface.getName()}. Expected values are: [\{expectedValues}]"
+            );
+        }
+
+        if (hasClientCredentials && securityClientType == SecurityClientType.OAUTH2_CLIENT_CREDENTIALS) {
             return analyzeClientCredentials(proxyClientInterface);
         }
 
-        if (hasPassthrough) {
+        if (hasPassthrough && securityClientType == SecurityClientType.PASSTHROUGH) {
             return analyzePassthrough(proxyClientInterface);
         }
 
-        if (hasApiKey) {
+        if (hasApiKey && securityClientType == SecurityClientType.API_KEY) {
             return analyzeApiKey(proxyClientInterface);
         }
 
@@ -91,7 +107,7 @@ public class ProxySecurityAnalyzer implements EnvironmentAware {
         SecurityApiKeyClientConfiguration config =
                 new SecurityApiKeyClientConfiguration();
         config.setHeaderName(environment.resolvePlaceholders(annotation.headerName()).trim());
-
+        config.setApiKeyValue(environment.resolvePlaceholders(annotation.value()).trim());
         return config;
     }
 

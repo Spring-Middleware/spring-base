@@ -3,6 +3,7 @@ package io.github.spring.middleware.client.proxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.client.proxy.security.config.SecurityClientConfiguration;
+import io.github.spring.middleware.client.proxy.security.oauth2.OAuth2TokenAcquisitionException;
 import io.github.spring.middleware.config.PropertyNames;
 import io.github.spring.middleware.filter.Context;
 import org.apache.commons.lang3.StringUtils;
@@ -100,6 +101,9 @@ public class ProxyConnectionTask<T> implements Callable<T> {
             processWebClientResponseException(ex);
             return null; // o lanzar una excepción personalizada si prefieres
         } catch (Exception ex) {
+            if (ex instanceof ProxyClientException proxyClientException) {
+                throw proxyClientException; // re-lanzar si ya es un ProxyClientException
+            }
             if (ex.getCause() != null && ex.getCause() instanceof WebClientResponseException wcre) {
                 processWebClientResponseException(wcre);
             }

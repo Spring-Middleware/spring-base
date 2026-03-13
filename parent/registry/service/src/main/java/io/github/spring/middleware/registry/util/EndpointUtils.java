@@ -6,18 +6,42 @@ public class EndpointUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    public static String extractHostPort(String endpoint) {
-        endpoint = normalizeEndpoint(endpoint);
-        int slash = endpoint.indexOf('/');
-        return (slash >= 0) ? endpoint.substring(0, slash) : endpoint;
+    public static String extractServiceBaseFromResource(String resourceEndpoint) {
+        resourceEndpoint = normalizeEndpoint(resourceEndpoint);
+        if (resourceEndpoint.isBlank()) {
+            return "";
+        }
+
+        int firstSlash = resourceEndpoint.indexOf('/');
+        if (firstSlash < 0) {
+            return resourceEndpoint;
+        }
+
+        int secondSlash = resourceEndpoint.indexOf('/', firstSlash + 1);
+        if (secondSlash < 0) {
+            return resourceEndpoint;
+        }
+
+        return resourceEndpoint.substring(0, secondSlash);
     }
 
-    private static String normalizeEndpoint(String s) {
+    public static String normalizeEndpoint(String s) {
         if (s == null) return "";
-        // normaliza barras dobles y trailing slash
-        s = s.replaceAll("(?<!:)//+", "/"); // deja "http://"
-        if (s.endsWith("/")) s = s.substring(0, s.length() - 1);
+        s = s.trim();
+        while (s.endsWith("/")) {
+            s = s.substring(0, s.length() - 1);
+        }
         return s;
+    }
+
+
+    public static String extractHostPort(String endpoint) {
+        if (endpoint == null || endpoint.isBlank()) {
+            return "";
+        }
+
+        int slash = endpoint.indexOf('/');
+        return (slash >= 0) ? endpoint.substring(0, slash) : endpoint;
     }
 
     public static String normalizeResourcePath(String path) {

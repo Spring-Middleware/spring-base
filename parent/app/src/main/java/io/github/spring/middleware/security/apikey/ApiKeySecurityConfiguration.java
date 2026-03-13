@@ -22,10 +22,16 @@ public class ApiKeySecurityConfiguration {
     @ConditionalOnMissingBean(ApiKeyRetriever.class)
     public ApiKeyRetriever propertiesApiKeyRetriever(SecurityConfigProperties properties) {
         return apiKey -> properties.getApiKey().getCredentials().stream()
-                .filter(ApiKeyDetails::enabled)
-                .filter(c -> Objects.equals(c.key(), apiKey))
+                .filter(SecurityConfigProperties.ApiKey.ApiKeyDetails::isEnabled)
+                .filter(c -> Objects.equals(c.getKey(), apiKey))
                 .findFirst()
-                .map(c -> new ApiKeyDetails(c.key(), c.enabled(), c.roles()));
+                .map(c -> {
+                    var newApiKeyDetails = new SecurityConfigProperties.ApiKey.ApiKeyDetails();
+                    newApiKeyDetails.setKey(c.getKey());
+                    newApiKeyDetails.setRoles(c.getRoles());
+                    newApiKeyDetails.setEnabled(c.isEnabled());
+                    return newApiKeyDetails;
+                });
     }
 
     @Bean
@@ -38,7 +44,8 @@ public class ApiKeySecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationEntryPoint authenticationEntryPoint(final ObjectMapper objectMapper, final ErrorMessageFactory errorMessageFactory) {
+    public AuthenticationEntryPoint authenticationEntryPoint(final ObjectMapper objectMapper,
+                                                             final ErrorMessageFactory errorMessageFactory) {
         return new MiddlewareAuthenticationEntryPoint(objectMapper, errorMessageFactory);
     }
 }

@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 public class RegistryEntry implements Serializable {
 
     private String name;
-    private String clusterEndpoint;
+    private String resourceEndpoint;
     private Set<NodeEndpoint> nodeEndpoints;
     private String publicEndpoint;
     private LocalDateTime dateTime;
@@ -17,9 +17,9 @@ public class RegistryEntry implements Serializable {
     public RegistryEntry() {
     }
 
-    public RegistryEntry(String clusterEndpoint, String name) {
+    public RegistryEntry(String resourceEndpoint, String name) {
         this.name = name;
-        this.clusterEndpoint = clusterEndpoint;
+        this.resourceEndpoint = resourceEndpoint;
         this.nodeEndpoints = new HashSet<>();
     }
 
@@ -36,12 +36,12 @@ public class RegistryEntry implements Serializable {
         return Set.copyOf(this.nodeEndpoints);
     }
 
-    public String getClusterEndpoint() {
-        return clusterEndpoint;
+    public String getResourceEndpoint() {
+        return resourceEndpoint;
     }
 
-    public void setClusterEndpoint(String clusterEndpoint) {
-        this.clusterEndpoint = clusterEndpoint;
+    public void setResourceEndpoint(String resourceEndpoint) {
+        this.resourceEndpoint = resourceEndpoint;
     }
 
     public void setNodeEndpoints(Set<NodeEndpoint> nodeEndpoints) {

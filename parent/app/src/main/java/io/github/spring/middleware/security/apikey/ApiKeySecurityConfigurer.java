@@ -1,5 +1,6 @@
 package io.github.spring.middleware.security.apikey;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.security.AbstractAuthorizationSecurityConfigurer;
 import io.github.spring.middleware.security.SecurityConfigProperties;
 import io.github.spring.middleware.security.SecurityConfigurer;
@@ -16,8 +17,8 @@ public class ApiKeySecurityConfigurer extends AbstractAuthorizationSecurityConfi
 
     private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
-    protected ApiKeySecurityConfigurer(SecurityConfigProperties configProperties, ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) {
-        super(configProperties);
+    protected ApiKeySecurityConfigurer(SecurityConfigProperties configProperties, NodeInfoRetriever nodeInfoRetriever, ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) {
+        super(configProperties, nodeInfoRetriever);
         this.apiKeyAuthenticationFilter = apiKeyAuthenticationFilter;
     }
 

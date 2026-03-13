@@ -3,6 +3,7 @@ package io.github.spring.middleware.graphql.controller;
 import graphql.ExecutionInput;
 import graphql.GraphQL;
 import io.github.spring.middleware.graphql.annotations.GraphQLEndpoint;
+import jakarta.annotation.security.PermitAll;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +45,7 @@ public class GraphQLController {
         return graphQL.execute(input).toSpecification();
     }
 
+    @PermitAll
     @GetMapping("/_alive")
     public Map<String, Object> alive() {
         return Map.of("status", "UP");

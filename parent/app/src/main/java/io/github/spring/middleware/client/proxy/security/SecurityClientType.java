@@ -5,5 +5,5 @@ public enum SecurityClientType {
     NONE,
     PASSTHROUGH,
     API_KEY,
-    CLIENT_CREDENTIALS
+    OAUTH2_CLIENT_CREDENTIALS
 }

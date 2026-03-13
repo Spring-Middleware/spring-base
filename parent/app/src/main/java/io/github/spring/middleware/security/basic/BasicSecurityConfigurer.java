@@ -1,5 +1,6 @@
 package io.github.spring.middleware.security.basic;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.security.AbstractAuthorizationSecurityConfigurer;
 import io.github.spring.middleware.security.SecurityConfigProperties;
 import io.github.spring.middleware.security.SecurityConfigurer;
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "middleware.security", name = "type", havingValue = "BASIC_AUTH")
 public final class BasicSecurityConfigurer extends AbstractAuthorizationSecurityConfigurer implements SecurityConfigurer {
 
-    public BasicSecurityConfigurer(SecurityConfigProperties configProperties) {
-        super(configProperties);
+    public BasicSecurityConfigurer(SecurityConfigProperties configProperties, NodeInfoRetriever nodeInfoRetriever) {
+        super(configProperties, nodeInfoRetriever);
     }
 
 

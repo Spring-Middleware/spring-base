@@ -22,7 +22,7 @@ public class SecurityApplierFactory {
             case NONE -> securityNoneApplier;
             case PASSTHROUGH -> securityPassthroughApplier;
             case API_KEY -> securityApiKeyApplier;
-            case CLIENT_CREDENTIALS -> securityClientCredentialsApplier;
+            case OAUTH2_CLIENT_CREDENTIALS -> securityClientCredentialsApplier;
         };
     }
 

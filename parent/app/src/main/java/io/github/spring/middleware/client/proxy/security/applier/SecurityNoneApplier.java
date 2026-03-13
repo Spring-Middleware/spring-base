@@ -20,6 +20,6 @@ public class SecurityNoneApplier implements SecurityApplier<SecurityNoneClientCo
 
     @Override
     public boolean supports(MethodSecurityConfiguration methodSecurityConfiguration) {
-        return methodSecurityConfiguration instanceof VoidMethodSecurityConfiguration;
+        return true;
     }
 }

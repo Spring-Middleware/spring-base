@@ -1,5 +1,6 @@
 package io.github.spring.middleware.security;
 
+import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
@@ -9,8 +10,10 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 public abstract class AbstractAuthorizationSecurityConfigurer {
 
     protected final SecurityConfigProperties configProperties;
+    protected final NodeInfoRetriever nodeInfoRetriever;
 
-    protected AbstractAuthorizationSecurityConfigurer(SecurityConfigProperties configProperties) {
+    protected AbstractAuthorizationSecurityConfigurer(SecurityConfigProperties configProperties, NodeInfoRetriever nodeInfoRetriever) {
+        this.nodeInfoRetriever = nodeInfoRetriever;
         this.configProperties = configProperties;
     }
 
@@ -23,6 +26,10 @@ public abstract class AbstractAuthorizationSecurityConfigurer {
 
     private void configurePublicPaths(
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+
+        if (nodeInfoRetriever.getMandatoryPublicPaths() != null && !nodeInfoRetriever.getMandatoryPublicPaths().isEmpty()) {
+            auth.requestMatchers(nodeInfoRetriever.getMandatoryPublicPaths().toArray(new String[0])).permitAll();
+        }
         if (configProperties.getPublicPaths() == null || configProperties.getPublicPaths().isEmpty()) {
             return;
         }

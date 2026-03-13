@@ -9,6 +9,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Instant;
 import java.util.List;
@@ -77,15 +78,22 @@ public class OAuth2ClientCredentialsClient {
             formData.add("scope", scopeValue);
         }
 
-        return webClient.post()
-                .uri(tokenUri)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .headers(headers -> headers.setBasicAuth(clientId, clientSecret))
-                .bodyValue(formData)
-                .retrieve()
-                .bodyToMono(OAuth2TokenResponse.class)
-                .blockOptional()
-                .orElseThrow(() -> new ProxyClientException("OAuth2 token endpoint returned no response."));
+        try {
+            return webClient.post()
+                    .uri(tokenUri)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .headers(headers -> headers.setBasicAuth(clientId, clientSecret))
+                    .bodyValue(formData)
+                    .retrieve()
+                    .bodyToMono(OAuth2TokenResponse.class)
+                    .blockOptional()
+                    .orElseThrow(() -> new ProxyClientException("OAuth2 token endpoint returned no response."));
+        } catch (WebClientResponseException ex) {
+            throw new OAuth2TokenAcquisitionException(
+                    STR."OAuth2 token request failed. status=\{ex.getStatusCode().value()}, tokenUri=\{tokenUri}, clientId=\{clientId}, response=\{ex.getResponseBodyAsString()}",
+                    ex
+            );
+        }
     }
 
     private void validate(String tokenUri, String clientId, String clientSecret) {

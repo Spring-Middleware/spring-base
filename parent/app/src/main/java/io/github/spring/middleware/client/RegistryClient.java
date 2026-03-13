@@ -36,6 +36,4 @@ public interface RegistryClient {
     @GetMapping("/schema/{namespace}")
     SchemaLocation getSchemaLocation(@PathVariable("namespace") @NotNull String namespace);
 
-    @GetMapping("/_alive")
-    Map<String, String> isAlive();
 }

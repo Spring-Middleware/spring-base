@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 )
 public class RegistryConsistencyScheduler {
 
-    private final RegistryClient registryClient;
+    private final RegistryChecker registryChecker;
     private final RegistrationManager registrationManager;
     private final ProxyConfigurationClientManager proxyConfigurationClientManager;
 
@@ -145,10 +145,16 @@ public class RegistryConsistencyScheduler {
 
     private boolean isRegistryAlive() {
         try {
-            Map<String, String> resp = registryClient.isAlive();
-            if (resp == null) return false;
-            String status = resp.get("status");
-            return status != null && "UP".equalsIgnoreCase(status.trim());
+            Boolean alive = registryChecker.isAlive()
+                    .map(m -> {
+                        log.debug("Registry alive check result: {}", m);
+                        Object status = m.get("status");
+                        return status != null && "UP".equalsIgnoreCase(status.toString().trim());
+                    })
+                    .onErrorReturn(false)
+                    .block();
+
+            return Boolean.TRUE.equals(alive);
         } catch (Exception e) {
             log.debug("isRegistryAlive check failed", e);
             return false;

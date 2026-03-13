@@ -283,6 +283,39 @@ Authentication and authorization exceptions are resolved through the same error 
 
 This guarantees that security failures produce the same structured error response format as application errors.
 
+### Mandatory Public Endpoints
+
+Spring Middleware automatically exposes a small set of **framework-level health endpoints** that are always accessible without authentication.
+
+These endpoints are required for internal platform operations such as **registry node health checks** and **cluster topology maintenance**.
+
+The framework guarantees that the following endpoints are always publicly accessible regardless of security configuration:
+
+```text
+/{contextPath}/_alive
+/{contextPath}/graphql/_alive
+```
+
+Examples:
+
+```text
+/product/_alive
+/product/graphql/_alive
+
+/catalog/_alive
+/catalog/graphql/_alive
+
+/registry/_alive
+```
+
+These endpoints are added automatically by the framework through an internal list of **mandatory public paths** and do not require explicit configuration under `middleware.security.public-paths`.
+
+This mechanism ensures that:
+
+- the **registry service can perform node liveness checks**
+- internal cluster infrastructure is not accidentally blocked by user-defined security rules
+- health probes remain stable across different authentication configurations
+
 ---
 
 ## Error Model
@@ -433,6 +466,64 @@ This enables **distributed coordination without direct node-to-node communicatio
 
 ---
 
+## Registry Endpoint Model
+
+The registry maintains several endpoint types to describe the topology of the platform.
+
+### clusterEndpoint
+
+Represents the **base endpoint of a service cluster**.
+
+Example:
+
+```text
+product:8080/product
+```
+
+### resourceEndpoint
+
+Represents the **fully qualified endpoint of a registered resource**.
+
+Example:
+
+```text
+product:8080/product/graphql
+product:8080/product/api
+```
+
+### nodeEndpoint
+
+Represents the **endpoint of a specific running node instance**.
+
+Example:
+
+```text
+172.21.0.5:8080/product/graphql
+```
+
+### publicEndpoint
+
+Optional externally accessible endpoint used when services are exposed through
+an external gateway or ingress.
+
+Example:
+
+```text
+api.example.com/product/graphql
+```
+
+### Endpoint Composition
+
+Endpoints are constructed using the following elements:
+
+- `cluster`
+- `node`
+- `port`
+- `contextPath`
+- `resourcePath`
+
+---
+
 ## Modules
 
 Spring Middleware is composed of multiple modules organized as a multi-module Maven repository.
@@ -506,15 +597,6 @@ Main component:
 GraphQLValidationExceptionHandler
 ```
 
-Handled exceptions:
-
-- `ServiceException`
-- `ErrorDescriptor`
-- `PersistenceException` (Hibernate constraint resolution)
-- `ConstraintViolationException` (Jakarta Validation)
-- `LazyInitializationException` (ignored)
-- fallback → `FrameworkErrorCodes.UNKNOWN_ERROR`
-
 Security improvements:
 
 - unified authorization model across authentication types
@@ -528,6 +610,7 @@ Cluster improvements:
 - node-scoped event queues with automatic expiration
 - asynchronous client reconfiguration signals across nodes
 - distributed registry consistency through event messaging
+- mandatory framework-level liveness endpoints for node health verification
 
 ---
 
@@ -565,6 +648,13 @@ When the user asks to **add something to the context** ("añadir al contexto"), 
 - The goal is to **extend the context while preserving stability of the document structure**.
 - The resulting document must remain **fully copy-paste safe**.
 
+Additional clarification:
+
+- The assistant **must not rewrite existing explanations**, even if they could be improved.
+- The assistant **must not refactor section names or headings** unless explicitly requested.
+- The assistant **must not collapse or summarize sections** of the document.
+- The assistant **must treat this document as a stable knowledge base**, extending it incrementally instead of regenerating it.
+
 ---
 
 # Documentation Output Rules
@@ -581,3 +671,6 @@ When generating Markdown documentation for this project:
   - examples or guides
   - any `.md` content
 ~~~~markdown
+
+---
+

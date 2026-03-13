@@ -127,8 +127,8 @@ public class ProxyClient<T> implements ClientConfigurable {
                 final MethodMetaData methodMetaData = methodMethodMetaDataMap.get(method);
                 MethodMetaData.ExtractedParams extractedParams = methodMetaData.extractedParams(args);
                 String queryPath = ResourceMetadaURLResolver.resolvePath(extractedParams.getPath(), extractedParams.getPathVariables(), extractedParams.getRequestParams());
-                if (registryEntry != null && registryEntry.getClusterEndpoint() != null) {
-                    String url = UrlJoiner.join(registryEntry.getClusterEndpoint(), queryPath);
+                if (registryEntry != null && registryEntry.getResourceEndpoint() != null) {
+                    String url = UrlJoiner.join(registryEntry.getResourceEndpoint(), queryPath);
 
                     // Ensure WebClient is initialized
                     if (webClient == null) {
@@ -138,7 +138,7 @@ public class ProxyClient<T> implements ClientConfigurable {
 
                     // Debug logging to help diagnose calls to self
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Invoking remote resource: client={}, method={}, clusterEndpoint={}, queryPath={}, url={}", getName(), method.getName(), registryEntry.getClusterEndpoint(), queryPath, url);
+                        logger.debug("Invoking remote resource: client={}, method={}, clusterEndpoint={}, queryPath={}, url={}", getName(), method.getName(), registryEntry.getResourceEndpoint(), queryPath, url);
                         Object bodyDbg = extractedParams.getBody();
                         try {
                             logger.debug("Outgoing body (toString): {}", bodyDbg != null ? bodyDbg.toString() : "<null>");

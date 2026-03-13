@@ -64,14 +64,4 @@ public class RegistryController {
         return schemaRegistryService.getSchemaLocation(namespace);
     }
 
-    /**
-     * Simple liveness endpoint used by health checks and docker-compose checks.
-     * Returns a minimal JSON body so it's easy to assert UP from scripts.
-     */
-    @GetMapping("/_alive")
-    public Map<String, String> isAlive() {
-        log.debug("isAlive called");
-        return Map.of("status", "UP");
-    }
-
 }

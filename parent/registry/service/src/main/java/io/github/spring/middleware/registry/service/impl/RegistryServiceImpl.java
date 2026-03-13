@@ -65,10 +65,9 @@ public class RegistryServiceImpl implements RegistryService {
         path = normalizeResourcePath(path);                   // "" o "/graphql" ...
 
         String clusterEndpoint = joinUrl(STR."\{cluster}:\{port}", contextPath);          // product:8080 + /product
-        clusterEndpoint = joinUrl(clusterEndpoint, path);                              // + /
+        String resourceEndpoint = joinUrl(clusterEndpoint, path);                              // + /
 
         String nodeEndpoint = joinUrl(STR."\{node}:\{port}", contextPath);                 // 172.21.0.5:8080 + /product
-        nodeEndpoint = joinUrl(nodeEndpoint, path);                                    // + /
 
         String publicEndpoint = null;
         if (publicServer != null) {
@@ -78,7 +77,7 @@ public class RegistryServiceImpl implements RegistryService {
 
         RegistryEntry registryEntry = registryEntryMap.get(name);
         if (registryEntry == null) {
-            registryEntry = createRegistryEntry(name, clusterEndpoint);
+            registryEntry = createRegistryEntry(name, resourceEndpoint);
             ProxyClientEvent event = new ProxyClientEvent(name, ProxyClientEventType.CLIENT_AVAILABLE);
             try {
                 proxyClientEventResourceProducer.send(event);
@@ -89,7 +88,7 @@ public class RegistryServiceImpl implements RegistryService {
 
         registryEntry.setName(name);
         registryEntry.upsertNodeEndpoint(new NodeEndpoint(nodeId, nodeEndpoint));
-        registryEntry.setClusterEndpoint(clusterEndpoint);
+        registryEntry.setResourceEndpoint(clusterEndpoint);
         registryEntry.setPublicEndpoint(publicEndpoint);
         registryEntry.setDateTime(LocalDateTime.now());
         registryEntryMap.put(name, registryEntry);
@@ -121,32 +120,35 @@ public class RegistryServiceImpl implements RegistryService {
         String target = EndpointUtils.extractHostPort(hostPort);
 
         return registryEntryMap.values().stream()
-                .map(RegistryEntry::getClusterEndpoint)              // "product:8080/product"
+                .map(RegistryEntry::getResourceEndpoint)              // "product:8080/product"
                 .map(c -> EndpointUtils.extractHostPort(c))                          // "product:8080"
                 .anyMatch(target::equalsIgnoreCase);
     }
 
 
     @Override
-    public void removeRegistryEntryNodeEndpoint(String clusterEndpoint, String nodeEndpoint) {
-        String targetHostPort = EndpointUtils.extractHostPort(clusterEndpoint);   // "product:8080"
-        String deadHostPort = EndpointUtils.extractHostPort(nodeEndpoint);      // "192.168.160.5:8080"
+    public void removeRegistryEntryNodeEndpoint(String resourceEndpoint, String nodeEndpoint) {
+        String targetBaseEndpoint = EndpointUtils.extractServiceBaseFromResource(resourceEndpoint);
+        String deadNodeEndpoint = EndpointUtils.normalizeEndpoint(nodeEndpoint);
 
         Set<String> keysRemove = new HashSet<>();
 
         registryEntryMap.entrySet().stream()
-                .filter(e -> EndpointUtils.extractHostPort(e.getValue().getClusterEndpoint())
-                        .equalsIgnoreCase(targetHostPort))
+                .filter(e -> EndpointUtils.extractServiceBaseFromResource(e.getValue().getResourceEndpoint())
+                        .equalsIgnoreCase(targetBaseEndpoint))
                 .forEach(e -> {
                     RegistryEntry re = e.getValue();
 
-                    // borra cualquier nodeEndpoint cuyo host:port sea el muerto (da igual el "/product")
                     re.removeNodeEndpointsIf(ne ->
-                            EndpointUtils.extractHostPort(ne.getNodeEndpoint()).equalsIgnoreCase(deadHostPort)
+                            EndpointUtils.normalizeEndpoint(ne.getNodeEndpoint())
+                                    .equalsIgnoreCase(deadNodeEndpoint)
                     );
 
-                    if (re.getNodeEndpoints().isEmpty()) keysRemove.add(e.getKey());
-                    else registryEntryMap.put(e.getKey(), re);
+                    if (re.getNodeEndpoints().isEmpty()) {
+                        keysRemove.add(e.getKey());
+                    } else {
+                        registryEntryMap.put(e.getKey(), re);
+                    }
                 });
 
         keysRemove.forEach(key -> {

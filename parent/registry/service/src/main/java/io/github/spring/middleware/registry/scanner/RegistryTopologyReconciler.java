@@ -2,7 +2,6 @@ package io.github.spring.middleware.registry.scanner;
 
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
-import io.github.spring.middleware.registry.model.NodeEndpoint;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -83,28 +82,35 @@ public class RegistryTopologyReconciler {
 
     private void checkRegistryNodeEnpoints() {
         log.info("Checking registry node endpoints...");
-        List<NodeEndpoint> nodeEndpoints = registryService.getRegistryMap().registryMap().values().stream()
-                .flatMap(re -> re.getNodeEndpoints().stream())
-                .toList();
 
-        nodeEndpoints.stream().filter(n -> !n.getId().equals(nodeInfoRetriever.getNodeId()))
-                .forEach(n -> scannerClient.isAlive(getRegistryNodeEndpoint(n.getNodeEndpoint()))
-                        .filter(alive -> !alive)
-                        .doOnNext(alive -> {
-                            log.info("Removing not alive registry node endpoint {} with id {}", n.getNodeEndpoint(), n.getId());
-                            registryService.removeRegistryEntryNodeEndpoint(
-                                    registryService.getRegistryEnry("registry").getClusterEndpoint(),
-                                    n.getNodeEndpoint()
-                            );
-                        })
-                        .subscribe()
-                );
+        registryService.getRegistryMap().registryMap().values().forEach(registryEntry -> {
+            String contextPath = getContextPath(registryEntry.getResourceEndpoint());
 
+            registryEntry.getNodeEndpoints().stream()
+                    .filter(n -> !n.getId().equals(nodeInfoRetriever.getNodeId()))
+                    .forEach(n -> scannerClient.isAlive(getHealthPath(n.getNodeEndpoint(), contextPath))
+                            .filter(alive -> !alive)
+                            .doOnNext(alive -> {
+                                log.info("Removing not alive registry node endpoint {} with id {}", n.getNodeEndpoint(), n.getId());
+                                registryService.removeRegistryEntryNodeEndpoint(
+                                        registryEntry.getResourceEndpoint(),
+                                        n.getNodeEndpoint()
+                                );
+                            })
+                            .subscribe()
+                    );
+        });
     }
 
-    private String getRegistryNodeEndpoint(String nodeEndpoint) {
-        String registryClusterEndpoint = nodeEndpoint.substring(0, nodeEndpoint.indexOf("/")); // "product:8080"
-        return joinUrl(registryClusterEndpoint, "/registry");
+    private String getContextPath(String clusterEndpoint) {
+        int idx = clusterEndpoint.indexOf('/');
+        return idx >= 0 ? clusterEndpoint.substring(idx) : "";
+    }
+
+
+    private String getHealthPath(String nodeEndpoint, String contextPath) {
+        String nodeHost = nodeEndpoint.substring(0, nodeEndpoint.indexOf("/")); // "product:8080"
+        return joinUrl(nodeHost, contextPath);
     }
 
 
@@ -193,7 +199,7 @@ public class RegistryTopologyReconciler {
                                 .doOnNext(alive -> {
                                     log.info("Removing not alive registry node endpoint {} with id {}", n.getNodeEndpoint(), n.getId());
                                     registryService.removeRegistryEntryNodeEndpoint(
-                                            registryEntry.getClusterEndpoint(),
+                                            registryEntry.getResourceEndpoint(),
                                             n.getNodeEndpoint()
                                     );
                                 })

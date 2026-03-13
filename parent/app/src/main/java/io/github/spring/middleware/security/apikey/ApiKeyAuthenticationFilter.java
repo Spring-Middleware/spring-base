@@ -60,8 +60,8 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        ApiKeyDetails details = apiKeyRetriever.findByKey(apiKey)
-                .filter(ApiKeyDetails::enabled).orElse(null);
+        SecurityConfigProperties.ApiKey.ApiKeyDetails details = apiKeyRetriever.findByKey(apiKey)
+                .filter(SecurityConfigProperties.ApiKey.ApiKeyDetails::isEnabled).orElse(null);
 
         if (details == null) {
             authenticationEntryPoint.commence(request, response, new BadCredentialsException(
@@ -69,7 +69,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        List<? extends GrantedAuthority> authorities = details.roles().stream()
+        List<? extends GrantedAuthority> authorities = details.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(AUTHORITY_PREFIX + role))
                 .toList();
 

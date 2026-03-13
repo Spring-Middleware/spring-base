@@ -17,4 +17,5 @@ public @interface MiddlewareContract {
 
     MiddlewareCircuitBreaker circuitBreaker() default @MiddlewareCircuitBreaker;
 
+    String security() default "NONE";
 }

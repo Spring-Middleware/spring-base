@@ -1,12 +1,16 @@
 package io.github.spring.middleware.client.proxy;
 
 import io.github.spring.middleware.annotation.MiddlewareCircuitBreaker;
+import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotation.NoCacheSession;
+import io.github.spring.middleware.annotation.security.MiddlewareApiKey;
 import io.github.spring.middleware.annotation.security.MiddlewareApiKeyValue;
 import io.github.spring.middleware.annotation.security.MiddlewareRequiredScopes;
+import io.github.spring.middleware.client.proxy.security.SecurityClientType;
 import io.github.spring.middleware.client.proxy.security.method.ApiKeyMethodSecurityConfiguration;
 import io.github.spring.middleware.client.proxy.security.method.ClientCredentialsMethodSecurityConfiguration;
 import io.github.spring.middleware.client.proxy.security.method.VoidMethodSecurityConfiguration;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -23,9 +27,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Component
 public class MethodMetaDataExtractor {
 
@@ -68,14 +74,16 @@ public class MethodMetaDataExtractor {
             }
         }
 
-        List<String> requiredScopes = resolveRequiredScopes(method);
-        String apiKeyValue = resolveApiKey(method);
+        MiddlewareContract middlewareContract = method.getDeclaringClass().getAnnotation(MiddlewareContract.class);
+        SecurityClientType securityClientType = SecurityClientType.valueOf(environment.resolvePlaceholders(middlewareContract.security()).trim());
+        List<String> requiredScopes = new ArrayList<>();
+        String apiKeyValue = null;
 
-        if (!requiredScopes.isEmpty() && apiKeyValue != null) {
-            throw new IllegalArgumentException(
-                    "Method '%s' cannot declare both @MiddlewareRequiredScopes and @MiddlewareApiKeyValue"
-                            .formatted(method.getName())
-            );
+        if (securityClientType == SecurityClientType.OAUTH2_CLIENT_CREDENTIALS) {
+            requiredScopes = resolveRequiredScopes(method);
+        }
+        if (securityClientType == SecurityClientType.API_KEY) {
+            apiKeyValue = resolveApiKey(method);
         }
 
         if (!requiredScopes.isEmpty()) {
@@ -113,10 +121,24 @@ public class MethodMetaDataExtractor {
         MiddlewareApiKeyValue apiKeyAnnotation = method.getAnnotation(MiddlewareApiKeyValue.class);
         String apiKeyValue = environment.resolvePlaceholders(apiKeyAnnotation.value()).trim();
 
-        if (apiKeyValue.isEmpty()) {
-            throw new IllegalArgumentException("@MiddlewareApiKeyValue value cannot be empty");
+        if (!apiKeyValue.isEmpty() && !apiKeyValue.startsWith("${")) {
+            return apiKeyValue;
         }
-        return apiKeyValue;
+
+        Class<?> declaringClass = method.getDeclaringClass();
+        if (declaringClass.isAnnotationPresent(MiddlewareApiKey.class)) {
+            MiddlewareApiKey classAnnotation = declaringClass.getAnnotation(MiddlewareApiKey.class);
+            apiKeyValue = environment.resolvePlaceholders(classAnnotation.value()).trim();
+
+            if (!apiKeyValue.isEmpty()) {
+                log.info("Using class-level api key for {}.{}",
+                        method.getDeclaringClass().getName(), method.getName());
+                return apiKeyValue;
+            }
+        } else {
+            log.info("No class-level api key defined for {}.{}", method.getDeclaringClass().getName(), method.getName());
+        }
+        return null;
     }
 
 
