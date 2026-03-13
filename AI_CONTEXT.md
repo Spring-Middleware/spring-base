@@ -318,6 +318,115 @@ This mechanism ensures that:
 
 ---
 
+## OAuth2 / OIDC Service Authentication
+
+Spring Middleware supports **service-to-service authentication using OAuth2 Client Credentials**.
+
+This mechanism allows one microservice to securely call another using a **machine-to-machine access token** issued by an OIDC provider such as **Keycloak**.
+
+Client configuration is declared directly on contract interfaces.
+
+Example:
+
+```java
+@MiddlewareClientCredentials(
+    tokenUri = "${middleware.client.product.oauth.token-uri}",
+    clientId = "${middleware.client.product.oauth.client-id}",
+    clientSecret = "${middleware.client.product.oauth.client-secret}"
+)
+```
+
+Capabilities:
+
+- OAuth2 **client_credentials grant**
+- automatic token acquisition
+- automatic token caching
+- token propagation through `Authorization: Bearer` headers
+- integration with framework error handling
+- configurable scopes
+
+Example token request:
+
+```text
+POST /realms/spring-middleware/protocol/openid-connect/token
+grant_type=client_credentials
+scope=product.read
+```
+
+---
+
+## Security Client Types
+
+Spring Middleware proxy clients support multiple authentication strategies.
+
+These strategies are configured declaratively through annotations on contract interfaces.
+
+Supported strategies:
+
+### CLIENT_CREDENTIALS
+
+Uses OAuth2 **client_credentials** grant to obtain a token from the identity provider.
+
+Typical use case:
+
+- service-to-service authentication
+
+Token flow:
+
+```text
+Service A
+  │
+  │ request token
+  ▼
+OIDC Provider (Keycloak)
+  │
+  │ access_token
+  ▼
+Service A → Service B
+Authorization: Bearer <token>
+```
+
+### API_KEY
+
+Adds a static API key to outbound requests.
+
+Example:
+
+```java
+@MiddlewareApiKey(
+  headerName = "X-API-KEY",
+  value = "${middleware.client.product.security.api-key}"
+)
+```
+
+Typical use cases:
+
+- internal services
+- gateway-to-service authentication
+- legacy system integration
+
+### PASSTHROUGH
+
+Forwards the inbound authentication header to downstream services.
+
+Example:
+
+```java
+@MiddlewarePassthrough(
+  headerName = "Authorization"
+)
+```
+
+Typical use cases:
+
+- gateway → service propagation
+- user authentication delegation
+- chained service calls
+
+Passthrough enables **end-user identity propagation across service boundaries**.
+
+---
+
 ## Error Model
 
 Errors are propagated using a structured error model.
@@ -602,6 +711,10 @@ Security improvements:
 - unified authorization model across authentication types
 - introduction of `ProtectedPathRuleResolver`
 - API Key authentication infrastructure
+- OAuth2 **client_credentials service authentication**
+- OIDC resource server integration
+- passthrough authentication propagation
+- support for `issuer-uri` or `jwk-set-uri` validation
 - integration of Spring Security exceptions with `ErrorMessageFactory`
 
 Cluster improvements:
@@ -633,6 +746,7 @@ Current capabilities:
 - GraphQL schema registry
 - centralized error handling
 - configurable security module
+- OAuth2 service authentication
 - BOM distribution via Maven Central
 - RabbitMQ-based cluster messaging
 
@@ -673,4 +787,3 @@ When generating Markdown documentation for this project:
 ~~~~markdown
 
 ---
-
