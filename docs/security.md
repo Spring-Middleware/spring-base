@@ -29,7 +29,7 @@ Key ideas:
 
 - **Authentication mode** is selected with `middleware.security.type`.
 - **Authorization rules** are defined via `public-paths` and `protected-paths`.
-- Each security mode has its own configuration block (e.g. `basic`, `jwt`, `oidc`, `api-key`).
+- Each security mode has its own configuration block (e.g. `basic`, `jwt`, `oauth2`, `api-key`).
 - API key authentication failures are translated into the unified `ErrorMessage` JSON structure.
 
 If no type is configured or `type: NONE` is used, all requests are permitted.
@@ -78,7 +78,7 @@ public enum SecurityType {
 
 - Property: `middleware.security.type=OIDC`.
 - Effect: configures the service as an **OIDC-aware resource server**.
-- Token validation is driven by `middleware.security.oidc.*` properties (issuer / JWKs).
+- Token validation is driven by `middleware.security.oauth2.*` properties (issuer / JWKs).
 - Authorities / roles are extracted from a configured claim path.
 - Authorization uses the common **protected path rules**.
 
@@ -225,15 +225,15 @@ JWT validation is configured by the `JwtSecurityConfigurer` and related beans. T
 middleware:
   security:
     type: OIDC
-    oidc:
+    oauth2:
       issuer-uri: https://issuer.example.com/realms/demo
       jwk-set-uri: https://issuer.example.com/realms/demo/protocol/openid-connect/certs
       authorities-claim-path: $.realm_access.roles
 ```
 
-- `oidc.issuer-uri` – OIDC issuer URI.
-- `oidc.jwk-set-uri` – JWK Set URI to resolve signing keys.
-- `oidc.authorities-claim-path` – JSON path used to extract role names from the token.
+- `oauth2.issuer-uri` – OIDC issuer URI.
+- `oauth2.jwk-set-uri` – JWK Set URI to resolve signing keys.
+- `oauth2.authorities-claim-path` – JSON path used to extract role names from the token.
 
 The OIDC mode also behaves as a stateless resource server and reuses the common authorization model.
 

@@ -33,15 +33,15 @@ public class JwtSecurityConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "middleware.security", name = "type", havingValue = "OIDC")
-    public SecurityConfigurer oidcSecurityConfigurer(
+    @ConditionalOnProperty(prefix = "middleware.security", name = "type", havingValue = "OAUTH2")
+    public SecurityConfigurer oauth2SecurityConfigurer(
             SecurityConfigProperties properties,
             JwtDecoder oidcJwtDecoder,
             Converter<Jwt, ? extends AbstractAuthenticationToken> converter,
             NodeInfoRetriever nodeInfoRetriever) {
 
         return new JwtSecurityConfigurer(
-                SecurityType.OIDC,
+                SecurityType.OAUTH2,
                 properties,
                 oidcJwtDecoder,
                 converter,

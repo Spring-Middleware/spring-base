@@ -5,7 +5,7 @@ public enum SecurityType {
     NONE,
     BASIC_AUTH,
     JWT,
-    OIDC,
+    OAUTH2,
     API_KEY
 
 }

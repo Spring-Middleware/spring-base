@@ -15,15 +15,15 @@ public class SecurityConfigProperties {
     private SecurityType type;
     private List<String> publicPaths = new ArrayList<>();
     private List<ProtectedPathRule> protectedPaths = new ArrayList<>();
-    private Basic basic = new Basic();
+    private BasicAuth basicAuth = new BasicAuth();
     private Jwt jwt = new Jwt();
-    private Oidc oidc = new Oidc();
+    private Oauth2 oauth2 = new Oauth2();
     private ApiKey apiKey = new ApiKey();
 
     @Data
-    public static class Basic {
+    public static class BasicAuth {
 
-        private Credentials credentials = new Credentials();
+        private List<Credentials> credentials = new ArrayList<>();
         private UserApi userApi = new UserApi();
 
         @Data
@@ -47,7 +47,7 @@ public class SecurityConfigProperties {
     }
 
     @Data
-    public static class Oidc {
+    public static class Oauth2 {
         private String issuerUri;
         private String jwkSetUri;
         private String authoritiesClaimPath;

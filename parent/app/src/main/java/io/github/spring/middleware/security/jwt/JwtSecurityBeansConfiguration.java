@@ -36,14 +36,14 @@ public class JwtSecurityBeansConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "middleware.security", name = "type", havingValue = "OIDC")
-    public JwtDecoder oidcDecoder(SecurityConfigProperties properties) {
+    @ConditionalOnProperty(prefix = "middleware.security", name = "type", havingValue = "OAUTH2")
+    public JwtDecoder oauth2Decoder(SecurityConfigProperties properties) {
 
-        SecurityConfigProperties.Oidc oidc = Optional.ofNullable(properties.getOidc())
-                .orElseThrow(() -> new IllegalArgumentException("OIDC configuration is missing"));
+        SecurityConfigProperties.Oauth2 oauth2 = Optional.ofNullable(properties.getOauth2())
+                .orElseThrow(() -> new IllegalArgumentException("OATUH2 configuration is missing"));
 
-        String issuerUri = oidc.getIssuerUri();
-        String jwkSetUri = oidc.getJwkSetUri();
+        String issuerUri = oauth2.getIssuerUri();
+        String jwkSetUri = oauth2.getJwkSetUri();
 
         if (StringUtils.hasText(jwkSetUri)) {
 
@@ -52,7 +52,7 @@ public class JwtSecurityBeansConfiguration {
             if (StringUtils.hasText(issuerUri)) {
                 decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuerUri));
             } else {
-                log.warn("OIDC issuer-uri is not configured. JWT validation will verify signature only (issuer will NOT be validated).");
+                log.warn("OAUTH2 issuer-uri not configured. Token issuer will NOT be validated. This configuration should only be used in trusted environments.");
                 decoder.setJwtValidator(JwtValidators.createDefault());
             }
 
@@ -64,7 +64,7 @@ public class JwtSecurityBeansConfiguration {
         }
 
         throw new IllegalArgumentException(
-                "Invalid OIDC configuration: either 'issuer-uri' or 'jwk-set-uri' must be configured"
+                "Invalid OAUTH2 configuration: either 'issuer-uri' or 'jwk-set-uri' must be configured to validate JWT tokens."
         );
     }
 

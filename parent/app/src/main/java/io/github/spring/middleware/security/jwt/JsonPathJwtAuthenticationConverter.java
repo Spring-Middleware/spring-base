@@ -20,12 +20,12 @@ public class JsonPathJwtAuthenticationConverter implements Converter<Jwt, Abstra
     private final static String AUTHORITY_PREFIX = "ROLE_";
 
     public JsonPathJwtAuthenticationConverter(SecurityConfigProperties properties) {
-        SecurityConfigProperties.Oidc oidc = Objects.requireNonNull(
-                properties.getOidc(),
-                "OIDC configuration is missing"
+        SecurityConfigProperties.Oauth2 oauth2 = Objects.requireNonNull(
+                properties.getOauth2(),
+                "OAUTH2 configuration is missing"
         );
 
-        this.authoritiesClaimPath = oidc.getAuthoritiesClaimPath();
+        this.authoritiesClaimPath = oauth2.getAuthoritiesClaimPath();
     }
 
     @Override
