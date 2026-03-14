@@ -10,6 +10,6 @@ public class RefreshableSingletonScopeRegister implements BeanFactoryPostProcess
     public void postProcessBeanFactory(
             ConfigurableListableBeanFactory configurableListableBeanFactory) throws BeansException {
 
-        configurableListableBeanFactory.registerScope("refreshable-singleton", new RefresahbleSingletonOnDemandScope());
+        configurableListableBeanFactory.registerScope("refreshable-singleton", new RefreshableSingletonOnDemandScope());
     }
 }

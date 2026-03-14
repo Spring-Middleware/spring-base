@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.spring.middleware.registry.util.EndpointUtils.joinUrl;
-import static io.github.spring.middleware.registry.util.EndpointUtils.normalizePath;
+import static io.github.spring.middleware.utils.EndpointUtils.joinUrl;
+import static io.github.spring.middleware.utils.EndpointUtils.normalizePath;
 
 @Slf4j
 @Component

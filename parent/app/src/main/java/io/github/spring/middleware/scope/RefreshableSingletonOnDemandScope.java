@@ -9,21 +9,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class RefresahbleSingletonOnDemandScope implements Scope {
+public class RefreshableSingletonOnDemandScope implements Scope {
 
     private Map<String, RefreshableServiceOnDemandProvider> providersMap
             = Collections.synchronizedMap(new HashMap<String, RefreshableServiceOnDemandProvider>());
     private Map<String, Runnable> destructionCallbacks
             = Collections.synchronizedMap(new HashMap<String, Runnable>());
 
-    private ApplicationContext applicationContext;
-
     @Override
     public Object get(String name, ObjectFactory<?> objectFactory) {
 
-        if (!providersMap.containsKey(name)) {
-            providersMap.put(name, new RefreshableServiceOnDemandProvider(objectFactory));
-        }
+        providersMap.computeIfAbsent(name, n -> new RefreshableServiceOnDemandProvider(objectFactory));
         return providersMap.get(name).getObject();
     }
 
@@ -53,8 +49,11 @@ public class RefresahbleSingletonOnDemandScope implements Scope {
     }
 
     public void refreshInstance(String name) {
+        Optional.ofNullable(destructionCallbacks.get(name))
+                .ifPresent(Runnable::run);
 
-        Optional.ofNullable(providersMap.get(name)).ifPresent(RefreshableServiceOnDemandProvider::refresh);
+        Optional.ofNullable(providersMap.get(name))
+                .ifPresent(RefreshableServiceOnDemandProvider::refresh);
     }
 
 }

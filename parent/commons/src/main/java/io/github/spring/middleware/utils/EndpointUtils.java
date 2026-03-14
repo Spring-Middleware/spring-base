@@ -1,4 +1,4 @@
-package io.github.spring.middleware.registry.util;
+package io.github.spring.middleware.utils;
 
 public class EndpointUtils {
 

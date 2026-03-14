@@ -9,7 +9,7 @@ import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import io.github.spring.middleware.registry.params.ResourceRegisterParameters;
 import io.github.spring.middleware.registry.service.RegistryService;
-import io.github.spring.middleware.registry.util.EndpointUtils;
+import io.github.spring.middleware.utils.EndpointUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RMap;
@@ -22,9 +22,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static io.github.spring.middleware.registry.util.EndpointUtils.joinUrl;
-import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeContextPath;
-import static io.github.spring.middleware.registry.util.EndpointUtils.normalizeResourcePath;
+import static io.github.spring.middleware.utils.EndpointUtils.joinUrl;
+import static io.github.spring.middleware.utils.EndpointUtils.normalizeContextPath;
+import static io.github.spring.middleware.utils.EndpointUtils.normalizeResourcePath;
 
 
 @Slf4j

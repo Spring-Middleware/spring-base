@@ -1,6 +1,6 @@
 package io.github.spring.middleware.controller;
 
-import io.github.spring.middleware.scope.RefresahbleSingletonOnDemandScope;
+import io.github.spring.middleware.scope.RefreshableSingletonOnDemandScope;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import jakarta.annotation.PostConstruct;
@@ -22,19 +22,19 @@ public class BeanController {
     @Autowired
     private ApplicationContext applicationContext;
 
-    private RefresahbleSingletonOnDemandScope refresahbleSingletonOnDemandScope;
+    private RefreshableSingletonOnDemandScope refreshableSingletonOnDemandScope;
 
     @PostConstruct
     public void init() {
 
-        refresahbleSingletonOnDemandScope = (RefresahbleSingletonOnDemandScope) ((DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory()).getRegisteredScope(
+        refreshableSingletonOnDemandScope = (RefreshableSingletonOnDemandScope) ((DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory()).getRegisteredScope(
                 "refreshable-singleton");
     }
 
     @GetMapping("/refresh")
     public void refresh(@RequestParam(value = "name") String name) {
 
-        refresahbleSingletonOnDemandScope.refreshInstance(name);
+        refreshableSingletonOnDemandScope.refreshInstance(name);
     }
 
 }
