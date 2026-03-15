@@ -49,7 +49,8 @@ public class NodeInfoRetriever {
     public List<String> getMandatoryPublicPaths() {
         return List.of(
                 "/_alive",
-                "/graphql/_alive"
+                "/graphql/_alive",
+                "/resources/register"
         );
     }
 

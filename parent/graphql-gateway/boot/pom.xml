@@ -8,32 +8,21 @@
 
     <parent>
         <groupId>io.github.spring-middleware</groupId>
-        <artifactId>registry</artifactId>
-        <version>${core.registry.version}</version>
+        <artifactId>graphql-gateway</artifactId>
+        <version>${core.graphql.gateway.version}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.spring-middleware</groupId>
-    <artifactId>registry-boot</artifactId>
-    <version>${core.registry.version}</version>
-    <name>registry-boot</name>
-    <description>Registry Boot</description>
+    <artifactId>graphql-gateway-boot</artifactId>
+    <version>${core.graphql.gateway.version}</version>
+    <name>graphql-gateway-boot</name>
+    <description>GraphQL Gateway Boot</description>
 
     <dependencies>
         <dependency>
             <groupId>io.github.spring-middleware</groupId>
-            <artifactId>registry-service</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <artifactId>graphql-gateway-service</artifactId>
         </dependency>
     </dependencies>
 

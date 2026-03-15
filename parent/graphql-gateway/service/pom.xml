@@ -19,10 +19,6 @@
     <name>graphql-gateway-service</name>
     <description>GraphQL Gateway Service</description>
 
-    <properties>
-        <redisson.version>4.2.0</redisson.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.github.spring-middleware</groupId>
@@ -31,7 +27,7 @@
         <dependency>
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java</artifactId>
-            <version>25.0</version>
+            <version>${graphql-java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

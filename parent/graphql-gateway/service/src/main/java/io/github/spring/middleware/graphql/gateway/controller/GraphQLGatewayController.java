@@ -3,7 +3,11 @@ package io.github.spring.middleware.graphql.gateway.controller;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import io.github.spring.middleware.graphql.gateway.runtime.GraphQLGatewayHolder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,14 +18,17 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/graphql")
-public class GraphQLController {
+@RequiredArgsConstructor
+public class GraphQLGatewayController {
 
-    private final GraphQL graphQL;
+    private final GraphQLGatewayHolder holder;
+
 
     @PostMapping
     public Map<String, Object> execute(@RequestBody Map<String, Object> request) {
+
+        GraphQL graphQL = holder.getRequired();
 
         Map<String, Object> variables = Optional
                 .ofNullable((Map<String, Object>) request.get("variables"))

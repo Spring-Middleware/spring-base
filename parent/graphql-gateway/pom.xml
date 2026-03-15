@@ -6,10 +6,11 @@
     <packaging>pom</packaging>
     <parent>
         <groupId>io.github.spring-middleware</groupId>
-        <artifactId>bom</artifactId>
+        <artifactId>parent</artifactId>
         <version>1.1.0</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
+
 
     <artifactId>graphql-gateway</artifactId>
     <version>${core.graphql.gateway.version}</version>
@@ -22,6 +23,7 @@
 
     <modules>
         <module>service</module>
+        <module>boot</module>
     </modules>
 
 

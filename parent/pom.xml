@@ -83,6 +83,7 @@
         <json-path.version>2.9.0</json-path.version>
         <aws.secrets.manager.version>2.4.4</aws.secrets.manager.version>
         <aws.sdk.sts.version>1.12.429</aws.sdk.sts.version>
+        <graphql-java.version>25.0</graphql-java.version>
 
         <enable.preview.args>--enable-preview</enable.preview.args>
         <maven.javadoc.skip>${project.packaging.equals('pom')}</maven.javadoc.skip>
@@ -101,6 +102,7 @@
         <module>app</module>
         <module>model</module>
         <module>graphql</module>
+        <module>graphql-gateway</module>
     </modules>
 
     <dependencyManagement>
@@ -177,6 +179,16 @@
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>graphql</artifactId>
                 <version>${core.graphql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>graphql-gateway-service</artifactId>
+                <version>${core.graphql.gateway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>graphql-gateway-boot</artifactId>
+                <version>${core.graphql.gateway.version}</version>
             </dependency>
 
             <dependency>

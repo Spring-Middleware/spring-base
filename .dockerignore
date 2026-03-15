@@ -4,6 +4,8 @@ target/
 # allow registry-boot jar to be included when building locally
 !parent/registry/boot/target/*.jar
 !parent/registry/boot/target/dependency/**
+!parent/graphql-gateway/boot/target/*.jar
+!parent/graphql-gateway/boot/target/dependency/**
 .mvn/
 .m2/
 # git

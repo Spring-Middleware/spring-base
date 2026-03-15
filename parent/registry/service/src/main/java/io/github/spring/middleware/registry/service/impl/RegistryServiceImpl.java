@@ -125,6 +125,15 @@ public class RegistryServiceImpl implements RegistryService {
                 .anyMatch(target::equalsIgnoreCase);
     }
 
+    @Override
+    public boolean existsNodeEndpoint(String namespace, String nodeEndpoint) {
+        if (registryEntryMap == null) return false;
+
+        String targetNode = EndpointUtils.normalizeEndpoint(nodeEndpoint);
+
+        return registryEntryMap.get(namespace).getNodeEndpoints().stream().anyMatch(n -> EndpointUtils.extractHostPort(n.getNodeEndpoint()).equalsIgnoreCase(targetNode));
+    }
+
 
     @Override
     public void removeRegistryEntryNodeEndpoint(String resourceEndpoint, String nodeEndpoint) {

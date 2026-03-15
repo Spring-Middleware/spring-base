@@ -7,6 +7,7 @@ import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.register.graphql.GraphQLAutoRegistrar;
 import io.github.spring.middleware.register.graphql.GraphQLRegisterProperties;
 import io.github.spring.middleware.register.resource.ResourceAutoRegistrar;
+import io.github.spring.middleware.utils.EndpointUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -87,7 +88,7 @@ public class DefaultRegistrationManager implements RegistrationManager {
         if (registryEntry == null || registryEntry.getNodeEndpoints() == null) return false;
         String me;
         try {
-            me = resourceAutoRegistrar.getNodeEndpointName(register.path());
+            me = EndpointUtils.normalizeEndpoint(resourceAutoRegistrar.getNodeEndpointName(register.path()));
         } catch (UnknownHostException e) {
             log.warn("Error retrieving local host address", e);
             return false;

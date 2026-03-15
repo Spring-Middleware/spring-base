@@ -2,6 +2,7 @@ package io.github.spring.middleware.graphql.gateway.client;
 
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.schema.idl.SchemaPrinter;
+import io.github.spring.middleware.client.proxy.UrlJoiner;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
 
+import static io.github.spring.middleware.client.proxy.UrlJoiner.join;
 import static io.github.spring.middleware.utils.EndpointUtils.joinUrl;
 import static io.github.spring.middleware.utils.EndpointUtils.normalizeContextPath;
 import static io.github.spring.middleware.utils.EndpointUtils.normalizeEndpoint;
@@ -136,7 +138,7 @@ public class IntrospectionGraphQLClient {
 
     public String fetchRemoteSchema(SchemaLocation schemaLocation) {
         final String clusterEndpoint = joinUrl(normalizeEndpoint(schemaLocation.getLocation()), normalizeContextPath(schemaLocation.getContextPath()));
-        final String graphqlEndpoint = joinUrl(clusterEndpoint, normalizePath(schemaLocation.getPathApi()));
+        final String graphqlEndpoint = join(clusterEndpoint, normalizePath(schemaLocation.getPathApi()));
         try {
             Map<String, Object> response = webClient.post()
                     .uri(graphqlEndpoint)
@@ -145,7 +147,7 @@ public class IntrospectionGraphQLClient {
                     .bodyToMono(Map.class)
                     .block();
 
-            return schemaPrinter.print(resultToSchema.createSchemaDefinition(response));
+            return schemaPrinter.print(resultToSchema.createSchemaDefinition((Map)response.get("data")));
 
         } catch (Exception e) {
             throw new GraphQLException(GraphQLErrorCodes.SCHEMA_FETCH_ERROR, STR."Failed to fetch remote schema from \{graphqlEndpoint}", e);

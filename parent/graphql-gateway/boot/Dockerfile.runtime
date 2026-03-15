@@ -1,0 +1,14 @@
+# Minimal runtime Dockerfile for registry: always run the fat Spring Boot jar with BOOT-INF
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# By default copy the built jar from module target (path relative to repo root build context).
+# Use build-arg to override when needed.
+ARG JAR=parent/graphql-gateway/boot/target/graphql-gateway-boot-1.1.0.jar
+COPY ${JAR} /app/app.jar
+
+EXPOSE 8080
+
+# Always run the jar as a Spring Boot fat jar (assume BOOT-INF present)
+ENTRYPOINT ["java","-Xms256m","-Xmx512m","-jar","/app/app.jar"]

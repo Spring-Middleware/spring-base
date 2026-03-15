@@ -18,13 +18,13 @@ import java.util.Map;
 
 @Configuration
 @AllArgsConstructor
+@ConditionalOnProperty(prefix = "middleware.graphql", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class GraphQLAutoConfiguration {
 
     private final ConstraintErrorResolver constraintErrorResolver;
     private final ErrorMessageFactory errorMessageFactory;
 
     @Bean
-    @ConditionalOnProperty(prefix = "middleware.graphql", name = "enabled", havingValue = "true", matchIfMissing = false)
     public GraphQL graphQL(ApplicationContext context) {
 
         Map<String, Object> services =

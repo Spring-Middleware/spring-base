@@ -141,8 +141,8 @@ public class RegistryTopologyReconciler {
 
             // Si existe schemaLocation pero NO existe RegistryEntry del cluster (product:8080),
             // puedes pedirle al nodo que (re)registre resources (como hacía el task viejo)
-            if (!registryService.existsClusterHost(clusterLocation)) {
-                triggerRegisterResource(nodeLocation);
+            if (registryService.existsClusterHost(clusterLocation) && !registryService.existsNodeEndpoint(namespace, nodeLocation)) {
+                triggerRegisterResource(joinUrl(nodeLocation, schemaLocation.getContextPath()));
             }
 
         } else {

@@ -30,8 +30,6 @@ public class GraphQLGatewayFactory {
     private final GraphQLSchemaDefinitionBuilder schemaDefinitionBuilder;
     private final GraphQLTypeRegistryLoader registryLoader;
 
-    @Bean
-    @Scope("refreshable-singleton")
     public GraphQL build() {
         final GraphQLTypeRegistryMap graphQLTypeRegistryMap = registryLoader.loadTypeRegistryMap();
         final GraphQLMerged graphQLMerged = typeRegistryMerger.merge(graphQLTypeRegistryMap);
