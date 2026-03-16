@@ -21,7 +21,7 @@ public class InstantScalar {
                         return instant.toString();
                     }
                     throw new CoercingSerializeException(
-                            "Expected Instant but was " + dataFetcherResult.getClass()
+                            STR."Expected Instant but was \{dataFetcherResult.getClass()}"
                     );
                 }
 

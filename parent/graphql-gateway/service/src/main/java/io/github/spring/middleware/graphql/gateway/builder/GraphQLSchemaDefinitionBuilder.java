@@ -3,12 +3,13 @@ package io.github.spring.middleware.graphql.gateway.builder;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.schema.idl.TypeDefinitionRegistry;
-import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
-import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLTypeRegistryMap;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import org.springframework.stereotype.Component;
+
+import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.isRootType;
+import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mergeTypeDefinitions;
 
 @Component
 public class GraphQLSchemaDefinitionBuilder {
@@ -43,7 +44,7 @@ public class GraphQLSchemaDefinitionBuilder {
                 if (isRootType(typeName)) {
                     return;
                 }
-                addTypeIfAbsentOrFail(registry, typeName, typeDefinition);
+                addTypeIfAbsentOrMerge(registry, typeName, typeDefinition);
             });
 
             sourceRegistry.scalars().forEach((scalarName, scalarDefinition) -> {
@@ -56,7 +57,7 @@ public class GraphQLSchemaDefinitionBuilder {
 
     }
 
-    private void addTypeIfAbsentOrFail(
+    private void addTypeIfAbsentOrMerge(
             TypeDefinitionRegistry targetRegistry,
             String typeName,
             TypeDefinition<?> typeDefinition
@@ -67,16 +68,7 @@ public class GraphQLSchemaDefinitionBuilder {
             return;
         }
 
-        if (!existing.equals(typeDefinition)) {
-            throw new GraphQLException(
-                    GraphQLErrorCodes.SCHEMA_MERGE_ERROR,
-                    STR."Conflicting GraphQL type definition detected for type: \{typeName}"
-            );
-        }
-    }
-
-    private boolean isRootType(String typeName) {
-        return "Query".equals(typeName) || "Mutation".equals(typeName) || "Subscription".equals(typeName);
+        mergeTypeDefinitions(existing, typeDefinition, targetRegistry);
     }
 
 }

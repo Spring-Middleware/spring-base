@@ -2,13 +2,9 @@ package io.github.spring.middleware.graphql.gateway.fetcher;
 
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
-import graphql.language.Field;
-import graphql.language.Selection;
-import graphql.language.SelectionSet;
+import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLObjectType;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
@@ -18,9 +14,11 @@ import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationKey;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.registry.model.SchemaLocation;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static io.github.spring.middleware.graphql.gateway.fetcher.QueryBuilder.buildGraphQLQueryWithVariables;
+import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
+import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.normalizeValue;
 
 public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
 
@@ -74,91 +72,19 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
         }
 
         Object dataObject = response.get("data");
-        if (!(dataObject instanceof Map<?, ?> dataMap)) {
-            return null;
-        }
+        Object errorsObject = response.get("errors");
 
-        return dataMap.get(fieldName);
+        Map<?, ?> dataMap = response.get("data") instanceof Map<?, ?> m ? m : null;
+        Object fieldData = dataMap != null ? dataMap.get(environment.getField().getName()) : null;
+
+        Object normalizedData = fieldData instanceof Map<?, ?> map
+                ? normalizeValue(map, environment.getFieldType(), environment.getGraphQLSchema())
+                : fieldData;
+
+        return DataFetcherResult.newResult()
+                .data(normalizedData)
+                .errors(mapErrors(response.get("errors"), environment))
+                .build();
     }
 
-    private String buildGraphQLQueryWithVariables(
-            DataFetchingEnvironment environment,
-            GraphQLOperationType operationType,
-            String fieldName
-    ) {
-        StringBuilder sb = new StringBuilder();
-        String operation = operationType == GraphQLOperationType.MUTATION ? "mutation" : "query";
-
-        sb.append(operation).append(" ").append(fieldName);
-
-        String variablesDefinition = buildVariablesDefinition(environment);
-        if (!variablesDefinition.isEmpty()) {
-            sb.append("(").append(variablesDefinition).append(")");
-        }
-
-        sb.append(" {");
-        appendRootFieldWithVariables(environment.getField(), environment, sb, "\n  ");
-        sb.append("\n}");
-
-        return sb.toString();
-    }
-
-    private String buildVariablesDefinition(DataFetchingEnvironment environment) {
-        List<GraphQLArgument> arguments = environment.getFieldDefinition().getArguments();
-        if (arguments.isEmpty()) {
-            return "";
-        }
-
-        return arguments.stream()
-                .map(argument -> STR."$\{argument.getName()}: \{renderInputType(argument.getType())}")
-                .collect(Collectors.joining(", "));
-    }
-
-    private String renderInputType(GraphQLInputType type) {
-        return type.toString();
-    }
-
-    private void appendRootFieldWithVariables(
-            Field field,
-            DataFetchingEnvironment environment,
-            StringBuilder sb,
-            String indent
-    ) {
-        sb.append(indent).append(field.getName());
-
-        Map<String, Object> arguments = environment.getArguments();
-        if (!arguments.isEmpty()) {
-            sb.append("(");
-            String argsAsVariables = arguments.keySet().stream()
-                    .map(argumentName -> STR."\{argumentName}: $\{argumentName}")
-                    .collect(Collectors.joining(", "));
-            sb.append(argsAsVariables).append(")");
-        }
-
-        SelectionSet selectionSet = field.getSelectionSet();
-        if (selectionSet != null && !selectionSet.getSelections().isEmpty()) {
-            sb.append(" {");
-            for (Selection<?> selection : selectionSet.getSelections()) {
-                if (selection instanceof Field childField) {
-                    appendNestedField(childField, sb, STR."\{indent}  ");
-                }
-            }
-            sb.append(indent).append("}");
-        }
-    }
-
-    private void appendNestedField(Field field, StringBuilder sb, String indent) {
-        sb.append("\n").append(indent).append(field.getName());
-
-        SelectionSet selectionSet = field.getSelectionSet();
-        if (selectionSet != null && !selectionSet.getSelections().isEmpty()) {
-            sb.append(" {");
-            for (Selection<?> selection : selectionSet.getSelections()) {
-                if (selection instanceof Field childField) {
-                    appendNestedField(childField, sb, STR."\{indent}  ");
-                }
-            }
-            sb.append("\n").append(indent).append("}");
-        }
-    }
 }

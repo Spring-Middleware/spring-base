@@ -40,13 +40,12 @@ public class JmsConnectionManager {
         while (jmsConnection == null && numberTries < 3) {
             try {
                 jmsConnection = new JmsConnection(this.connectionFactory.createConnection());
-                logger.debug("Created new connection " + jmsConnection + " with " +
-                        jmsConnectionConfiguration.getUrlConnection());
+                logger.debug(STR."Created new connection \{jmsConnection} with \{jmsConnectionConfiguration.getUrlConnection()}");
             } catch (Exception ex) {
-                logger.error("Can't created a new connection with " + jmsConnectionConfiguration.getUrlConnection(),
+                logger.error(STR."Can't created a new connection with \{jmsConnectionConfiguration.getUrlConnection()}",
                         ex);
                 jmsException = new JMSException(
-                        "Can't created a new connection with " + jmsConnectionConfiguration.getUrlConnection());
+                        STR."Can't created a new connection with \{jmsConnectionConfiguration.getUrlConnection()}");
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException iex) {

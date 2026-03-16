@@ -50,7 +50,13 @@ public class RabbitMQClient extends AbstractWebClient {
                         .build("/", queueName))
                 .retrieve()
                 .bodyToMono(RabbitQueueData.class)
-                .doOnError(ex -> log.error("Can't connect with {} for read queue={}", baseUrl, queueName, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        log.info("Client error for {} queueName={}: {}", baseUrl, queueName, wcre.getMessage());
+                    } else {
+                        log.error("Can't connect with {} for read queue={}", baseUrl, queueName, ex);
+                    }
+                })
                 .doOnSuccess(v -> log.info("Read queue {} queueName={}", baseUrl, queueName))
                 .onErrorResume(this::emptyOnClientErrorMono);
     }
@@ -65,7 +71,13 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyValue(createQueueRequest)
                 .retrieve()
                 .bodyToMono(Void.class)
-                .doOnError(ex -> log.error("Can't create queue {} queueName={}", baseUrl, queueName, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("create queue", queueName, wcre);
+                    } else {
+                        log.error("Can't create queue {} queueName={}", baseUrl, queueName, ex);
+                    }
+                })
                 .doOnSuccess(v -> log.info("Created queue {} queueName={}", baseUrl, queueName))
                 .onErrorResume(this::emptyOnClientErrorMono);
     }
@@ -78,7 +90,13 @@ public class RabbitMQClient extends AbstractWebClient {
                 .uri("/api/consumers")
                 .retrieve()
                 .bodyToFlux(RabbitConsumerData.class)
-                .doOnError(ex -> log.error("Can't connect with {}", baseUrl, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("read consumers", "", wcre);
+                    } else {
+                        log.error("Can't connect with {}", baseUrl, ex);
+                    }
+                })
                 .onErrorResume(this::emptyOnClientErrorFlux);
     }
 
@@ -93,8 +111,14 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyToFlux(RabbitBindingData.class)
                 .filter(binding -> destinationQueue.equals(binding.getDestination()))
                 .next()
-                .doOnError(ex -> log.error("Can't connect with {} for read binding exchange={} destinationQueue={}",
-                        baseUrl, exchangeName, destinationQueue, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("read binding", STR."exchangeName=\{exchangeName} destinationQueue=\{destinationQueue}", wcre);
+                    } else {
+                        log.error("Can't connect with {} for read binding exchange={} destinationQueue={}",
+                                baseUrl, exchangeName, destinationQueue, ex);
+                    }
+                })
                 .doOnSuccess(v -> {
                     if (v != null) {
                         log.info("Read binding {} exchangeName={} destinationQueue={}",
@@ -103,7 +127,6 @@ public class RabbitMQClient extends AbstractWebClient {
                 })
                 .onErrorResume(this::emptyOnClientErrorMono);
     }
-
 
 
     public Mono<ExchangeData> getExchange(String exchangeName) {
@@ -115,7 +138,13 @@ public class RabbitMQClient extends AbstractWebClient {
                         .build("/", exchangeName))
                 .retrieve()
                 .bodyToMono(ExchangeData.class)
-                .doOnError(ex -> log.error("Can't connect with {} for read exchange={}", baseUrl, exchangeName, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("read exchange", exchangeName, wcre);
+                    } else {
+                        log.error("Can't connect with {} for read exchange={}", baseUrl, exchangeName, ex);
+                    }
+                })
                 .doOnSuccess(v -> log.info("Read exchange {} exchangeName={}", baseUrl, exchangeName))
                 .onErrorResume(this::emptyOnClientErrorMono);
     }
@@ -130,7 +159,13 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyValue(createExchangeRequest)
                 .retrieve()
                 .bodyToMono(Void.class)
-                .doOnError(ex -> log.error("Can't create exchange {} exchangeName={}", baseUrl, exchangeName, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("create exchange", exchangeName, wcre);
+                    } else {
+                        log.error("Can't create exchange {} exchangeName={}", baseUrl, exchangeName, ex);
+                    }
+                })
                 .doOnSuccess(v -> log.info("Created exchange {} exchangeName={}", baseUrl, exchangeName))
                 .onErrorResume(this::emptyOnClientErrorMono);
     }
@@ -144,7 +179,13 @@ public class RabbitMQClient extends AbstractWebClient {
                         .build("/", queueName))
                 .retrieve()
                 .bodyToMono(Void.class)
-                .doOnError(ex -> log.error("Can't delete queue {} queueName={}", baseUrl, queueName, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("delete queue", queueName, wcre);
+                    } else {
+                        log.error("Can't delete queue {} queueName={}", baseUrl, queueName, ex);
+                    }
+                })
                 .doOnSuccess(v -> log.info("Deleted queue {} queueName={}", baseUrl, queueName))
                 .onErrorResume(this::emptyOnClientErrorMono);
 
@@ -160,9 +201,19 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyValue(bindingRequest)
                 .retrieve()
                 .bodyToMono(Void.class)
-                .doOnError(ex -> log.error("Can't create binding {} exchangeName={} destinationQueue={}",
-                        baseUrl, exchangeName, detinationQueue, ex))
+                .doOnError(ex -> {
+                    if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+                        logClientError("create binding", STR."exchangeName=\{exchangeName} destinationQueue=\{detinationQueue}", wcre);
+                    } else {
+                        log.error("Can't create binding {} exchangeName={} destinationQueue={}",
+                                baseUrl, exchangeName, detinationQueue, ex);
+                    }
+                })
                 .onErrorResume(this::emptyOnClientErrorMono);
+    }
+
+    private void logClientError(String action, String resourceName, Throwable ex) {
+        log.info("Client error for {} {}={}: {}", baseUrl, action, resourceName, ex.getMessage());
     }
 
     private boolean isClientError(Throwable ex) {

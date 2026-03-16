@@ -1,6 +1,8 @@
 package io.github.spring.middleware.graphql.gateway.client;
 
 import graphql.ExecutionInput;
+import io.github.spring.middleware.config.PropertyNames;
+import io.github.spring.middleware.filter.Context;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -12,9 +14,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.github.spring.middleware.config.PropertyNames.REQUEST_HEADERS;
 import static io.github.spring.middleware.utils.EndpointUtils.joinUrl;
 import static io.github.spring.middleware.utils.EndpointUtils.normalizeContextPath;
 import static io.github.spring.middleware.utils.EndpointUtils.normalizeEndpoint;
@@ -37,7 +41,7 @@ public class RemoteGraphQLExecutionClient {
             requestBody.put("variables", Optional.ofNullable(executionInput.getVariables()).orElse(Map.of()));
 
             Map<String, Object> response = webClient.post()
-                    .uri(endpoint)
+                    .uri("http://"+endpoint)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .headers(headers -> copyHeaders(headers))
@@ -65,7 +69,14 @@ public class RemoteGraphQLExecutionClient {
     }
 
     private void copyHeaders(HttpHeaders headers) {
-        Optional.ofNullable(MDC.get(REQUEST_ID))
-                .ifPresent(requestId -> headers.add(REQUEST_ID, requestId));
+        List<String> headersToCopy = Context.get(PropertyNames.HEADERS_TO_COPY);
+        headersToCopy.forEach(headerName -> {
+            Object headerValue = Context.get(headerName);
+            if (headerValue != null) {
+                headers.add(headerName, headerValue.toString());
+            }
+        });
+        Map<String,String> requestHeaders = Context.get(REQUEST_HEADERS);
+        requestHeaders.forEach((key, value) -> headers.add(key, value));
     }
 }

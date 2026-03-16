@@ -15,11 +15,11 @@ import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLTypeRegistryMerger;
 import io.github.spring.middleware.graphql.gateway.scalars.InstantScalar;
 import io.github.spring.middleware.graphql.gateway.scalars.OffsetDateTimeScalar;
-import io.github.spring.middleware.graphql.gateway.scalars.UUIDScalar;
+import io.github.spring.middleware.graphql.gateway.scalars.ScalarsProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
+
+import java.util.Optional;
 
 @Configuration
 @RequiredArgsConstructor
@@ -29,6 +29,7 @@ public class GraphQLGatewayFactory {
     private final GraphQLTypeRegistryMerger typeRegistryMerger;
     private final GraphQLSchemaDefinitionBuilder schemaDefinitionBuilder;
     private final GraphQLTypeRegistryLoader registryLoader;
+    private final Optional<ScalarsProvider> scalarsProviderOptional;
 
     public GraphQL build() {
         final GraphQLTypeRegistryMap graphQLTypeRegistryMap = registryLoader.loadTypeRegistryMap();
@@ -88,9 +89,13 @@ public class GraphQLGatewayFactory {
                 .scalar(ExtendedScalars.Time)
                 .scalar(ExtendedScalars.GraphQLBigDecimal)
                 .scalar(ExtendedScalars.GraphQLLong)
+                .scalar(ExtendedScalars.CountryCode)
+                .scalar(ExtendedScalars.Currency)
+                .scalar(ExtendedScalars.Locale)
+                .scalar(ExtendedScalars.LocalTime)
                 .scalar(InstantScalar.INSTANCE)
-                .scalar(OffsetDateTimeScalar.INSTANCE)
-                .scalar(UUIDScalar.INSTANCE);
+                .scalar(OffsetDateTimeScalar.INSTANCE);
 
+        scalarsProviderOptional.ifPresent(provider -> provider.getScalars().forEach(builder::scalar));
     }
 }
