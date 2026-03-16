@@ -330,9 +330,9 @@ Example:
 
 ```java
 @MiddlewareClientCredentials(
-    tokenUri = "${middleware.client.product.oauth.token-uri}",
-    clientId = "${middleware.client.product.oauth.client-id}",
-    clientSecret = "${middleware.client.product.oauth.client-secret}"
+        tokenUri = "${middleware.client.product.oauth.token-uri}",
+        clientId = "${middleware.client.product.oauth.client-id}",
+        clientSecret = "${middleware.client.product.oauth.client-secret}"
 )
 ```
 
@@ -394,8 +394,8 @@ Example:
 
 ```java
 @MiddlewareApiKey(
-  headerName = "X-API-KEY",
-  value = "${middleware.client.product.security.api-key}"
+        headerName = "X-API-KEY",
+        value = "${middleware.client.product.security.api-key}"
 )
 ```
 
@@ -413,7 +413,7 @@ Example:
 
 ```java
 @MiddlewarePassthrough(
-  headerName = "Authorization"
+        headerName = "Authorization"
 )
 ```
 
@@ -485,6 +485,71 @@ Example GraphQL error:
   }
 }
 ```
+
+### GraphQL Federation Gateway
+
+Spring Middleware provides a **distributed GraphQL federation gateway** that dynamically composes schemas registered by services in the registry.
+
+Main responsibilities:
+
+- collect GraphQL schemas from registered services
+- merge schemas into a unified gateway schema
+- resolve remote fields through service contracts
+- route GraphQL queries to the correct downstream service
+- normalize responses and scalar types
+
+The gateway supports:
+
+- remote field resolution
+- cross-service GraphQL queries
+- scalar normalization
+- centralized error propagation
+
+### Query Execution Model
+
+Incoming GraphQL queries are analyzed by the gateway and translated into **downstream GraphQL queries** targeting the owning service.
+
+Execution flow:
+
+```text
+Client
+  │
+  ▼
+GraphQL Gateway
+  │
+  ├── query analysis
+  ├── field ownership resolution
+  └── downstream query execution
+        │
+        ▼
+  product-service / catalog-service / other services
+```
+
+The gateway reconstructs the final response by combining downstream responses into a unified result.
+
+### Inline Fragment Support
+
+The federation gateway supports **GraphQL inline fragments** when building downstream queries.
+
+Inline fragments are required when querying polymorphic types or interfaces across services.
+
+Example:
+
+```graphql
+{
+  product(id: "123") {
+    id
+    ... on PhysicalProduct {
+      stockQuantity
+    }
+    ... on DigitalProduct {
+      downloadUrl
+    }
+  }
+}
+```
+
+The query builder preserves fragment structures when generating downstream service queries.
 
 ---
 
@@ -725,6 +790,14 @@ Cluster improvements:
 - distributed registry consistency through event messaging
 - mandatory framework-level liveness endpoints for node health verification
 
+GraphQL improvements:
+
+- distributed GraphQL federation gateway
+- dynamic schema merging from registered services
+- inline fragment support in query builder
+- scalar normalization during response merging
+- polymorphic GraphQL response handling across services
+
 ---
 
 ## Current Status
@@ -785,5 +858,3 @@ When generating Markdown documentation for this project:
   - examples or guides
   - any `.md` content
 ~~~~markdown
-
----
