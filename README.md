@@ -265,16 +265,45 @@ Example:
 
 # GraphQL Support
 
-Spring Middleware provides infrastructure for **GraphQL schema registration and federation**.
+Spring Middleware provides infrastructure for **distributed GraphQL federation** across microservices.
 
-Services can register:
+Instead of exposing a single monolithic GraphQL server, each service can publish its own schema.  
+The platform then composes these schemas into a **unified GraphQL API**.
 
-- schema namespace
-- schema location
+Each service registers:
+
+- GraphQL schema namespace
+- schema definition
 - context path
-- API path
+- GraphQL endpoint path
 
-The registry stores this metadata so that a federated GraphQL gateway can compose schemas.
+This metadata is stored in the **Registry Service**.
+
+The platform can then dynamically compose a **federated GraphQL gateway** that exposes a unified API to clients.
+
+```
+Client
+   │
+   ▼
+GraphQL Gateway
+   │
+   ├── product-service GraphQL API
+   ├── catalog-service GraphQL API
+   └── inventory-service GraphQL API
+```
+
+Capabilities include:
+
+- distributed schema federation
+- cross-service queries
+- centralized GraphQL error handling
+- scalar normalization
+- inline fragment support
+- dynamic schema composition
+
+For a detailed explanation see:
+
+`docs/graphql.md`
 
 ---
 
