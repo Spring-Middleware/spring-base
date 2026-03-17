@@ -1,5 +1,8 @@
 package io.github.spring.middleware.registry.service.impl;
 
+import io.github.spring.middleware.graphql.gateway.event.SchemaLocationEvent;
+import io.github.spring.middleware.graphql.gateway.event.SchemaLocationEventType;
+import io.github.spring.middleware.registry.jms.SchemaLocationEventResourceProducer;
 import io.github.spring.middleware.registry.model.SchemaLocation;
 import io.github.spring.middleware.registry.model.SchemaLocationNode;
 import io.github.spring.middleware.registry.params.SchemaRegisterParameters;
@@ -26,10 +29,12 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
 
     private RMap<String, SchemaLocation> schemaLocationsMap;
     private final RedissonClient redissonClient;
+    private final SchemaLocationEventResourceProducer schemaLocationEventResourceProducer;
 
-    public SchemaRegistryServiceImpl(RedissonClient redissonClient) {
+    public SchemaRegistryServiceImpl(RedissonClient redissonClient, SchemaLocationEventResourceProducer schemaLocationEventResourceProducer) {
         Objects.requireNonNull(redissonClient, "redissonClient");
         this.redissonClient = redissonClient;
+        this.schemaLocationEventResourceProducer = schemaLocationEventResourceProducer;
     }
 
     @PostConstruct
@@ -48,20 +53,7 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
 
         // Atomic update with RMap.compute (safe under concurrency)
         schemaLocationsMap.compute(namespace, (k, current) -> {
-            SchemaLocation schemaLocation = current != null ? current : new SchemaLocation();
-
-            // Mandatory identifiers
-            schemaLocation.setNamespace(namespace);
-
-            // Location of the schema (cluster/service endpoint)
-            schemaLocation.setLocation(params.getLocation());
-            schemaLocation.setPathApi(params.getPathApi());
-            schemaLocation.setContextPath(params.getContextPath());
-
-            // Ensure node list exists
-            if (schemaLocation.getSchemaLocationNodes() == null) {
-                schemaLocation.setSchemaLocationNodes(new HashSet<>());
-            }
+            SchemaLocation schemaLocation = getSchemaLocation(params, current, namespace);
 
             // Node location (pod/instance), ensure uniqueness
             String nodeLocation = params.getNodeLocation();
@@ -77,6 +69,28 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
         });
     }
 
+    private SchemaLocation getSchemaLocation(SchemaRegisterParameters params, SchemaLocation current, String namespace) {
+        SchemaLocation schemaLocation = current != null ? current : new SchemaLocation();
+
+        if (schemaLocation.getNamespace() == null) {
+            sendRefreshEventForNamespace(namespace.trim());
+        }
+
+        // Mandatory identifiers
+        schemaLocation.setNamespace(namespace.trim());
+
+        // Location of the schema (cluster/service endpoint)
+        schemaLocation.setLocation(params.getLocation());
+        schemaLocation.setPathApi(params.getPathApi());
+        schemaLocation.setContextPath(params.getContextPath());
+
+        // Ensure node list exists
+        if (schemaLocation.getSchemaLocationNodes() == null) {
+            schemaLocation.setSchemaLocationNodes(new HashSet<>());
+        }
+        return schemaLocation;
+    }
+
     @Override
     public List<SchemaLocation> getSchemaLocations() {
         // Copy to avoid exposing live Redisson collection
@@ -87,7 +101,20 @@ public class SchemaRegistryServiceImpl implements SchemaRegistryService {
     public void removeSchemaLocation(String namespace) {
         if (namespace == null || namespace.isBlank()) return;
         schemaLocationsMap.remove(namespace.trim());
+        sendRefreshEventForNamespace(namespace.trim());
     }
+
+    private void sendRefreshEventForNamespace(String namespace) {
+        final SchemaLocationEvent event = new SchemaLocationEvent();
+        event.setEventType(SchemaLocationEventType.REFRESH);
+        event.setNamespace(namespace);
+        try {
+            schemaLocationEventResourceProducer.send(event);
+        } catch (Exception exception) {
+            throw new RuntimeException(STR."Failed to send schema location event for namespace: \{namespace}", exception);
+        }
+    }
+
 
     @Override
     public void removeSchemaLocationNode(String namespace, String locationNode) {

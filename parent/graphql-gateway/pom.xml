@@ -23,6 +23,7 @@
 
     <modules>
         <module>service</module>
+        <module>event</module>
         <module>boot</module>
     </modules>
 

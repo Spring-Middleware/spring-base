@@ -30,7 +30,10 @@ middleware:
     max-idle: ${JMS_MAX_IDLE:10}
     rabbitmq:
       base-url: ${JMS_RABBITMQ_BASE_URL:http://rabbitmq:15672}
-      check-interval-seconds: ${JMS_RABBITMQ_CHECK_INTERVAL_MS:10000}
+      registry:
+        scanner:
+          check-interval: ${JMS_RABBITMQ_REGISTRY_SCANNER_CHECK_INTERVAL_MS:10000}
+          enabled: ${JMS_RABBITMQ_REGISTRY_SCANNER_ENABLED:true}
 
 
   client:

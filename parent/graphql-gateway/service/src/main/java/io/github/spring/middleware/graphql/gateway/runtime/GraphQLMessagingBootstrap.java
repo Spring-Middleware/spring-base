@@ -1,6 +1,8 @@
-package io.github.spring.middleware.jms;
+package io.github.spring.middleware.graphql.gateway.runtime;
+
 
 import io.github.spring.middleware.component.NodeInfoRetriever;
+import io.github.spring.middleware.jms.JmsConsumersStartedEvent;
 import io.github.spring.middleware.jms.rabbitmq.CreateBindingRequest;
 import io.github.spring.middleware.jms.rabbitmq.CreateExchangeRequest;
 import io.github.spring.middleware.jms.rabbitmq.CreateQueueRequest;
@@ -20,39 +22,39 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "middleware.jms.rabbitmq.registry.scanner.enabled", havingValue = "true")
-public class RegistryMessagingBootstrap {
+@ConditionalOnProperty(name = "middleware.jms.rabbitmq.graphql-gateway.scanner.enabled", havingValue = "true")
+public class GraphQLMessagingBootstrap {
 
     private final RabbitMQClient rabbitMQClient;
     private final NodeInfoRetriever nodeInfoRetriever;
 
     private volatile boolean ready = false;
 
-    @Scheduled(fixedDelayString = "${middleware.jms.rabbitmq.registry.scanner.check-interval:10000}")
+    @Scheduled(fixedDelayString = "${middleware.jms.rabbitmq.graphql-gateway.scanner.check-interval:10000}")
     public void startJmsListener() {
 
         if (!ready) {
             return;
         }
 
-        rabbitMQClient.getExchange("registry")
+        rabbitMQClient.getExchange("graphql")
                 .switchIfEmpty(Mono.defer(() -> {
                     CreateExchangeRequest exchangeRequest = new CreateExchangeRequest();
                     exchangeRequest.setType("topic");
                     exchangeRequest.setDurable(true);
                     exchangeRequest.setAutoDelete(false);
 
-                    return rabbitMQClient.createExchange("registry", exchangeRequest)
-                            .thenReturn(new ExchangeData("registry", null, null));
+                    return rabbitMQClient.createExchange("graphql", exchangeRequest)
+                            .thenReturn(new ExchangeData("graphql", null, null));
                 }))
                 .flatMap(exchangeData -> {
-                    String queueName = STR."client-events-\{nodeInfoRetriever.getNodeClusterAndId()}";
+                    String queueName = STR."graphql-events-\{nodeInfoRetriever.getNodeClusterAndId()}";
 
                     return rabbitMQClient.getDestinationQueue(queueName)
                             .switchIfEmpty(Mono.defer(() -> {
                                 CreateQueueRequest queueRequest = new CreateQueueRequest();
                                 queueRequest.setQueueName(queueName);
-                                queueRequest.setDurable(true);
+                                queueRequest.setDurable(false);
                                 queueRequest.setAutoDelete(false);
                                 queueRequest.setArguments(Map.of("x-expires", 60000));
 
@@ -62,24 +64,23 @@ public class RegistryMessagingBootstrap {
                             .thenReturn(exchangeData);
                 })
                 .flatMap(exchangeData -> {
-                    String queueName = STR."client-events-\{nodeInfoRetriever.getNodeClusterAndId()}";
+                    String queueName = STR."graphql-events-\{nodeInfoRetriever.getNodeClusterAndId()}";
 
                     return rabbitMQClient.getBindingForExchange(exchangeData.getName(), queueName)
                             .switchIfEmpty(Mono.defer(() -> {
                                 CreateBindingRequest bindingRequest = new CreateBindingRequest();
-                                bindingRequest.setRoutingKey("client-events.#");
+                                bindingRequest.setRoutingKey("graphql-events.#");
 
                                 return rabbitMQClient.createBinding(
                                         exchangeData.getName(),
                                         queueName,
                                         bindingRequest
                                 ).then(Mono.empty());
-                            }))
-                            .then();
+                            }));
                 })
                 .subscribe(
-                        ignored -> log.info("Successfully ensured registry exchange, queue and binding"),
-                        error -> log.error("Failed to ensure registry exchange, queue and binding", error)
+                        unused -> log.info("Successfully ensured JMS infrastructure for GraphQL Gateway"),
+                        error -> log.error("Failed to ensure JMS infrastructure for GraphQL Gateway", error)
                 );
     }
 

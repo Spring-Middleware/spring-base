@@ -1,23 +1,26 @@
 package io.github.spring.middleware.config;
 
+import io.github.spring.middleware.jms.JmsConsumersStartedEvent;
 import io.github.spring.middleware.rabbitmq.core.JmsResources;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JmsConsumersManager {
 
-    @Autowired
-    private ApplicationContext applicationContext;
-    @Autowired
-    private JmsConfiguration jmsConfiguration;
+
+    private final ApplicationContext applicationContext;
+    private final JmsConfiguration jmsConfiguration;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @EventListener(ApplicationReadyEvent.class)
     public void startComsumers() {
@@ -29,6 +32,7 @@ public class JmsConsumersManager {
                 jmsResources.getAllConsumers().stream().forEach(jmsConsumerResource -> {
                     jmsConsumerResource.start(false);
                 });
+                applicationEventPublisher.publishEvent(new JmsConsumersStartedEvent());
             }
         }
     }

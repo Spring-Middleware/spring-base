@@ -207,6 +207,12 @@
 
             <dependency>
                 <groupId>io.github.spring-middleware</groupId>
+                <artifactId>graphql-gateway-event</artifactId>
+                <version>${core.graphql.gateway.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>graphql-gateway-boot</artifactId>
                 <version>${core.graphql.gateway.version}</version>
             </dependency>

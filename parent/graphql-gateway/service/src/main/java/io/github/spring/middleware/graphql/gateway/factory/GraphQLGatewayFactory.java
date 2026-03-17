@@ -37,15 +37,19 @@ public class GraphQLGatewayFactory {
 
     public GraphQL build() {
         final GraphQLTypeRegistryMap graphQLTypeRegistryMap = registryLoader.loadTypeRegistryMap();
-        final GraphQLMerged graphQLMerged = typeRegistryMerger.merge(graphQLTypeRegistryMap);
-        final TypeDefinitionRegistry schemaRegistry = schemaDefinitionBuilder.build(graphQLMerged, graphQLTypeRegistryMap);
-        final GraphQLSchema graphQLSchema = new SchemaGenerator()
-                .makeExecutableSchema(
-                        schemaRegistry,
-                        buildRuntimeWiring(graphQLMerged, schemaRegistry)
-                );
+        if (!graphQLTypeRegistryMap.isEmpty()) {
+            final GraphQLMerged graphQLMerged = typeRegistryMerger.merge(graphQLTypeRegistryMap);
+            final TypeDefinitionRegistry schemaRegistry = schemaDefinitionBuilder.build(graphQLMerged, graphQLTypeRegistryMap);
+            final GraphQLSchema graphQLSchema = new SchemaGenerator()
+                    .makeExecutableSchema(
+                            schemaRegistry,
+                            buildRuntimeWiring(graphQLMerged, schemaRegistry)
+                    );
 
-        return GraphQL.newGraphQL(graphQLSchema).build();
+            return GraphQL.newGraphQL(graphQLSchema).build();
+        } else {
+            return null;
+        }
     }
 
     private RuntimeWiring buildRuntimeWiring(GraphQLMerged merged, TypeDefinitionRegistry registry) {

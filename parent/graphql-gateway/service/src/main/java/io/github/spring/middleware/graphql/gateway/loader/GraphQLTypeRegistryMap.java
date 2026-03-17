@@ -7,4 +7,9 @@ import java.util.Map;
 
 
 public record GraphQLTypeRegistryMap(Map<SchemaLocation, TypeDefinitionRegistry> registryMap) {
+
+    public boolean isEmpty() {
+        return registryMap.isEmpty();
+    }
+
 }
