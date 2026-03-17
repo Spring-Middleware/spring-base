@@ -110,9 +110,8 @@ public class QueryBuilder {
 
 
     private static void appendInlineFragment(InlineFragment inlineFragment, StringBuilder sb, String indent) {
-        sb.append("\n").append(indent).append("... on ").append(inlineFragment.getTypeCondition().getName()).append(" {");
+        sb.append("\n").append(indent).append("... on ").append(inlineFragment.getTypeCondition().getName());
         appendSelectionSet(inlineFragment.getSelectionSet(), sb, STR."\{indent}  ");
-        sb.append("\n").append(indent).append("}");
     }
 
 
@@ -138,6 +137,10 @@ public class QueryBuilder {
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field childField) {
                     appendNestedField(childField, sb, STR."\{indent}  ");
+                } else if (selection instanceof InlineFragment inlineFragment) {
+                    appendInlineFragment(inlineFragment, sb, indent);
+                } else if (selection instanceof FragmentSpread) {
+                    throw new GraphQLException(GraphQLErrorCodes.SCHEMA_FETCH_ERROR, "FragmentSpread is not supported in this implementation");
                 }
             }
             sb.append("\n").append(indent).append("}");

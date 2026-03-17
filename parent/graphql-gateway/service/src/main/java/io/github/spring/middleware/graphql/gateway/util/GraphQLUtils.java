@@ -6,6 +6,7 @@ import graphql.language.FieldDefinition;
 import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.SourceLocation;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -19,6 +20,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLUnionType;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
@@ -138,7 +140,7 @@ public class GraphQLUtils {
 
     private static void mergeUnionTypes(UnionTypeDefinition source, UnionTypeDefinition target, TypeDefinitionRegistry registry) {
         Set<String> mergedMembers = Stream.concat(source.getMemberTypes().stream(), target.getMemberTypes().stream())
-                .map(Type::toString)
+                .map(type -> ((TypeName) type).getName())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         UnionTypeDefinition richest = source.getMemberTypes().size() >= target.getMemberTypes().size() ? source : target;
@@ -203,6 +205,21 @@ public class GraphQLUtils {
             }
             return map;
         }
+        if (type instanceof GraphQLUnionType unionType) {
+            if (!(value instanceof Map map)) {
+                throw new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."Expected an object for union type \{type}, but got: \{value}");
+            }
+            String typeName = (String) map.get("__typename");
+            if (typeName == null) {
+                throw new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."Missing __typename field for union type \{type}");
+            }
+            GraphQLObjectType matchedType = (GraphQLObjectType) unionType.getTypes().stream()
+                    .filter(t -> t.getName().equals(typeName))
+                    .findFirst()
+                    .orElseThrow(() -> new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."No matching type found for __typename: \{typeName} in union type \{type}"));
+            return normalizeValue(value, matchedType, schema);
+        }
+
         return value;
     }
 
@@ -259,7 +276,26 @@ public class GraphQLUtils {
                 .map(Map.class::cast)
                 .map(error -> GraphqlErrorBuilder.newError(environment)
                         .message(String.valueOf(error.get("message")))
+                        .locations(toSourceLocations(error.get("locations")))
+                        .path((List<Object>) error.get("path"))
+                        .extensions(error.get("extensions") instanceof Map ? (Map<String, Object>) error.get("extensions") : null)
                         .build())
+                .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<SourceLocation> toSourceLocations(Object locationsObj) {
+        if (!(locationsObj instanceof List<?> locations)) {
+            return List.of();
+        }
+
+        return locations.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(loc -> new SourceLocation(
+                        (Integer) loc.get("line"),
+                        (Integer) loc.get("column")
+                ))
                 .toList();
     }
 

@@ -1,6 +1,7 @@
 package io.github.spring.middleware.graphql.handler;
 
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
@@ -12,6 +13,7 @@ import io.github.spring.middleware.error.ConstraintErrorResolver;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.ErrorMessageFactory;
+import io.github.spring.middleware.error.RemoteError;
 import io.github.spring.middleware.utils.ExceptionUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -20,7 +22,9 @@ import org.hibernate.LazyInitializationException;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHandler {
@@ -53,17 +57,22 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
                 Class<? extends Annotation> annoType = annotation.annotationType();
 
                 ErrorDescriptor descriptor = errorResolver.resolveFromAnnotation(annoType);
+                ErrorMessage errorMessage = errorMessageFactory.from(descriptor);
 
-                GraphQLException gqlEx = new GraphQLException(descriptor);
-                gqlEx.addExtension("field", extractFieldName(violation.getPropertyPath()));
-                gqlEx.addExtension("validationMessage", violation.getMessage());
-                gqlEx.addExtension("constraint", annoType.getSimpleName());
+                errorMessage.getExtensions().putIfAbsent("field", extractFieldName(violation.getPropertyPath()));
+                errorMessage.getExtensions().putIfAbsent("validationMessage", violation.getMessage());
+                errorMessage.getExtensions().putIfAbsent("constraint", annoType.getSimpleName());
 
                 ResultPath validationPath = buildPath(path, violation.getPropertyPath());
 
-                errors.add(buildError(gqlEx, validationPath, sourceLocation));
+                errors.add(buildError(errorMessage, validationPath, sourceLocation));
             }
 
+            return completed(errors);
+        }
+
+        if (exception instanceof RemoteError remoteEx && remoteEx.getErrorMessage() != null) {
+            errors.add(buildError(remoteEx.getErrorMessage(), path, sourceLocation));
             return completed(errors);
         }
 
@@ -72,34 +81,29 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
         }
 
         ErrorMessage error = errorMessageFactory.from(exception);
-        GraphQLException gqlEx = new GraphQLException(error);
-        errors.add(buildError(gqlEx, path, sourceLocation));
+        errors.add(buildError(error, path, sourceLocation));
         return completed(errors);
     }
 
-    private GraphQLError buildError(GraphQLException ex, ResultPath path, SourceLocation location) {
+    private GraphQLError buildError(ErrorMessage errorMessage, ResultPath resultPath, SourceLocation location) {
+        Map<String, Object> extensions = new LinkedHashMap<>();
 
-        // Si la excepción trae pathSegments adicionales (por ejemplo "a.b.c"),
-        // las mergeamos al path actual.
-        ResultPath mergedPath = mergePath(path, ex);
+        extensions.put("code", errorMessage.getCode());
+        extensions.put("statusCode", errorMessage.getStatusCode());
+        extensions.put("statusMessage", errorMessage.getStatusMessage());
+
+        if (errorMessage.getExtensions() != null) {
+            extensions.putAll(errorMessage.getExtensions());
+        }
 
         return GraphqlErrorBuilder.newError()
-                .message(ex.getMessage())
-                .path(mergedPath)
+                .message(errorMessage.getMessage())
+                .path(resultPath)
                 .location(location)
-                .extensions(ex.getExtensions())
+                .extensions(extensions)
                 .build();
     }
 
-    private ResultPath mergePath(ResultPath base, GraphQLException ex) {
-        List<String> extra = ex.getPathSegments();
-        if (extra == null || extra.isEmpty()) {
-            return base;
-        }
-        List<Object> nodes = new ArrayList<>(base.toList());
-        nodes.addAll(extra);
-        return ResultPath.fromList(nodes);
-    }
 
     private ResultPath buildPath(ResultPath basePath, Path validationPath) {
 

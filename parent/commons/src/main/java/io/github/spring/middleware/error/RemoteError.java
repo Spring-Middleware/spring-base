@@ -6,6 +6,8 @@ public interface RemoteError extends ErrorDescriptor {
 
     String getRequestId();
 
+    ErrorMessage getErrorMessage();
+
     default String getOrigin() {
         return "unknown";
     }
