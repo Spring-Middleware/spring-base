@@ -20,8 +20,11 @@ Spring Middleware currently provides the **foundational infrastructure required 
 - schema metadata registration
 - centralized error handling
 - platform-level consistency
+- a **GraphQL gateway service** that can load and expose registered schemas
 
-At this stage, Spring Middleware focuses on **schema registration and discovery**, not on executing or federating GraphQL queries itself.
+At this stage, Spring Middleware focuses on **schema registration and discovery** and provides a **reference GraphQL gateway implementation** instead of a full-blown feature-complete federation engine.
+
+The `graphql-gateway` module is meant as a **platform-native gateway** that consumes the Registry and exposes a single GraphQL endpoint.
 
 ---
 
@@ -41,17 +44,16 @@ This information is represented by the `SchemaLocation` model.
 In practice this means:
 
 - each service that participates in GraphQL can register its schema locations in the Registry
-- other tools or services can later read this information and decide how to compose or federate schemas
+- the **GraphQL gateway** can later read this information and decide how to compose or federate schemas
 
 Spring Middleware itself does **not currently**:
 
-- expose a central GraphQL gateway
-- perform schema stitching or query planning
-- execute GraphQL queries across services
+- perform advanced schema stitching or query planning across services
+- execute complex GraphQL federation with per-field ownership rules
 
-Instead, it focuses on providing **reliable metadata about where schemas are and which services own them**.
+Instead, it focuses on providing **reliable metadata about where schemas are and which services own them**, plus a **simple gateway implementation** that can execute queries against the composed schema.
 
-This makes it possible for external components (for example a GraphQL gateway) to dynamically compose APIs across services.
+This makes it possible for external components (for example a more advanced GraphQL gateway) or the built-in `graphql-gateway` service to dynamically compose APIs across services.
 
 ---
 
@@ -105,6 +107,23 @@ The gateway composes these schemas into a **single API exposed to clients**.
 
 ---
 
+# 2.1 GraphQL Gateway service
+
+Spring Middleware includes a **GraphQL gateway service** under the `parent/graphql-gateway` modules.
+
+The gateway:
+
+- discovers registered `SchemaLocation` entries from the Registry
+- loads the schemas referenced by those locations
+- builds a GraphQL executable schema
+- exposes a single `/graphql` HTTP endpoint
+
+Clients interact only with the gateway and do not talk directly to individual service schemas.
+
+For more details, see `parent/graphql-gateway/README.md`.
+
+---
+
 # 3. Future federation and composition
 
 Spring Middleware is designed so that **another service** can consume the registered schema locations and build a unified GraphQL API.
@@ -112,8 +131,8 @@ Spring Middleware is designed so that **another service** can consume the regist
 A typical setup looks like this:
 
 1. Each microservice registers its GraphQL schema location in the Registry.
-2. A **GraphQL gateway service** reads all `SchemaLocation` entries from the Registry.
-3. The gateway loads all schemas and **composes them into a single federated schema**.
+2. The **GraphQL gateway service** reads all `SchemaLocation` entries from the Registry.
+3. The gateway loads all schemas and **composes them into a single schema** (today this is a simple composition without advanced query planning).
 4. Client queries are executed through this gateway.
 
 Execution flow:
@@ -125,8 +144,8 @@ Client
 GraphQL Gateway
   │
   ├── analyze query
-  ├── determine field ownership
-  └── execute downstream queries
+  ├── resolve fields against composed schema
+  └── execute downstream calls (depending on implementation)
         │
         ▼
      target services
@@ -141,7 +160,7 @@ This allows:
 In this model:
 
 - Spring Middleware is responsible for **schema metadata and discovery**
-- the gateway is responsible for **federation and query execution**
+- the gateway is responsible for **composition and query execution**
 
 ---
 
@@ -263,13 +282,12 @@ If you are building services today with Spring Middleware:
     - providing centralized GraphQL error handling
     - exposing metadata required for federation
 
-You should plan for a **GraphQL gateway service** that will:
+You can either:
 
-- read schema metadata from the Registry
-- compose schemas into a unified API
-- route queries to the appropriate backend services
+- use the **built-in GraphQL gateway service** (`parent/graphql-gateway`) as your central entry point, or
+- build your own gateway that consumes the same Registry metadata.
 
-The current GraphQL support is therefore **foundational infrastructure** for a federated GraphQL platform.
+The current GraphQL support is therefore **foundational infrastructure** for a federated GraphQL platform, plus a **reference gateway implementation** that you can adopt or extend.
 
 ---
 
@@ -279,3 +297,5 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 - `AI_CONTEXT.md` – concise summary of GraphQL capabilities in the platform.
 - `docs/registry.md` – details on `SchemaLocation` and registry responsibilities.
 - `docs/errors.md` – unified error model and GraphQL error representation.
+- `parent/graphql-gateway/README.md` – GraphQL gateway module details.
+

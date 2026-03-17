@@ -8,13 +8,13 @@
     <parent>
         <groupId>io.github.spring-middleware</groupId>
         <artifactId>bom</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>parent</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <name>spring-middleware-parent</name>
     <description>Core parent for Spring Middleware modules</description>
     <url>https://github.com/Spring-Middleware/spring-base</url>

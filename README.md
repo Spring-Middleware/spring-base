@@ -22,7 +22,7 @@ It provides infrastructure for:
 - service discovery
 - declarative HTTP clients
 - API metadata registry
-- GraphQL schema federation
+- GraphQL schema federation **and a reference GraphQL gateway service**
 - distributed error propagation
 - request context propagation
 - dynamic search engines (Mongo / JPA)
@@ -75,7 +75,7 @@ Instead of every microservice reimplementing infrastructure concerns, Spring Mid
 - **central service registry**
 - **consistent error model**
 - **context propagation**
-- **schema federation**
+- **schema federation and a GraphQL gateway**
 - **distributed data utilities**
 
 For a deeper architectural view, see `docs/architecture.md`.

@@ -1,5 +1,43 @@
 # Changelog
 
+# Changelog
+
+## 1.2.0
+
+### Added
+
+- Service-side security configuration with role-based access rules
+- Client-side security propagation for distributed calls
+- Circuit breaker support for resilient service communication
+- Dynamic GraphQL schema generation based on registry nodes
+- GraphQL union type support with dynamic TypeResolver
+- Custom GraphQL scalars (Instant, URI, UUID, BigDecimal, Long)
+- Registry-driven messaging bootstrap and JMS lifecycle coordination
+- Structured GraphQL error propagation with full remote metadata
+- Support for `__typename`-based resolution in dynamic responses
+
+### Improved
+
+- ErrorMessage as unified error model across framework layers
+- Remote error propagation without information loss (requestId, spanId, remote metadata)
+- GraphQL exception handling pipeline (removed intermediate exception layer)
+- TypeDefinitionRegistry merging logic for unions and schema composition
+- Query builder for GraphQL inline fragments
+- Messaging initialization order and startup synchronization
+
+### Fixed
+
+- Incorrect union type merging using stringified types instead of actual names
+- Loss of fields in normalized GraphQL responses (`__typename`-only issue)
+- Malformed GraphQL queries (duplicate `{` in inline fragments)
+- Remote error fallback to `UNKNOWN_ERROR` losing original context
+- RabbitMQ queue declaration conflicts (durable vs non-durable mismatch handling)
+
+### Upgraded
+
+- Internal GraphQL wiring and schema composition capabilities
+- Resilience and fault-tolerance mechanisms across service calls
+
 ## 1.1.0
 
 ### Added
