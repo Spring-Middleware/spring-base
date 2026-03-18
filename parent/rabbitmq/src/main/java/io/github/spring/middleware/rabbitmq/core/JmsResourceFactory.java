@@ -302,7 +302,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
         RMQDestination destination = new RMQDestination(
                 queueName,
                 true,
-                !jmsDestination.durable(),
+                false,
                 queueDeclareArguments
         );
         destination.setAmqpExchangeName(exchange);

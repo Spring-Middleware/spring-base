@@ -5,10 +5,8 @@ import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionCredentia
 import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionPoolConfiguration;
 import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import io.github.spring.middleware.rabbitmq.message.TestingMessage;
-import io.github.spring.middleware.rabbitmq.resources.queue.durable.JmsConsumerQueueDurable;
-import io.github.spring.middleware.rabbitmq.resources.queue.durable.JmsProducerQueueDurable;
-import io.github.spring.middleware.rabbitmq.resources.queue.transients.JmsConsumerQueueTransient;
-import io.github.spring.middleware.rabbitmq.resources.queue.transients.JmsProducerQueueTransient;
+import io.github.spring.middleware.rabbitmq.resources.queue.JmsConsumerQueueTest;
+import io.github.spring.middleware.rabbitmq.resources.queue.JmsProducerQueueTest;
 import io.github.spring.middleware.rabbitmq.resources.topic.JmsConsumerES;
 import io.github.spring.middleware.rabbitmq.resources.topic.JmsConsumerNews;
 import io.github.spring.middleware.rabbitmq.resources.topic.JmsConsumerUK;
@@ -36,11 +34,8 @@ public class JmsTest {
     private Logger logger = LoggerFactory.getLogger(JmsTest.class);
 
     private JmsResources jmsResources;
-    private JmsProducerQueueTransient jmsProducerQueueTransient;
-    private JmsConsumerQueueTransient jmsConsumerQueueTransient;
 
-    private JmsProducerQueueDurable jmsProducerQueueDurable;
-    private JmsConsumerQueueDurable jmsConsumerQueueDurable;
+    private JmsProducerQueueTest jmsProducerQueueTest;
 
     // Esto levanta RabbitMQ automáticamente antes de los tests
     @ClassRule
@@ -82,10 +77,7 @@ public class JmsTest {
 
         JmsFactory jmsFactory = JmsFactory.newInstance();
         jmsResources = jmsFactory.createJmsResources(Arrays.asList("io.github.spring.middleware.rabbitmq.resources"), jmsConnectionConfiguration);
-        jmsProducerQueueTransient = jmsResources.getJmsProducer(JmsProducerQueueTransient.class);
-        jmsConsumerQueueTransient = jmsResources.getJmsConsumer(JmsConsumerQueueTransient.class);
-        jmsProducerQueueDurable = jmsResources.getJmsProducer(JmsProducerQueueDurable.class);
-        jmsConsumerQueueDurable = jmsResources.getJmsConsumer(JmsConsumerQueueDurable.class);
+        jmsProducerQueueTest = jmsResources.getJmsProducer(JmsProducerQueueTest.class);
 
         // El puerto 15672 es el estándar del Management Plugin
         String dashboardUrl = "http://" + rabbit.getHost() + ":" + rabbit.getMappedPort(15672);
@@ -98,37 +90,10 @@ public class JmsTest {
     }
 
     @Test
-    public void sendAndReceiveMessageToTestQueueTransient() throws Exception {
-        AtomicInteger atomicInteger = new AtomicInteger(0);
-        jmsResources.getJmsConsumers(JmsConsumerQueueTransient.class).stream().forEach(c -> c.setAtomicInteger(atomicInteger));
-        jmsResources.start(JmsConsumerQueueTransient.class);
-        for (int i = 0; i < 4; i++) {
-            final int iMessage = i;
-            CompletableFuture.runAsync(() -> {
-                TestingMessage testMessaage = new TestingMessage();
-                try {
-                    testMessaage.setMessage("Hola Mundo! (Queue Transient)");
-                    testMessaage.setId(iMessage);
-                    jmsProducerQueueTransient.send(testMessaage);
-                } catch (Exception ex) {
-                    logger.error("Error sending message " + testMessaage.getId());
-                }
-            }).get();
-        }
-        jmsResources.getJmsConsumers(JmsConsumerQueueTransient.class).stream().forEach(c -> {
-            try {
-                c.waitUntilMessageReceived(4);
-            } catch (Exception ex) {
-                fail(ex.getMessage());
-            }
-        });
-    }
-
-    @Test
     public void sendAndReceiveMessageToTestQueueDurable() throws Exception {
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        jmsResources.getJmsConsumers(JmsConsumerQueueDurable.class).stream().forEach(c -> c.setAtomicInteger(atomicInteger));
-        jmsResources.start(JmsConsumerQueueDurable.class);
+        jmsResources.getJmsConsumers(JmsConsumerQueueTest.class).stream().forEach(c -> c.setAtomicInteger(atomicInteger));
+        jmsResources.start(JmsConsumerQueueTest.class);
         for (int i = 0; i < 3; i++) {
             final int iMessage = i;
             CompletableFuture.runAsync(() -> {
@@ -136,13 +101,13 @@ public class JmsTest {
                 try {
                     testMessaage.setMessage("Hola Mundo! (Queue Durable)");
                     testMessaage.setId(iMessage);
-                    jmsProducerQueueDurable.send(testMessaage);
+                    jmsProducerQueueTest.send(testMessaage);
                 } catch (Exception ex) {
                     logger.error("Error sending message " + testMessaage.getId());
                 }
             }).get();
         }
-        jmsResources.getJmsConsumers(JmsConsumerQueueDurable.class).stream().forEach(c -> {
+        jmsResources.getJmsConsumers(JmsConsumerQueueTest.class).stream().forEach(c -> {
             try {
                 c.waitUntilMessageReceived(3);
             } catch (Exception ex) {

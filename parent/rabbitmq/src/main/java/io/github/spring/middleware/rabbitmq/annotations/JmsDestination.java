@@ -23,8 +23,6 @@ public @interface JmsDestination {
 
     DestinationType destinationType() default DestinationType.QUEUE;
 
-    boolean durable() default true;
-
     long expires() default 0;
 
     @Component

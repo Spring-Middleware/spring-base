@@ -1,4 +1,4 @@
-package io.github.spring.middleware.rabbitmq.resources.queue.durable;
+package io.github.spring.middleware.rabbitmq.resources.queue;
 
 
 import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationSuffix;

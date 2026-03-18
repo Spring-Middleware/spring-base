@@ -86,7 +86,7 @@ public class MethodMetaDataExtractor {
             apiKeyValue = resolveApiKey(method);
         }
 
-        if (!requiredScopes.isEmpty()) {
+        if (securityClientType == SecurityClientType.OAUTH2_CLIENT_CREDENTIALS) {
             md.setMethodSecurityConfiguration(new ClientCredentialsMethodSecurityConfiguration(requiredScopes));
         } else if (apiKeyValue != null) {
             md.setMethodSecurityConfiguration(new ApiKeyMethodSecurityConfiguration(apiKeyValue));
@@ -115,7 +115,7 @@ public class MethodMetaDataExtractor {
 
     private String resolveApiKey(Method method) {
         if (!method.isAnnotationPresent(MiddlewareApiKeyValue.class)) {
-            return null;
+            return resolveApiKeyFromClassLevel(method);
         }
 
         MiddlewareApiKeyValue apiKeyAnnotation = method.getAnnotation(MiddlewareApiKeyValue.class);
@@ -124,11 +124,14 @@ public class MethodMetaDataExtractor {
         if (!apiKeyValue.isEmpty() && !apiKeyValue.startsWith("${")) {
             return apiKeyValue;
         }
+        return resolveApiKeyFromClassLevel(method);
+    }
 
+    private String resolveApiKeyFromClassLevel(Method method) {
         Class<?> declaringClass = method.getDeclaringClass();
         if (declaringClass.isAnnotationPresent(MiddlewareApiKey.class)) {
             MiddlewareApiKey classAnnotation = declaringClass.getAnnotation(MiddlewareApiKey.class);
-            apiKeyValue = environment.resolvePlaceholders(classAnnotation.value()).trim();
+            String apiKeyValue = environment.resolvePlaceholders(classAnnotation.value()).trim();
 
             if (!apiKeyValue.isEmpty()) {
                 log.info("Using class-level api key for {}.{}",

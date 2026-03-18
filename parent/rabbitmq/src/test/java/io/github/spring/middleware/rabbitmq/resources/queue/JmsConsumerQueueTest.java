@@ -1,4 +1,4 @@
-package io.github.spring.middleware.rabbitmq.resources.queue.durable;
+package io.github.spring.middleware.rabbitmq.resources.queue;
 
 
 
@@ -20,13 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @JmsConsumer(instances = 4)
 @DurableConsumerListener
-@JmsDestination(name = "queue-durable", destinationType = DestinationType.QUEUE, clazzSuffix = EnvironmentSuffix.class)
-public class JmsConsumerQueueDurable extends JmsConsumerResource<TestingMessage> {
+@JmsDestination(name = "queue-test", destinationType = DestinationType.QUEUE, clazzSuffix = EnvironmentSuffix.class)
+public class JmsConsumerQueueTest extends JmsConsumerResource<TestingMessage> {
 
-    private Logger logger = LoggerFactory.getLogger(JmsConsumerQueueDurable.class);
+    private Logger logger = LoggerFactory.getLogger(JmsConsumerQueueTest.class);
     private AtomicInteger atomicInteger;
 
-    public JmsConsumerQueueDurable(ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters, JmsResourceDestination jmsResourceDestination, Class<TestingMessage> clazz) {
+    public JmsConsumerQueueTest(ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters, JmsResourceDestination jmsResourceDestination, Class<TestingMessage> clazz) {
         super(connectionPool, jmsSessionParameters, jmsResourceDestination, clazz);
     }
 
