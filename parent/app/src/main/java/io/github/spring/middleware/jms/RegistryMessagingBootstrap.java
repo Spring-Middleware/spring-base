@@ -20,7 +20,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "middleware.jms.rabbitmq.registry.scanner.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "middleware.jms.rabbitmq.registry.scanner.enabled", havingValue = "true", matchIfMissing = true)
 public class RegistryMessagingBootstrap {
 
     private final RabbitMQClient rabbitMQClient;

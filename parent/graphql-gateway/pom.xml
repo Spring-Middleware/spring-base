@@ -14,6 +14,8 @@
 
     <artifactId>graphql-gateway</artifactId>
     <version>${core.graphql.gateway.version}</version>
+    <name>Spring Middleware GraphQL Gateway</name>
+    <description>GraphQL gateway module for Spring Middleware</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

@@ -50,7 +50,8 @@ public class NodeInfoRetriever {
         return List.of(
                 "/_alive",
                 "/graphql/_alive",
-                "/resources/register"
+                "/resources/register",
+                "/graphql/schema-metadata"
         );
     }
 
