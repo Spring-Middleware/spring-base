@@ -98,6 +98,7 @@
         <module>view</module>
         <module>jpa</module>
         <module>redis</module>
+        <module>kafka</module>
         <module>api</module>
         <module>app</module>
         <module>model</module>
@@ -134,6 +135,11 @@
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>rabbitmq</artifactId>
                 <version>${core.rabbitmq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>kakfa-api</artifactId>
+                <version>${core.kafka.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.spring-middleware</groupId>

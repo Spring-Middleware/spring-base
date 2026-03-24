@@ -4,7 +4,7 @@
 [![Maven](https://img.shields.io/badge/Maven-3.x-blue.svg)](https://maven.apache.org/)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://search.maven.org/artifact/io.github.spring-middleware/bom)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12+-orange.svg)](https://www.rabbitmq.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](../../LICENSE)
 
 A lightweight, annotation-driven JMS framework for RabbitMQ that enables seamless integration of message producers and consumers in Java applications, independent of any specific framework (Spring, Jakarta EE, etc.).
 
@@ -22,6 +22,10 @@ A lightweight, annotation-driven JMS framework for RabbitMQ that enables seamles
 - [Project Structure](#-project-structure)
 - [Contributing](#-contributing)
 - [Published artifacts and installation](#-published-artifacts-and-installation)
+
+## Documentation
+
+This module is documented in the central repository docs: `docs/rabbitmq.md` (root `docs` folder). See `../../docs/rabbitmq.md` for a concise overview and usage examples. For the full API and detailed examples, keep reading this module README.
 
 ## ✨ Features
 

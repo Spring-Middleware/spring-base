@@ -52,7 +52,7 @@ public class RabbitMQClient extends AbstractWebClient {
                 .bodyToMono(RabbitQueueData.class)
                 .doOnError(ex -> {
                     if (ex instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
-                        log.info("Client error for {} queueName={}: {}", baseUrl, queueName, wcre.getMessage());
+                        log.error("Client error for {} queueName={}: {}", baseUrl, queueName, wcre.getMessage());
                     } else {
                         log.error("Can't connect with {} for read queue={}", baseUrl, queueName, ex);
                     }
@@ -213,7 +213,7 @@ public class RabbitMQClient extends AbstractWebClient {
     }
 
     private void logClientError(String action, String resourceName, Throwable ex) {
-        log.info("Client error for {} {}={}: {}", baseUrl, action, resourceName, ex.getMessage());
+        log.error("Client error for {} {}={}: {}", baseUrl, action, resourceName, ex.getMessage());
     }
 
     private boolean isClientError(Throwable ex) {

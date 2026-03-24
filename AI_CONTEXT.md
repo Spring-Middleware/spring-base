@@ -23,8 +23,8 @@ Example dependency:
 
 ```xml
 <dependency>
-  <groupId>io.github.spring-middleware</groupId>
-  <artifactId>app</artifactId>
+    <groupId>io.github.spring-middleware</groupId>
+    <artifactId>app</artifactId>
 </dependency>
 ```
 
@@ -115,7 +115,7 @@ Example:
 ```java
 @MiddlewareContract(name = "product")
 public interface ProductsApi {
-  Product getProduct(String id);
+    Product getProduct(String id);
 }
 ```
 
@@ -537,15 +537,15 @@ Example:
 
 ```graphql
 {
-  product(id: "123") {
-    id
-    ... on PhysicalProduct {
-      stockQuantity
+    product(id: "123") {
+        id
+        ... on PhysicalProduct {
+            stockQuantity
+        }
+        ... on DigitalProduct {
+            downloadUrl
+        }
     }
-    ... on DigitalProduct {
-      downloadUrl
-    }
-  }
 }
 ```
 
@@ -588,6 +588,282 @@ Queues may include RabbitMQ arguments such as:
 - `autoDelete`
 
 This allows **ephemeral node-level messaging infrastructure** that automatically cleans up when a node leaves the cluster.
+
+---
+
+## Messaging Infrastructure (Kafka)
+
+Spring Middleware provides a **declarative abstraction layer on top of Apache Kafka**.
+
+The Kafka module is designed to follow the same platform-oriented principles as the rest of the framework:
+
+- annotation-driven infrastructure
+- centralized declarative configuration
+- reusable transport abstractions
+- distributed tracing integration
+- consistent developer experience across infrastructure modules
+
+Kafka configuration is declared under:
+
+`spring.middleware.kafka`
+
+Example configuration:
+
+```yaml
+spring:
+  middleware:
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+      publishers:
+        catalog-events:
+          topic: ${KAFKA_TOPIC_CATALOG:catalog-events}
+
+      subscribers:
+        catalog-events:
+          group-id: ${KAFKA_GROUP_ID_CATALOG:catalog-service-group}
+          topic: ${KAFKA_TOPIC_CATALOG:catalog-events}
+          concurrency: 1
+```
+
+### Publisher Model
+
+Kafka publishing is exposed through a **registry-driven publisher abstraction**.
+
+Example usage:
+
+```java
+kafkaPublisherRegistry
+        .getPublisher("catalog-events")
+    .publish(event);
+```
+
+Publishing with key:
+
+```java
+kafkaPublisherRegistry
+        .getPublisher("catalog-events")
+    .publish(event, eventId);
+```
+
+The publisher abstraction provides:
+
+- topic resolution through configuration
+- keyed and non-keyed publishing
+- event wrapping through a shared envelope
+- integration with distributed trace identifiers
+- centralized publisher lookup by logical name
+
+### Event Envelope
+
+Kafka events are wrapped in a standard transport envelope:
+
+```java
+EventEnvelope<T>
+```
+
+Main fields:
+
+- `eventId`
+- `eventType`
+- `timestamp`
+- `traceId`
+- `payload`
+
+This envelope provides:
+
+- transport-level metadata
+- event traceability
+- separation between domain payload and infrastructure metadata
+- consistency across event-driven components
+
+### Subscriber Model
+
+Kafka consumers are declared using annotations.
+
+Example:
+
+```java
+@MiddlewareKafkaListener("catalog-events")
+public void handleCatalogEvent(EventEnvelope<CatalogEvent> event) {
+    log.info("Received catalog event: {}", event.getPayload());
+}
+```
+
+Subscriber configuration resolves:
+
+- topic
+- group-id
+- concurrency
+
+This enables:
+
+- listener declaration in code
+- infrastructure configuration in YAML
+- decoupling between logical subscriber name and physical topic
+
+### Listener Registration
+
+Kafka listeners are discovered at startup through a dedicated registrar.
+
+The registrar is responsible for:
+
+- scanning configured base packages
+- identifying methods annotated with `@MiddlewareKafkaListener`
+- resolving subscriber configuration
+- dynamically registering listener containers
+
+This model aligns Kafka listener discovery with other Spring Middleware infrastructure registration patterns.
+
+### Topic Management
+
+Kafka topics may be created in different ways depending on the environment.
+
+Development mode may rely on broker auto-creation.
+
+Production-oriented setups should explicitly define topics, including:
+
+- partitions
+- replicas
+- retention-related policies
+
+Future declarative topic model example:
+
+```yaml
+spring:
+  middleware:
+    kafka:
+      topics:
+        catalog-events:
+          partitions: 3
+          replicas: 1
+```
+
+### Partitioning Strategy
+
+Kafka partitioning is a key part of the design model.
+
+Principles:
+
+- messages with the same key are routed to the same partition
+- ordering is guaranteed within a partition
+- throughput and parallelism scale through partitions
+
+Example:
+
+```java
+publish(event, event.getId());
+```
+
+This allows:
+
+- ordering per business entity
+- scalable parallel consumption
+- partition-aware event processing
+
+### Kafka Runtime Behavior and Constraints
+
+Kafka runtime behavior introduces several important constraints that directly impact system design:
+
+- **parallelism is bounded by partitions**
+
+```text
+max_parallelism = number_of_partitions
+```
+
+- **consumer concurrency must not exceed partitions**
+
+```text
+concurrency <= partitions
+```
+
+Exceeding this does not increase throughput and may introduce unnecessary thread overhead.
+
+- **multiple listeners with the same groupId compete for partitions**
+
+This is not a clean scaling model:
+
+```text
+2 listeners + same groupId → competing consumers
+```
+
+Instead:
+
+- use **one logical listener with concurrency** for parallelism
+- use **different groupIds** when the same event must be processed by different independent flows
+
+- **partition assignment is hash-based**
+
+```text
+partition = hash(key) % partitions
+```
+
+Implications:
+
+- no guarantee of uniform distribution with a small key set
+- collisions are expected
+- distribution improves statistically with many distinct keys
+
+- **key strategy defines scalability**
+
+Guidelines:
+
+- use **high-cardinality keys (UUID, eventId)** for throughput and distribution
+- use **business keys (orderId, userId)** when strict ordering per entity is required
+- avoid small fixed key sets (e.g., A/B/C) as they create partition hotspots
+
+- **Kafka delivery semantics**
+
+Kafka guarantees:
+
+```text
+at-least-once delivery
+```
+
+Implications:
+
+- duplicate events are possible
+- consumers must implement **idempotent processing**
+
+Recommended approach:
+
+- use `eventId` from `EventEnvelope`
+- maintain a processed-event store (e.g., Redis, DB)
+- ignore already processed events
+
+- **offset and consumer stability**
+
+Typical failure scenarios:
+
+- missing persistence (no volumes)
+- inconsistent offsets after restart
+- frequent rebalances due to consumer topology changes
+
+Common error:
+
+```text
+Timeout before position could be determined
+```
+
+Mitigation:
+
+- stable cluster configuration
+- persistent Kafka storage
+- avoid unnecessary consumer group churn
+
+- **Kafka as transport layer**
+
+Kafka does not provide business guarantees:
+
+```text
+Kafka → transport
+Application → consistency
+```
+
+Responsibility boundaries:
+
+- Kafka ensures delivery and ordering per partition
+- the application ensures correctness, idempotency, and state consistency
 
 ---
 
@@ -720,6 +996,7 @@ Spring Middleware is composed of multiple modules organized as a multi-module Ma
 ### Messaging
 
 - rabbitmq
+- kafka
 
 ### Platform
 
@@ -798,6 +1075,19 @@ GraphQL improvements:
 - scalar normalization during response merging
 - polymorphic GraphQL response handling across services
 
+Kafka improvements:
+
+- declarative Kafka publisher/subscriber model
+- registry-driven publisher resolution
+- annotation-based listener registration
+- event envelope standardization
+- integration with distributed tracing
+- foundation for partitioning and scalable event processing
+- clarified runtime model for partitions, concurrency, and consumer groups
+- explicit idempotency strategy using eventId
+- improved partitioning strategy guidelines (high-cardinality keys vs business keys)
+- documented consumer competition vs parallelism model
+
 ---
 
 ## Current Status
@@ -822,6 +1112,7 @@ Current capabilities:
 - OAuth2 service authentication
 - BOM distribution via Maven Central
 - RabbitMQ-based cluster messaging
+- Kafka-based event streaming infrastructure
 
 ---
 
@@ -852,9 +1143,17 @@ When generating Markdown documentation for this project:
 - This avoids breaking nested code blocks that contain triple backticks, for example XML, YAML, JSON, or Java examples.
 - The content inside the block must be valid Markdown and safe to copy directly into `.md` files.
 - This rule applies whenever documentation is requested for:
-  - README files
-  - architecture documentation
-  - AI_CONTEXT updates
-  - examples or guides
-  - any `.md` content
+    - README files
+    - architecture documentation
+    - AI_CONTEXT updates
+    - examples or guides
+    - any `.md` content
+
+Additional clarification:
+
+- The assistant **must never replace parts of the document with placeholders** such as:
+    - `[...]`
+    - `[... contenido ...]`
+    - `[... SIN MODIFICAR ...]`
+- The assistant must always return the **full explicit content**, even if sections are unchanged.
 ~~~~markdown

@@ -28,6 +28,7 @@ It provides infrastructure for:
 - dynamic search engines (Mongo / JPA)
 - Redis abstractions and distributed locks
 - RabbitMQ event integration
+- Kafka event integration
 
 The framework emerged from real production microservices and aims to remove recurring infrastructure complexity while keeping architecture explicit and transparent.
 
@@ -329,15 +330,23 @@ Spring Middleware is split into focused Maven modules.
 
 ## Redis Module
 Provides distributed locks, shared maps and caches.
+See `docs/redis.md` for details.
 
 ## Mongo Search Engine
 Dynamic search capabilities on top of MongoDB.
+See `docs/mongo.md` for details.
 
 ## JPA Search Engine
 Dynamic search capabilities for relational databases.
+See `docs/jpa.md` for details.
 
 ## RabbitMQ Integration
 Opinionated RabbitMQ integration for producers and consumers.
+See `docs/rabbitmq.md` for details.
+
+## Kafka Integration
+Provides auto-configuration for Kafka publishers and subscribers, topic creation support and a registry for named publishers/subscribers.
+See `docs/kafka.md` for details.
 
 ---
 
@@ -351,7 +360,7 @@ Spring Middleware is distributed via Maven Central using a BOM.
     <dependency>
       <groupId>io.github.spring-middleware</groupId>
       <artifactId>bom</artifactId>
-      <version>1.1.0</version>
+      <version>1.2.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -433,6 +442,7 @@ Planned improvements include:
 - `docs/errors.md`
 - `docs/graphql.md`
 - `docs/security.md`
+- `docs/kafka.md`
 
 ---
 
