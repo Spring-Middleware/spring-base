@@ -16,12 +16,12 @@ public class ConsumerHandlerResource<T> extends JmsHandlerResource<String, T> {
     @Override
     public String handleBeforeProcessingMessage(T message, Properties properties) throws JMSException {
         String handlingMessage = "Iniciando session de DB";
-        logger.debug("handleBeforeConsumingMessage " + handlingMessage);
+        logger.debug(STR."handleBeforeConsumingMessage \{handlingMessage}");
         return handlingMessage;
     }
 
 
     public void handleFinallyConsumingMessage(String handlingMessage) {
-        logger.debug("handleFinallyConsumingMessage " + handlingMessage);
+        logger.debug(STR."handleFinallyConsumingMessage \{handlingMessage}");
     }
 }

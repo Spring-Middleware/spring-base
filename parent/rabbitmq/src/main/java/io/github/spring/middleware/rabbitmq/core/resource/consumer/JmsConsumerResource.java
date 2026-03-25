@@ -14,7 +14,12 @@ import io.github.spring.middleware.rabbitmq.core.resource.JmsResource;
 import io.github.spring.middleware.rabbitmq.core.resource.JmsResourceType;
 import io.github.spring.middleware.rabbitmq.core.resource.consumer.creator.MessageConsumerFactory;
 import io.github.spring.middleware.rabbitmq.core.resource.handler.HandlerParameters;
-import jakarta.jms.*;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageListener;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
@@ -78,7 +83,7 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
                 session = getSession(jmsConnection);
                 messageConsumer = messageConsumerFactory
                         .createMesssageConsumer(session, jmsResourceDestination, createMessageSelector());
-                logger.info("Started jms: " + this.toString());
+                logger.info(STR."Started jms: \{this.toString()}");
                 messageConsumer.setMessageListener(this);
                 started = true;
             }
@@ -104,7 +109,7 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
                         .append("'").append(" and ");
             }
             messageSelector.setLength(messageSelector.length() - 5);
-            logger.debug("Created message selector " + messageSelector.toString());
+            logger.debug(STR."Created message selector \{messageSelector.toString()}");
         }
         return messageSelector.toString();
     }
@@ -155,16 +160,26 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
 
             logPropertiesAndMessage(properties, bodyMessage);
             T t = getT(contentType, bodyMessage);
-            if (jmsAcknowledgeListener != null) {
-                jmsAcknowledgeListener.acknowledge(message);
-            }
             HandlerParameters handlerParameters = new HandlerParameters();
             handlerParameters.setMessage(t);
             handlerParameters.setProperties(properties);
             handlerParameters.setHandlerError(true);
             handleMessage(handlerParameters);
+            if (session.getTransacted()) {
+                session.commit();
+            } else if (session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE
+                    && jmsAcknowledgeListener != null) {
+                jmsAcknowledgeListener.acknowledge(message);
+            }
         } catch (Exception e) {
             logger.error("Error consuming message ", e);
+            try {
+                if (session != null && session.getTransacted()) {
+                    session.rollback();
+                }
+            } catch (Exception rollbackEx) {
+                logger.error("Error rolling back session", rollbackEx);
+            }
             handleError(e, (T) bodyMessage, properties);
         }
     }
@@ -197,15 +212,12 @@ public abstract class JmsConsumerResource<T> extends JmsResource<T> implements M
             plainMessage = ((TextMessage) message).getText();
         } else if (message instanceof BytesMessage) {
             BytesMessage bytesMessage = (BytesMessage) message;
-            // Método estándar de la interfaz BytesMessage de Jakarta
             byte[] b = new byte[(int) bytesMessage.getBodyLength()];
             bytesMessage.readBytes(b);
             plainMessage = new String(b);
         } else {
-            // En Altia aman el tipado fuerte: lanza una excepción descriptiva
-            throw new IllegalArgumentException("Unsupported JMS message type: " + message.getJMSType());
+            throw new IllegalArgumentException(STR."Unsupported JMS message type: \{message.getJMSType()}");
         }
-
         return plainMessage;
     }
 

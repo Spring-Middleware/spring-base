@@ -99,7 +99,7 @@ public class DefaultRegistrationManager implements RegistrationManager {
         if (!endpointRegistered) {
             log.warn("Endpoint for resource {} is NOT registered", register.name());
         } else {
-            log.info("Endpoint for resource {} is registered", register.name());
+            log.debug("Endpoint for resource {} is registered", register.name());
         }
         return endpointRegistered;
     }

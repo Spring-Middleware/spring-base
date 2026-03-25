@@ -25,6 +25,7 @@ import io.github.spring.middleware.rabbitmq.core.resource.listener.JmsResourceLi
 import io.github.spring.middleware.rabbitmq.core.resource.producer.JmsProducerResource;
 import jakarta.jms.Destination;
 import jakarta.jms.JMSException;
+import jakarta.jms.Session;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -159,8 +160,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
                                 logger.error("Only allowed one handler for a consumer");
                             }
                         } catch (Exception ex) {
-                            logger.error("Error configuring handler " + clazzHandler.getSimpleName() + " in consumer " +
-                                    r.getClass());
+                            logger.error(STR."Error configuring handler \{clazzHandler.getSimpleName()} in consumer \{r.getClass()}");
                         }
                     });
         });
@@ -258,6 +258,11 @@ public class JmsResourceFactory implements ApplicationContextAware {
                     jmsConsumerResource.setJmsSessionParameters(jmsSessionParameters);
                     jmsConsumerResource.setJmsResourceDestination(jmsResourceDestination);
                     jmsConsumerResource.setClazz(genericType);
+                }
+                if (!jmsConsumer.transacted() && jmsConsumer.acknoledgement() == Session.CLIENT_ACKNOWLEDGE) {
+                    logger.info("Consumer {} is configured with CLIENT_ACKNOWLEDGE and not transacted, be sure to ack messages manually",
+                            clazz.getSimpleName());
+                    jmsConsumerResource.setJmsAcknowledgeListener(new DefaultJmsAcknowledgeListener());
                 }
 
                 jmsConsumerResource.setDurabilityFunctionExecutor(destinationTypeFunctionExecutor);

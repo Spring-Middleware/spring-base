@@ -34,7 +34,7 @@ public class ProxyConfigurationClientManager implements ApplicationListener<Cont
                 .filter(p -> p.getRegistryEntry() == null)
                 .collect(Collectors.toSet());
         if (!unconfigured.isEmpty()) {
-            log.info("Configuring {} unconfigured proxy clients", unconfigured.size());
+            log.debug("Configuring {} unconfigured proxy clients", unconfigured.size());
             clientConfigurator.configureProxies(unconfigured);
         }
     }

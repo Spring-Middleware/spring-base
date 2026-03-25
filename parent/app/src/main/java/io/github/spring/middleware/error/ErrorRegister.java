@@ -56,7 +56,7 @@ public class ErrorRegister {
             jmsErrorProducer.send(errorRequest);
 
         } catch (Exception ex) {
-            log.error("Can't register error " + exception.getMessage());
+            log.error(STR."Can't register error \{exception.getMessage()}");
         }
     }
 

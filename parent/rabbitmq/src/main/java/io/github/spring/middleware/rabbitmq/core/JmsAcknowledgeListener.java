@@ -5,6 +5,6 @@ import jakarta.jms.Message;
 
 public interface JmsAcknowledgeListener {
 
-    void acknowledge(Message message);
+    void acknowledge(Message message) throws Exception;
 
 }

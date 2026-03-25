@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.spring.middleware.kafka.api.data.EventEnvelope;
 import io.github.spring.middleware.kafka.core.converter.MessageConverterFactory;
+import io.github.spring.middleware.kafka.core.error.DefaultKafkaExceptionProvider;
+import io.github.spring.middleware.kafka.core.error.DefaultMiddlewareKafkaErrorHandlerFactory;
+import io.github.spring.middleware.kafka.core.error.KafkaExceptionProvider;
+import io.github.spring.middleware.kafka.core.error.MiddlewareKafkaErrorHandlerFactory;
 import io.github.spring.middleware.kafka.core.properties.KafkaProperties;
 import io.github.spring.middleware.kafka.core.publisher.DefaultKafkaPublisher;
 import io.github.spring.middleware.kafka.core.registrar.KafkaListenerMetadataRegistry;
@@ -15,6 +19,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -27,13 +32,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
-import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
@@ -66,16 +71,8 @@ public class KafkaAutoConfiguration {
             havingValue = "true",
             matchIfMissing = true
     )
-    public KafkaAdmin.NewTopics middlewareKafkaTopics(KafkaProperties properties) {
-        List<NewTopic> topics = properties.getTopics()
-                .entrySet()
-                .stream()
-                .map(entry -> TopicBuilder.name(entry.getKey())
-                        .partitions(entry.getValue().getPartitions())
-                        .replicas(entry.getValue().getReplicationFactor())
-                        .build())
-                .toList();
-
+    public KafkaAdmin.NewTopics middlewareKafkaTopics(KafkaProperties properties, NewTopicFactory newTopicFactory) {
+        List<NewTopic> topics = newTopicFactory.buildTopics(properties);
         log.info("Creating Kafka topics: {}", topics.stream().map(NewTopic::name).toList());
         return new KafkaAdmin.NewTopics(topics.toArray(new NewTopic[0]));
     }
@@ -129,8 +126,36 @@ public class KafkaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(
+            KafkaTemplate<String, Object> kafkaTemplate,
+            KafkaProperties properties
+    ) {
+        return new DeadLetterPublishingRecoverer(
+                kafkaTemplate,
+                (record, ex) -> new TopicPartition(
+                        record.topic() + properties.getErrorHandling().getDeadLetter().getSuffix(),
+                        record.partition()
+                )
+        );
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    public KafkaExceptionProvider kafkaExceptionProvider() {
+        return new DefaultKafkaExceptionProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MiddlewareKafkaErrorHandlerFactory defaultKafkaErrorHandlerFactory(KafkaProperties properties, KafkaExceptionProvider kafkaExceptionProvider, DeadLetterPublishingRecoverer deadLetterPublishingRecoverer) {
+        return new DefaultMiddlewareKafkaErrorHandlerFactory(properties, kafkaExceptionProvider, deadLetterPublishingRecoverer);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
-            ConsumerFactory<String, Object> consumerFactory, KafkaProperties kafkaProperties
+            ConsumerFactory<String, Object> consumerFactory, KafkaProperties kafkaProperties, MiddlewareKafkaErrorHandlerFactory errorHandlerFactory
     ) {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -162,6 +187,7 @@ public class KafkaAutoConfiguration {
                 return record;
             });
         }
+        factory.setCommonErrorHandler(errorHandlerFactory.buildErrorHandler());
         return factory;
     }
 

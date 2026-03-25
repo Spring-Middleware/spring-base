@@ -82,6 +82,7 @@ public abstract class JmsProducerResource<T> extends JmsResource<T> {
         } catch (Exception e) {
             logger.error("Error sending message ", e);
             rollback(session);
+            throw e;
         } finally {
             messageProducer.close();
             close(session, jmsConnection);

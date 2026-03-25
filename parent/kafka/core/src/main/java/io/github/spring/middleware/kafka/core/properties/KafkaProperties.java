@@ -21,6 +21,7 @@ public class KafkaProperties {
     private Map<String, TopicConfiguration> topics = new HashMap<>();
     private Map<String, Publisher> publishers = new HashMap<>();
     private Map<String, Subscriber> subscribers = new HashMap<>();
+    private ErrorHandling errorHandling = new ErrorHandling();
 
     @Getter
     @Setter
@@ -56,6 +57,24 @@ public class KafkaProperties {
         private boolean enabled = false;
         private boolean logPayload = false;
         private boolean logHeaders = false;
+    }
+
+    @Getter
+    @Setter
+    public static class ErrorHandling {
+        private boolean enabled = false;
+        private int maxRetries = 3;
+        private long retryBackoffMs = 1000;
+        private DeadLetter deadLetter = new DeadLetter();
+
+
+        @Getter
+        @Setter
+        public static class DeadLetter {
+            private boolean enabled = false;
+            private String suffix = ".DLT";
+        }
+
     }
 
 }

@@ -45,7 +45,7 @@ public class NotifyErrorHandlerResource<T> implements JmsResourceErrorHandler<T>
                     errorHandlerContext.getJmsResourceType().name(), errorHandlerContext.getClazz().getName(),
                     data, null);
         } catch (Exception ex) {
-            log.error("Can't register jms error " + jsonRequest);
+            log.error(STR."Can't register jms error \{jsonRequest}");
         }
     }
 

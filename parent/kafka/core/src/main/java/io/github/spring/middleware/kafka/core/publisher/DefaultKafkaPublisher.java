@@ -57,6 +57,7 @@ public class DefaultKafkaPublisher<T, K> implements KafkaPublisher<T, K> {
                 );
     }
 
+
     private PublishResult<T, K> createPublishResult(EventEnvelope<T> envelope, K key, SendResult sendResult) {
         PublishResult<T, K> result = new PublishResult<>();
         result.setKey(key);

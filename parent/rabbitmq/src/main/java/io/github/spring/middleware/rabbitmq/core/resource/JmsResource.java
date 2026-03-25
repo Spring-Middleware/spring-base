@@ -18,7 +18,12 @@ import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 public abstract class JmsResource<T> {
 
@@ -38,7 +43,7 @@ public abstract class JmsResource<T> {
     }
 
     public JmsResource(ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters,
-            JmsResourceDestination jmsResourceDestination, Class<T> clazz) {
+                       JmsResourceDestination jmsResourceDestination, Class<T> clazz) {
 
         this.connectionPool = connectionPool;
         this.jmsSessionParameters = jmsSessionParameters;
@@ -113,7 +118,7 @@ public abstract class JmsResource<T> {
             return jmsConnection.getConnection()
                     .createSession(jmsSessionParameters.isTransacted(), jmsSessionParameters.getAcknowledgeMode());
         } catch (Exception ex) {
-            throw new JMSException("Can't get session from connection " + jmsConnection);
+            throw new JMSException(STR."Can't get session from connection \{jmsConnection}");
         }
     }
 
@@ -125,15 +130,8 @@ public abstract class JmsResource<T> {
     }
 
     protected void logPropertiesAndMessage(Properties properties, String message) {
-
-        boolean logRequestEnabled = Boolean.parseBoolean(
-                Optional.ofNullable((String) properties.get("LogRequestEnabled")).orElse(Boolean.FALSE.toString()));
-        if (logger.isDebugEnabled() || logRequestEnabled) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(this.getClass().getSimpleName()+" Properties: " + properties + " Message: " + message);
-            } else if (logRequestEnabled) {
-                logger.error(this.getClass().getSimpleName()+" Properties: " + properties + " Message: " + message);
-            }
+        if (logger.isDebugEnabled()) {
+            logger.debug(STR."\{this.getClass().getSimpleName()} Properties: \{properties} Message: \{message}");
         }
     }
 
@@ -199,7 +197,7 @@ public abstract class JmsResource<T> {
             try {
                 session.close();
             } catch (Exception ex) {
-                logger.error("Error closing JMS session for resource " + this.getClass().getSimpleName(), ex);
+                logger.error(STR."Error closing JMS session for resource \{this.getClass().getSimpleName()}", ex);
             }
         }
     }
