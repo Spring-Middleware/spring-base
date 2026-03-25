@@ -27,6 +27,8 @@ import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import lombok.AllArgsConstructor;
 import org.apache.log4j.Logger;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.LinkedHashSet;

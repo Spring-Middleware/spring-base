@@ -94,7 +94,7 @@ public class QueryBuilder {
         }
     }
 
-    private static void appendSelectionSet(SelectionSet selectionSet, StringBuilder sb, String indent) {
+    public static void appendSelectionSet(SelectionSet selectionSet, StringBuilder sb, String indent) {
         sb.append(" {");
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field childField) {
