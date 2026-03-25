@@ -254,8 +254,16 @@ Refer to the `app` module documentation and code for concrete property names and
 
 ## 7. Related documentation
 
-- `README.md` – high-level overview and examples of `@MiddlewareClient`.
-- `docs/architecture.md` – overall architecture and control/data plane.
-- `docs/errors.md` – detailed error model and error propagation.
-- `docs/registry.md` – Registry model (`RegistryEntry`, `SchemaLocation`) and flows.
-- `docs/graphql.md` – GraphQL support and centralized error handling.
+- `README.md` — high-level overview and examples of `@MiddlewareClient`.
+- `docs/architecture.md` — overall architecture and control/data plane.
+- `docs/errors.md` — detailed error model and error propagation.
+- `docs/registry.md` — Registry model (`RegistryEntry`, `SchemaLocation`) and flows.
+- `docs/graphql.md` — GraphQL support and centralized error handling.
+- `docs/client-security.md` — security for declarative clients and configuration.
+- `docs/logging.md` — request/response logging and forced logging.
+- `docs/kafka.md` — Kafka integration and configuration.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module.
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — HTTP security configuration.

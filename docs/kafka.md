@@ -37,20 +37,39 @@ middleware:
         concurrency: 3
 ```
 
-Flat `application.properties` version:
+Error handling
+--------------
+The Kafka module supports configurable error handling for consumers (and related retry/dead-letter behaviour). The configuration keys are available under `middleware.kafka.error-handling` and are mapped in `KafkaProperties` (see the module sources for the exact mapping).
+
+Example YAML snippet:
+
+```yaml
+middleware:
+  kafka:
+    error-handling:
+      enabled: ${KAFKA_ERROR_HANDLING_ENABLED:true}
+      max-retries: ${KAFKA_ERROR_HANDLING_MAX_RETRIES:3}
+      retry-backoff-ms: ${KAFKA_ERROR_HANDLING_RETRY_BACKOFF_MS:1000}
+      dead-letter:
+        enabled: ${KAFKA_ERROR_HANDLING_DEAD_LETTER_ENABLED:true}
+        suffix: .DLT
+```
+
+What these settings control (summary):
+- `enabled` (boolean): enable/disable the module-level error handling behaviour.
+- `max-retries` (int): number of retry attempts before considering the record failed.
+- `retry-backoff-ms` (long): backoff (in milliseconds) between retries.
+- `dead-letter.enabled` (boolean): when true, records that exhaust retries will be routed to a dead-letter topic.
+- `dead-letter.suffix` (String): suffix appended to the original topic name to build the dead-letter topic name (e.g. `catalog-events.DLT`).
+
+Flat `application.properties` version for the same configuration:
 
 ```
-middleware.kafka.bootstrap-servers=localhost:9092
-middleware.kafka.create-missing-topics=true
-middleware.kafka.logging.enabled=false
-middleware.kafka.logging.log-payload=false
-middleware.kafka.logging.log-headers=false
-middleware.kafka.topics.catalog-events.partitions=5
-middleware.kafka.topics.catalog-events.replication-factor=3
-middleware.kafka.publishers.catalog.topic=${KAFKA_TOPIC_CATALOG:catalog-events}
-middleware.kafka.subscribers.catalog.topic=${KAFKA_TOPIC_CATALOG:catalog-events}
-middleware.kafka.subscribers.catalog.group-id=${KAFKA_GROUP_ID_CATALOG:catalog-service-group}
-middleware.kafka.subscribers.catalog.concurrency=3
+middleware.kafka.error-handling.enabled=${KAFKA_ERROR_HANDLING_ENABLED:true}
+middleware.kafka.error-handling.max-retries=${KAFKA_ERROR_HANDLING_MAX_RETRIES:3}
+middleware.kafka.error-handling.retry-backoff-ms=${KAFKA_ERROR_HANDLING_RETRY_BACKOFF_MS:1000}
+middleware.kafka.error-handling.dead-letter.enabled=${KAFKA_ERROR_HANDLING_DEAD_LETTER_ENABLED:true}
+middleware.kafka.error-handling.dead-letter.suffix=.DLT
 ```
 
 Important property keys and defaults
@@ -62,11 +81,14 @@ Important property keys and defaults
 - `middleware.kafka.topics.<name>.replication-factor` (int) — replication factor (default 1)
 - `middleware.kafka.publishers.<id>.topic` (String) — topic used by named publisher `<id>` (required for that publisher)
 - `middleware.kafka.subscribers.<id>.topic` (String), `group-id`, `concurrency` — subscriber endpoint metadata wired by the registrar
+- `middleware.kafka.error-handling.*` — error handling controls (`enabled`, `max-retries`, `retry-backoff-ms`, `dead-letter.*`) — defaults are shown in the YAML snippet above and are implemented in `KafkaProperties`.
 
 How it wires
 ------------
 - Publishers: the auto-configuration instantiates a `DefaultKafkaPublisher` for each entry under `middleware.kafka.publishers` and registers it in `KafkaPublisherRegistry` under the configured id.
 - Subscribers: entries under `middleware.kafka.subscribers` are used by `KafkaListenerRegistrar` to register consumer endpoints (topic, group-id, concurrency). The registrar uses a message converter to convert incoming records into `EventEnvelope<T>` instances.
+
+The error handling options are consumed by the module and will influence the retry behaviour and dead-letter routing for consumer endpoints that the registrar registers. See `parent/kafka/core/src/main/java/.../properties/KafkaProperties.java` for the authoritative property-to-field mapping and defaults.
 
 API surface and key types
 -------------------------
@@ -158,3 +180,21 @@ Key classes (examples of where to find the implementation):
 Further reading
 ---------------
 See the middleware Kafka module source for advanced configuration and extension points (custom converters, custom KafkaTemplate beans, error handlers).
+
+---
+
+## Related documentation
+
+- `README.md` — project overview and modules.
+- `docs/architecture.md` — architecture and control/data plane.
+- `docs/communication.md` — declarative clients and communication flow.
+- `docs/errors.md` — unified error model and propagation.
+- `docs/registry.md` — registry model used for discovery and schema locations.
+- `docs/client-security.md` — security for declarative clients (auth modes relevant to publishers/subscribers).
+- `docs/logging.md` — request/response logging and middleware log properties.
+- `docs/kafka.md` — Kafka module (this document).
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module.
+- `docs/security.md` — HTTP security configuration.

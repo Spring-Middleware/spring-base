@@ -437,6 +437,59 @@ public class MyConsumer extends JmsConsumerResource<MyMessage> {
 }
 ```
 
+### Handler and marker-based error handler example (DLT)
+
+The module allows you to wire handlers and error handlers to application-defined marker annotations. Examples below show both a `@JmsHandler` usage and a Dead Letter routing example using a `@DltError` marker.
+
+```java
+// user-defined marker annotation
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DltError {}
+
+// 1) Handler example using @JmsHandler to attach to resources annotated with @ConsumerHandler
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ConsumerHandler {}
+
+@JmsHandler(ConsumerHandler.class)
+public class ConsumerHandlerResource<T> extends JmsHandlerResource<String, T> {
+    @Override
+    public String handleBeforeProcessingMessage(T message, Properties properties) throws JMSException {
+        // e.g. open DB session, set MDC
+        return "dbSession";
+    }
+
+    @Override
+    public void handleFinallyConsumingMessage(String handlingMessage) {
+        // cleanup
+    }
+}
+
+// 2) Error handler wired to application marker @DltError
+@JmsErrorHandler(value = DltError.class)
+public class DltErrorHandler<T> implements JmsResourceErrorHandler<T> {
+    @Override
+    public void handleError(ErrorHandlerContext<T> ctx) {
+        // Route failed message to a Dead Letter Topic/Queue
+        dltProducer.send(ctx.getMessage(), ctx.getProperties());
+    }
+}
+
+// A consumer annotated with @DltError will have DltErrorHandler attached automatically
+@DltError
+@JmsConsumer
+@JmsDestination(name = "orders", destinationType = DestinationType.QUEUE)
+public class OrdersConsumer extends JmsConsumerResource<Order> {
+    @Override
+    public void process(Order order, Properties properties) { /* ... */ }
+}
+```
+
+Notes:
+- `@JmsHandler`, `@JmsListener` and `@JmsErrorHandler` use the `value` attribute to indicate the user marker annotation that links the component to resource classes.
+- The factory attaches the discovered handler/error handler/listener instances to matching resources at startup; this pattern enables application-specific behavior without changing the framework code.
+
 ## 📖 API Reference
 
 ### JmsFactory
@@ -508,6 +561,158 @@ The project includes comprehensive tests demonstrating:
 - **Custom selectors**
 
 See `src/test/java/com/middleware/jms/JmsTest.java` for complete examples.
+
+### Complete examples and test harness
+
+The module includes a small test fixture used in the module tests. Below are copy-paste-ready examples (taken from `src/test`) that show a full producer/consumer/handler/listener/error-handler flow and a minimal bootstrap that creates `JmsResources`, sends a message and starts consumers.
+
+1) Message DTO used in tests
+
+```java
+package io.github.spring.middleware.rabbitmq.message;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class TestingMessage {
+
+    @JsonProperty("message")
+    private String message;
+    private Integer id;
+
+    public TestingMessage() { }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+}
+```
+
+2) Producer example (queue)
+
+```java
+@JmsProducer
+@ProducerHandler
+@JmsDestination(name = "queue-test", destinationType = DestinationType.QUEUE, clazzSuffix = EnvironmentSuffix.class)
+public class JmsProducerQueueTest extends JmsProducerResource<TestingMessage> {
+    public JmsProducerQueueTest(String routingKey, ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters, JmsResourceDestination jmsResourceDestination, Class<TestingMessage> clazz) {
+        super(routingKey, connectionPool, jmsSessionParameters, jmsResourceDestination, clazz);
+    }
+}
+```
+
+3) Consumer example (queue)
+
+```java
+@JmsConsumer(instances = 4)
+@DurableConsumerListener
+@JmsDestination(name = "queue-test", destinationType = DestinationType.QUEUE, clazzSuffix = EnvironmentSuffix.class)
+public class JmsConsumerQueueTest extends JmsConsumerResource<TestingMessage> {
+
+    private AtomicInteger atomicInteger;
+
+    public JmsConsumerQueueTest(ObjectPool<JmsConnection> connectionPool, JmsSessionParameters jmsSessionParameters, JmsResourceDestination jmsResourceDestination, Class<TestingMessage> clazz) {
+        super(connectionPool, jmsSessionParameters, jmsResourceDestination, clazz);
+    }
+
+    @Override
+    public void process(TestingMessage testingMessage, Properties properties) {
+        logger.info("Message Received " + testingMessage.getId() + " in consumer " + getId());
+        atomicInteger.getAndIncrement();
+    }
+
+    public void waitUntilMessageReceived(Integer expectedMessages) throws Exception {
+        while (atomicInteger.get() < expectedMessages) {
+            Thread.sleep(300);
+        }
+    }
+}
+```
+
+4) Simple handler (custom marker + resource)
+
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ConsumerHandler {}
+
+@JmsHandler(ConsumerHandler.class)
+public class ConsumerHandlerResource<T> extends JmsHandlerResource<String, T> {
+    @Override
+    public String handleBeforeProcessingMessage(T message, Properties properties) throws JMSException {
+        // Example: start DB transaction / set MDC
+        return "dbSession";
+    }
+
+    @Override
+    public void handleFinallyConsumingMessage(String handlingMessage) {
+        // cleanup
+    }
+}
+
+// Consumer annotated with the marker will get the handler attached
+@ConsumerHandler
+@JmsConsumer
+@JmsDestination(...)
+public class MyConsumer extends JmsConsumerResource<MyDto> { ... }
+```
+
+5) Listener example
+
+```java
+@JmsListener
+public class JmsListenerAll implements JmsResourceListener {
+    @Override
+    public void onBeforeProcessingMessage(Properties properties) {
+        logger.info("[ALL] Listener on before process message");
+    }
+}
+```
+
+6) Error handler example
+
+```java
+@Slf4j
+@Component
+@JmsErrorHandler(value = NotifyErrorHandler.class)
+public class NotifyErrorHandlerResource<T> implements JmsResourceErrorHandler<T> {
+    @Override
+    public void handleError(ErrorHandlerContext<T> errorHandlerContext) {
+        // notify, persist, metrics
+    }
+}
+```
+
+7) Minimal bootstrap / test harness (sends one message and starts consumers)
+
+```java
+// 1) configure connection
+JmsConnectionConfiguration config = new JmsConnectionConfiguration();
+config.setTcpHost("tcp://localhost:5672");
+JmsConnectionCredentials creds = new JmsConnectionCredentials();
+creds.setUsername("guest");
+creds.setPassword("guest");
+config.setJmsConnectionCredentials(creds);
+
+// 2) create resources (scan package where producer/consumer classes live)
+JmsFactory factory = JmsFactory.newInstance();
+JmsResources resources = factory.createJmsResources(Arrays.asList("io.github.spring.middleware.rabbitmq.resources"), config);
+
+// 3) get producer and send
+JmsProducerQueueTest producer = resources.getJmsProducer(JmsProducerQueueTest.class);
+producer.send(new TestingMessage(){ { setId(1); setMessage("hello"); } });
+
+// 4) start consumers
+resources.start(JmsConsumerQueueTest.class);
+
+// 5) optionally wait and cleanup
+Thread.sleep(1000);
+resources.close();
+```
+
+Notes
+- The examples above are taken from the module `src/test` folder; they are intentionally minimal and intended to be used as a starting point.
+- For running integration tests locally the project uses Testcontainers to start RabbitMQ; the README's Quick Start shows how to run a local broker via docker-compose.
 
 ## 📁 Project Structure
 

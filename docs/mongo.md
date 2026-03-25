@@ -39,3 +39,22 @@ Where to look
 Further reading
 ---------------
 See the `parent/mongo` module sources for examples and advanced options.
+
+---
+
+## Related documentation
+
+- `README.md` — high-level project overview.
+- `docs/architecture.md` — architecture and control/data plane.
+- `docs/communication.md` — service communication and declarative clients.
+- `docs/errors.md` — unified error model and propagation.
+- `docs/registry.md` — registry and schema location metadata.
+- `docs/graphql.md` — GraphQL support.
+- `docs/kafka.md` — Kafka integration.
+- `docs/client-security.md` — security for declarative clients.
+- `docs/logging.md` — request/response logging.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module (this document).
+- `docs/jpa.md` — JPA module.
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — HTTP security configuration.

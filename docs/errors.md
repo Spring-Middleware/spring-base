@@ -287,3 +287,22 @@ The error model is tightly integrated with other parts of Spring Middleware:
 - **GraphQL** – see `docs/graphql.md` for GraphQL-specific behavior and examples.
 
 Together, these components provide a consistent, observable error story across the entire platform.
+
+---
+
+## Related documentation
+
+- `README.md` — high-level project overview.
+- `docs/architecture.md` — architecture and control/data plane.
+- `docs/communication.md` — how errors propagate across middleware clients.
+- `docs/errors.md` — this document.
+- `docs/graphql.md` — GraphQL error mapping and handler.
+- `docs/registry.md` — registry and topology implications on error handling.
+- `docs/client-security.md` — security for declarative clients (auth failures and propagation).
+- `docs/logging.md` — request/response logging and correlation.
+- `docs/kafka.md` — Kafka integration and error-handling for consumers.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module.
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — HTTP security configuration.

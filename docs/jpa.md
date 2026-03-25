@@ -41,3 +41,22 @@ Where to look
 Further reading
 ---------------
 Inspect `parent/jpa` module sources for examples and advanced usage.
+
+---
+
+## Related documentation
+
+- `README.md` — high-level project overview.
+- `docs/architecture.md` — architecture and control/data plane.
+- `docs/communication.md` — service communication and declarative clients.
+- `docs/errors.md` — unified error model and propagation.
+- `docs/registry.md` — registry and schema location metadata.
+- `docs/graphql.md` — GraphQL support and gateway.
+- `docs/kafka.md` — Kafka integration and configuration.
+- `docs/client-security.md` — security for declarative middleware clients.
+- `docs/logging.md` — request/response logging and forced logging.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module (this document).
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — HTTP security configuration.

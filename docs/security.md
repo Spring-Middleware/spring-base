@@ -330,3 +330,22 @@ The security layer is designed to be extensible:
 
 Method-level security annotations (e.g. `@RolesAllowed`) are also enabled via `@EnableMethodSecurity(jsr250Enabled =
 true)` in `MiddlewareSecurityConfiguration`, so you can combine URL-based rules with method-level checks when needed.
+
+---
+
+## Related documentation
+
+- `README.md` — high-level project overview.
+- `docs/architecture.md` — platform architecture.
+- `docs/communication.md` — how clients use the Registry and how auth propagates in service calls.
+- `docs/errors.md` — unified error model and security failure mapping.
+- `docs/registry.md` — registry responsibilities.
+- `docs/client-security.md` — security applied to declarative middleware clients.
+- `docs/logging.md` — request/response logging and forced logging.
+- `docs/kafka.md` — Kafka module.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module.
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — this document.
+

@@ -8,7 +8,7 @@ It is a platform layer designed to standardize microservice infrastructure while
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-green.svg)](https://spring.io/projects/spring-boot)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://central.sonatype.com/artifact/io.github.spring-middleware/bom)
-[![Status](https://img.shields.io/badge/status-active%20development-brightgreen)](#)
+![Status](https://img.shields.io/badge/status-active%20development-brightgreen)
 [![Architecture](https://img.shields.io/badge/Architecture-Microservices%20Platform-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -216,6 +216,10 @@ The framework automatically handles:
 - context propagation
 - retry strategies
 
+Security for declarative clients
+--------------------------------
+Declarative clients support several security modes (passthrough, api-key, OAuth2 client-credentials, none). See `docs/client-security.md` for detailed explanation, configuration examples and the annotations you can use on proxy interfaces and methods.
+
 ---
 
 # Request Context Propagation
@@ -243,6 +247,8 @@ Service B
 requestId = 4C7F...
 spanId = B992...
 ```
+
+Note: request/response logging is configurable via `middleware.log` properties, see `docs/logging.md` for details.
 
 ---
 
@@ -342,11 +348,15 @@ See `docs/jpa.md` for details.
 
 ## RabbitMQ Integration
 Opinionated RabbitMQ integration for producers and consumers.
-See `docs/rabbitmq.md` for details.
+See `docs/rabbitmq.md` for details and `parent/rabbitmq/README.md` for module-specific guidance and examples.
+For implementation best-practices and handler/listener/error-handler recommendations, see `docs/rabbitmq-best-practices.md`.
 
 ## Kafka Integration
 Provides auto-configuration for Kafka publishers and subscribers, topic creation support and a registry for named publishers/subscribers.
 See `docs/kafka.md` for details.
+
+## Logging
+Request/response logging for the middleware is documented in `docs/logging.md`.
 
 ---
 
@@ -436,13 +446,29 @@ Planned improvements include:
 
 # Where to go next
 
-- `docs/architecture.md`
-- `docs/registry.md`
-- `docs/communication.md`
-- `docs/errors.md`
-- `docs/graphql.md`
-- `docs/security.md`
-- `docs/kafka.md`
+The project contains detailed documentation under the `docs/` directory. Start with the high-level guides and then drill down into module-specific docs.
+
+- Architecture overview: `docs/architecture.md`
+- Registry and schema metadata: `docs/registry.md`
+- Service communication and `@MiddlewareClient`: `docs/communication.md`
+- Error model and propagation: `docs/errors.md`
+- GraphQL support and gateway: `docs/graphql.md`
+- HTTP security configuration: `docs/security.md`
+- Declarative client security (client-side modes): `docs/client-security.md`
+- Kafka integration and configuration: `docs/kafka.md`
+- Request/response logging and forced logging: `docs/logging.md`
+
+## Module-specific documentation
+
+- Redis: `docs/redis.md`
+- Mongo: `docs/mongo.md`
+- JPA: `docs/jpa.md`
+- RabbitMQ: `docs/rabbitmq.md`
+
+## How to find code and examples
+
+- Module READMEs: `parent/*/README.md` (for module-specific setup and examples, e.g. `parent/graphql-gateway/README.md`).
+- Use your IDE to jump to implementation classes referenced from the docs.
 
 ---
 

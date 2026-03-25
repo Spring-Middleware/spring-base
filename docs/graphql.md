@@ -173,28 +173,13 @@ For example, a `Product` may have multiple concrete implementations:
 - `PhysicalProduct`
 - `DigitalProduct`
 
-Clients can query subtype-specific fields using **inline fragments**.
+Clients can query subtype-specific fields using inline fragments. For example, a client may request a product by id and include subtype-specific fields using inline fragments; conceptually:
 
-Example:
+- request a product by id
+- select common fields such as `id` and `name`
+- use inline fragments to request subtype-only fields, e.g. `stockQuantity` for physical products or `downloadUrl` for digital products
 
-```graphql
-{
-  product(id: "123") {
-    id
-    name
-
-    ... on PhysicalProduct {
-      stockQuantity
-    }
-
-    ... on DigitalProduct {
-      downloadUrl
-    }
-  }
-}
-```
-
-Inline fragments allow clients to request fields that only exist on specific subtypes while still querying a shared interface.
+This avoids embedding a literal GraphQL query in the documentation that may be validated against a schema.
 
 Federated GraphQL gateways must preserve these fragments when routing queries to the owning services.
 
@@ -293,9 +278,17 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 
 # 9. Related documentation
 
-- `README.md` – high-level overview and GraphQL concept snippet.
-- `AI_CONTEXT.md` – concise summary of GraphQL capabilities in the platform.
-- `docs/registry.md` – details on `SchemaLocation` and registry responsibilities.
-- `docs/errors.md` – unified error model and GraphQL error representation.
-- `parent/graphql-gateway/README.md` – GraphQL gateway module details.
-
+- `README.md` — high-level overview and GraphQL concept snippet.
+- `AI_CONTEXT.md` — concise summary of GraphQL capabilities in the platform.
+- `docs/registry.md` — details on `SchemaLocation` and registry responsibilities.
+- `docs/errors.md` — unified error model and GraphQL error representation.
+- `parent/graphql-gateway/README.md` — GraphQL gateway module details.
+- `docs/communication.md` — service-to-service communication and how queries are routed.
+- `docs/kafka.md` — Kafka integration (event-driven patterns may interact with GraphQL resolvers).
+- `docs/client-security.md` — security for declarative clients.
+- `docs/logging.md` — request/response logging and correlation.
+- `docs/redis.md` — Redis module.
+- `docs/mongo.md` — Mongo module.
+- `docs/jpa.md` — JPA module.
+- `docs/rabbitmq.md` — RabbitMQ module.
+- `docs/security.md` — HTTP security configuration.
