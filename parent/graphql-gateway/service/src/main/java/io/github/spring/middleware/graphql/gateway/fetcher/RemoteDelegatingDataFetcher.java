@@ -5,16 +5,22 @@ import graphql.GraphQLContext;
 import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationKey;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.registry.model.SchemaLocation;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.github.spring.middleware.graphql.gateway.fetcher.QueryBuilder.buildGraphQLQueryWithVariables;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
@@ -24,13 +30,16 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
 
     private final GraphQLMerged graphQLMerged;
     private final RemoteGraphQLExecutionClient remoteGraphQLExecutionClient;
+    private final GraphQLLinkTypesMap graphQLLinkTypesMap;
 
     public RemoteDelegatingDataFetcher(
             GraphQLMerged graphQLMerged,
-            RemoteGraphQLExecutionClient remoteGraphQLExecutionClient
+            RemoteGraphQLExecutionClient remoteGraphQLExecutionClient,
+            GraphQLLinkTypesMap graphQLLinkTypesMap
     ) {
         this.graphQLMerged = graphQLMerged;
         this.remoteGraphQLExecutionClient = remoteGraphQLExecutionClient;
+        this.graphQLLinkTypesMap = graphQLLinkTypesMap;
     }
 
     @Override
@@ -53,8 +62,10 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
                     STR."No SchemaLocation found for operation key: \{key}"
             );
         }
+        List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks = graphQLLinkTypesMap.findGraphQLResolvedLinksForSchemaAndTypeName(schemaLocation, getReturnedTypeName(environment));
+        Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName = graphQLResolvedLinks.stream().collect(Collectors.toMap(GraphQLLinkTypesMap.GraphQLResolvedLink::getFieldName, link -> link));
 
-        String query = buildGraphQLQueryWithVariables(environment, operationType, fieldName);
+        String query = buildGraphQLQueryWithVariables(environment, operationType, fieldName, resolvedLinksByFieldName);
         Map<String, Object> variables = environment.getArguments();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -71,20 +82,30 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
             return null;
         }
 
-        Object dataObject = response.get("data");
-        Object errorsObject = response.get("errors");
-
         Map<?, ?> dataMap = response.get("data") instanceof Map<?, ?> m ? m : null;
         Object fieldData = dataMap != null ? dataMap.get(environment.getField().getName()) : null;
 
-        Object normalizedData = fieldData instanceof Map<?, ?> map
-                ? normalizeValue(map, environment.getFieldType(), environment.getGraphQLSchema())
-                : fieldData;
+        Object normalizedData = normalizeValue(fieldData, environment, graphQLResolvedLinks);
 
         return DataFetcherResult.newResult()
                 .data(normalizedData)
                 .errors(mapErrors(response.get("errors"), environment))
                 .build();
+    }
+
+
+    private String getReturnedTypeName(DataFetchingEnvironment environment) {
+        GraphQLType fieldType = environment.getFieldDefinition().getType();
+        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
+
+        if (!(unwrappedType instanceof GraphQLNamedType namedType)) {
+            throw new GraphQLException(
+                    GraphQLErrorCodes.REMOTE_EXECUTION_ERROR,
+                    STR."Unsupported return type for remote execution: \{fieldType.getClass()}"
+            );
+        }
+        String typeName = namedType.getName();
+        return typeName;
     }
 
 }

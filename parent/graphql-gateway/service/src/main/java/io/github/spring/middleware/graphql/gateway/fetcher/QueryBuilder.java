@@ -11,10 +11,14 @@ import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 
 import java.util.List;
@@ -26,7 +30,8 @@ public class QueryBuilder {
     public static String buildGraphQLQueryWithVariables(
             DataFetchingEnvironment environment,
             GraphQLOperationType operationType,
-            String fieldName
+            String fieldName,
+            Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName
     ) {
         StringBuilder sb = new StringBuilder();
         String operation = operationType == GraphQLOperationType.MUTATION ? "mutation" : "query";
@@ -39,7 +44,7 @@ public class QueryBuilder {
         }
 
         sb.append(" {");
-        appendRootFieldWithVariables(environment.getField(), environment, sb, "\n  ");
+        appendRootFieldWithVariables(environment.getField(), environment, sb, "\n  ", resolvedLinksByFieldName);
         sb.append("\n}");
 
         return sb.toString();
@@ -84,23 +89,24 @@ public class QueryBuilder {
             Field field,
             DataFetchingEnvironment environment,
             StringBuilder sb,
-            String indent
+            String indent,
+            Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName
     ) {
         sb.append(indent).append(field.getName());
         appendArguments(environment.getArguments(), sb);
 
         if (field.getSelectionSet() != null && !field.getSelectionSet().getSelections().isEmpty()) {
-            appendSelectionSet(field.getSelectionSet(), sb, indent);
+            appendSelectionSet(field.getSelectionSet(), sb, indent, resolvedLinksByFieldName);
         }
     }
 
-    public static void appendSelectionSet(SelectionSet selectionSet, StringBuilder sb, String indent) {
+    public static void appendSelectionSet(SelectionSet selectionSet, StringBuilder sb, String indent, Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName) {
         sb.append(" {");
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field childField) {
-                appendNestedField(childField, sb, indent + "  ");
+                appendNestedField(childField, sb, STR."\{indent}  ", resolvedLinksByFieldName);
             } else if (selection instanceof InlineFragment inlineFragment) {
-                appendInlineFragment(inlineFragment, sb, indent);
+                appendInlineFragment(inlineFragment, sb, indent, resolvedLinksByFieldName);
             } else if (selection instanceof FragmentSpread) {
                 throw new GraphQLException(GraphQLErrorCodes.SCHEMA_FETCH_ERROR, "FragmentSpread is not supported in this implementation");
             }
@@ -109,9 +115,9 @@ public class QueryBuilder {
     }
 
 
-    private static void appendInlineFragment(InlineFragment inlineFragment, StringBuilder sb, String indent) {
+    private static void appendInlineFragment(InlineFragment inlineFragment, StringBuilder sb, String indent,  Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName) {
         sb.append("\n").append(indent).append("... on ").append(inlineFragment.getTypeCondition().getName());
-        appendSelectionSet(inlineFragment.getSelectionSet(), sb, STR."\{indent}  ");
+        appendSelectionSet(inlineFragment.getSelectionSet(), sb, STR."\{indent}  ", resolvedLinksByFieldName);
     }
 
 
@@ -128,17 +134,35 @@ public class QueryBuilder {
     }
 
 
-    private static void appendNestedField(Field field, StringBuilder sb, String indent) {
+    private static void appendNestedField(Field field, StringBuilder sb, String indent, Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName) {
         sb.append("\n").append(indent).append(field.getName());
+
+        GraphQLLinkTypesMap.GraphQLResolvedLink link = resolvedLinksByFieldName.get(field.getName());
+
+        if (link != null) {
+            GraphQLType originalType = GraphQLTypeUtil.unwrapAll(link.getOriginOperationReturnType());
+
+            if (originalType instanceof GraphQLNamedType namedType
+                    && "GraphQLLinkArguments".equals(namedType.getName())) {
+
+                sb.append(" {");
+                sb.append("\n").append(indent).append("  values");
+                sb.append("\n").append(indent).append("}");
+                return;
+            }
+
+            // caso normal (UUID, lista, etc.)
+            return;
+        }
 
         SelectionSet selectionSet = field.getSelectionSet();
         if (selectionSet != null && !selectionSet.getSelections().isEmpty()) {
             sb.append(" {");
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field childField) {
-                    appendNestedField(childField, sb, STR."\{indent}  ");
+                    appendNestedField(childField, sb, STR."\{indent}  ", resolvedLinksByFieldName);
                 } else if (selection instanceof InlineFragment inlineFragment) {
-                    appendInlineFragment(inlineFragment, sb, indent);
+                    appendInlineFragment(inlineFragment, sb, indent, resolvedLinksByFieldName);
                 } else if (selection instanceof FragmentSpread) {
                     throw new GraphQLException(GraphQLErrorCodes.SCHEMA_FETCH_ERROR, "FragmentSpread is not supported in this implementation");
                 }

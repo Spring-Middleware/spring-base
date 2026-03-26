@@ -2,6 +2,8 @@ package io.github.spring.middleware.graphql.metadata;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class GraphQLFieldLinkDefinition {
 
@@ -9,6 +11,6 @@ public class GraphQLFieldLinkDefinition {
     private String targetTypeName;
     private String schema;
     private String query;
-    private String argumentName;
+    private List<GraphQLArgumentLinkDefinition> argumentLinkDefinitions;
     private boolean collection;
 }

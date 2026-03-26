@@ -7,15 +7,9 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface GraphQLLink {
+public @interface GraphQLLinkArgument {
 
-    String schema();
+    String name();
+    String type() default "";
 
-    String type();
-
-    String query();
-
-    GraphQLLinkArgument[] arguments();
-
-    boolean collection() default false;
 }

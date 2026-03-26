@@ -2,28 +2,33 @@ package io.github.spring.middleware.graphql.gateway.factory;
 
 import graphql.GraphQL;
 import graphql.language.UnionTypeDefinition;
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.graphql.gateway.builder.GraphQLSchemaDefinitionBuilder;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.fetcher.RemoteDelegatingDataFetcher;
+import io.github.spring.middleware.graphql.gateway.fetcher.RemoteDelegatingGraphQLLinkDataFetcher;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLSchemaMetadataLoader;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLTypeRegistryLoader;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLTypeRegistryMap;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLTypeRegistryMerger;
-import io.github.spring.middleware.graphql.gateway.scalars.InstantScalar;
-import io.github.spring.middleware.graphql.gateway.scalars.OffsetDateTimeScalar;
 import io.github.spring.middleware.graphql.gateway.scalars.ScalarsProvider;
-import io.github.spring.middleware.graphql.gateway.scalars.URIScalar;
 import io.github.spring.middleware.graphql.gateway.util.GraphQLTypeResolvers;
+import io.github.spring.middleware.registry.model.SchemaLocation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
 import java.util.Optional;
+
+import static io.github.spring.middleware.graphql.gateway.util.RuntimeWiringUtils.registerResolver;
+import static io.github.spring.middleware.graphql.gateway.util.RuntimeWiringUtils.registerScalars;
 
 @Configuration
 @RequiredArgsConstructor
@@ -33,17 +38,21 @@ public class GraphQLGatewayFactory {
     private final GraphQLTypeRegistryMerger typeRegistryMerger;
     private final GraphQLSchemaDefinitionBuilder schemaDefinitionBuilder;
     private final GraphQLTypeRegistryLoader registryLoader;
+    private final GraphQLSchemaMetadataLoader schemaMetadataLoader;
     private final Optional<ScalarsProvider> scalarsProviderOptional;
+    private final RegistryClient registryClient;
 
     public GraphQL build() {
-        final GraphQLTypeRegistryMap graphQLTypeRegistryMap = registryLoader.loadTypeRegistryMap();
+        List<SchemaLocation> schemaLocations = registryClient.getSchemaLocations();
+        final GraphQLTypeRegistryMap graphQLTypeRegistryMap = registryLoader.loadTypeRegistryMap(schemaLocations);
+        final GraphQLLinkTypesMap graphQLLinkTypesMap = schemaMetadataLoader.loadGraphQLLinkTypesMap(schemaLocations);
         if (!graphQLTypeRegistryMap.isEmpty()) {
             final GraphQLMerged graphQLMerged = typeRegistryMerger.merge(graphQLTypeRegistryMap);
-            final TypeDefinitionRegistry schemaRegistry = schemaDefinitionBuilder.build(graphQLMerged, graphQLTypeRegistryMap);
+            final TypeDefinitionRegistry schemaRegistry = schemaDefinitionBuilder.build(graphQLMerged, graphQLTypeRegistryMap, graphQLLinkTypesMap);
             final GraphQLSchema graphQLSchema = new SchemaGenerator()
                     .makeExecutableSchema(
                             schemaRegistry,
-                            buildRuntimeWiring(graphQLMerged, schemaRegistry)
+                            buildRuntimeWiring(graphQLMerged, graphQLLinkTypesMap, schemaRegistry)
                     );
 
             return GraphQL.newGraphQL(graphQLSchema).build();
@@ -52,15 +61,18 @@ public class GraphQLGatewayFactory {
         }
     }
 
-    private RuntimeWiring buildRuntimeWiring(GraphQLMerged merged, TypeDefinitionRegistry registry) {
+    private RuntimeWiring buildRuntimeWiring(GraphQLMerged merged, GraphQLLinkTypesMap graphQLLinkTypesMap, TypeDefinitionRegistry registry) {
         final RemoteDelegatingDataFetcher remoteDelegatingDataFetcher =
-                new RemoteDelegatingDataFetcher(merged, remoteGraphQLExecutionClient);
+                new RemoteDelegatingDataFetcher(merged, remoteGraphQLExecutionClient, graphQLLinkTypesMap);
+
+        final RemoteDelegatingGraphQLLinkDataFetcher remoteDelegatingGraphQLLinkDataFetcher =
+                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, remoteGraphQLExecutionClient);
 
         RuntimeWiring.Builder builder = RuntimeWiring.newRuntimeWiring();
 
         registry.getTypes(UnionTypeDefinition.class).forEach(unionTypeDefinition -> registerResolver(builder, unionTypeDefinition));
 
-        registerScalars(builder);
+        registerScalars(builder, scalarsProviderOptional);
 
         if (!merged.getOperationKeysByType(GraphQLOperationType.QUERY).isEmpty()) {
             builder.type("Query", typeBuilder -> {
@@ -88,35 +100,14 @@ public class GraphQLGatewayFactory {
             });
         }
 
-        return builder.build();
-    }
-
-    private void registerScalars(RuntimeWiring.Builder builder) {
-        builder
-                .scalar(ExtendedScalars.UUID)
-                .scalar(ExtendedScalars.DateTime)
-                .scalar(ExtendedScalars.Date)
-                .scalar(ExtendedScalars.Time)
-                .scalar(ExtendedScalars.GraphQLBigDecimal)
-                .scalar(ExtendedScalars.GraphQLLong)
-                .scalar(ExtendedScalars.CountryCode)
-                .scalar(ExtendedScalars.Currency)
-                .scalar(ExtendedScalars.Locale)
-                .scalar(ExtendedScalars.LocalTime)
-                .scalar(ExtendedScalars.Url)
-                .scalar(InstantScalar.INSTANCE)
-                .scalar(OffsetDateTimeScalar.INSTANCE)
-                .scalar(URIScalar.INSTANCE);
-
-
-        scalarsProviderOptional.ifPresent(provider -> provider.getScalars().forEach(builder::scalar));
-    }
-
-    private void registerResolver(RuntimeWiring.Builder builder, UnionTypeDefinition unionTypeDefinition) {
-        builder.type(unionTypeDefinition.getName(), typeBuilder -> {
-            typeBuilder.typeResolver(GraphQLTypeResolvers.fromUnionDefinition(unionTypeDefinition));
-            return typeBuilder;
+        graphQLLinkTypesMap.getAllLinkedFieldCoordinates().forEach(fieldCoordinate -> {
+            builder.type(fieldCoordinate.typeName(), typeBuilder -> {
+                typeBuilder.dataFetcher(fieldCoordinate.fieldName(), remoteDelegatingGraphQLLinkDataFetcher);
+                return typeBuilder;
+            });
         });
+
+        return builder.build();
     }
 
 }

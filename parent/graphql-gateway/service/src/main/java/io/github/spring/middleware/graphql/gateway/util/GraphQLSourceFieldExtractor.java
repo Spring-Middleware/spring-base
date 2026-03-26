@@ -1,8 +1,7 @@
-package io.github.spring.middleware.graphql.gateway.extractor;
+package io.github.spring.middleware.graphql.gateway.util;
 
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
-import org.springframework.stereotype.Component;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -10,10 +9,10 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-@Component
+
 public class GraphQLSourceFieldExtractor {
 
-    public Object extractFieldValue(Object source, String fieldName) {
+    public static Object extractFieldValue(Object source, String fieldName) {
         if (source == null) {
             return null;
         }
@@ -36,7 +35,7 @@ public class GraphQLSourceFieldExtractor {
         );
     }
 
-    private Object extractFromBean(Object source, String fieldName) {
+    private static Object extractFromBean(Object source, String fieldName) {
         try {
             for (PropertyDescriptor propertyDescriptor : Introspector.getBeanInfo(source.getClass()).getPropertyDescriptors()) {
                 if (fieldName.equals(propertyDescriptor.getName()) && propertyDescriptor.getReadMethod() != null) {

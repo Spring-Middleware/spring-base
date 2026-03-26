@@ -3,6 +3,7 @@ package io.github.spring.middleware.kafka.core.properties;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "middleware.kafka")
 public class KafkaProperties {
 
+    private boolean enabled = false;
     private String bootstrapServers = "localhost:9092";
     private boolean createMissingTopics = true;
     private Logging logging = new Logging();

@@ -38,6 +38,8 @@ public class GraphQLAutoConfiguration {
 
 
         GraphQLSchemaGenerator generator = new GraphQLSchemaGenerator();
+
+        generator.withTypeMappersPrepended(new GraphQLLinkArgumentsTypeMapper());
         services.values()
                 .forEach(generator::withOperationsFromSingleton);
         GraphQLSchema schema = generator.generate();

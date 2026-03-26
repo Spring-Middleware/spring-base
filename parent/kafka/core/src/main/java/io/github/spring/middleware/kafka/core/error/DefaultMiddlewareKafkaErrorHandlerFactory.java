@@ -2,6 +2,7 @@ package io.github.spring.middleware.kafka.core.error;
 
 import io.github.spring.middleware.kafka.core.properties.KafkaProperties;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(KafkaProperties.class)
 public class DefaultMiddlewareKafkaErrorHandlerFactory implements MiddlewareKafkaErrorHandlerFactory<DefaultErrorHandler> {
 
     private final KafkaProperties kafkaProperties;

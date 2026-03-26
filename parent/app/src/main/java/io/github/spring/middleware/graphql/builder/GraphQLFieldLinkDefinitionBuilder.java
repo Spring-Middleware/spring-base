@@ -1,6 +1,7 @@
 package io.github.spring.middleware.graphql.builder;
 
 import io.github.spring.middleware.annotation.graphql.GraphQLLink;
+import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 import io.github.spring.middleware.graphql.metadata.GraphQLFieldLinkDefinition;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Component;
 import java.beans.BeanInfo;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -26,7 +29,8 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setSchema(graphQLLink.schema());
         definition.setTargetTypeName(graphQLLink.type());
         definition.setQuery(graphQLLink.query());
-        definition.setArgumentName(graphQLLink.argument());
+        definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
+        definition.setCollection(graphQLLink.collection());
         return definition;
     }
 
@@ -41,8 +45,18 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setSchema(graphQLLink.schema());
         definition.setTargetTypeName(graphQLLink.type());
         definition.setQuery(graphQLLink.query());
-        definition.setArgumentName(graphQLLink.argument());
+        definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
+        definition.setCollection(graphQLLink.collection());
         return definition;
+    }
+
+    private List<GraphQLArgumentLinkDefinition> buildArgumentLinkDefinitions(GraphQLLink graphQLLink) {
+        return Arrays.stream(graphQLLink.arguments()).map(graphQLLinkArgument -> {
+            GraphQLArgumentLinkDefinition argumentLinkDefinition = new GraphQLArgumentLinkDefinition();
+            argumentLinkDefinition.setArgumentName(graphQLLinkArgument.name());
+            argumentLinkDefinition.setTargetTypeName(graphQLLinkArgument.type());
+            return argumentLinkDefinition;
+        }).toList();
     }
 
 

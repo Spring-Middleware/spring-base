@@ -7,12 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
-
-import static io.github.spring.middleware.client.proxy.UrlJoiner.join;
-import static io.github.spring.middleware.utils.EndpointUtils.joinUrl;
-import static io.github.spring.middleware.utils.EndpointUtils.normalizeContextPath;
-import static io.github.spring.middleware.utils.EndpointUtils.normalizeEndpoint;
-import static io.github.spring.middleware.utils.EndpointUtils.normalizePath;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -21,7 +17,9 @@ public class GraphQLSchemaMetadataLoader {
     private final GraphQLSchemaMetadataClient schemaMetadataClient;
 
     public GraphQLLinkTypesMap loadGraphQLLinkTypesMap(Collection<SchemaLocation> schemaLocations) {
-        GraphQLLinkTypesMap linkTypesMap = new GraphQLLinkTypesMap();
+        final var namespaceToSchemaLocationMap = schemaLocations.stream()
+                .collect(Collectors.toMap(SchemaLocation::getNamespace, Function.identity()));
+        GraphQLLinkTypesMap linkTypesMap = new GraphQLLinkTypesMap(namespaceToSchemaLocationMap);
 
         schemaLocations.forEach(schemaLocation -> {
             GraphQLSchemaMetadata schemaMetadata = schemaMetadataClient.fetchSchemaMetadata(schemaLocation);
@@ -31,19 +29,12 @@ public class GraphQLSchemaMetadataLoader {
 
             linkTypesMap.addLinkTypes(
                     schemaLocation.getNamespace(),
-                    buildGraphQLEndpoint(schemaLocation),
+                    schemaLocation,
                     schemaMetadata.getGraphQLLinkedTypes()
             );
         });
 
         return linkTypesMap;
     }
-
-
-    private String buildGraphQLEndpoint(SchemaLocation schemaLocation) {
-        final String clusterEndpoint = joinUrl(normalizeEndpoint(schemaLocation.getLocation()), normalizeContextPath(schemaLocation.getContextPath()));
-        return join(clusterEndpoint, normalizePath(schemaLocation.getPathApi()));
-    }
-
 
 }

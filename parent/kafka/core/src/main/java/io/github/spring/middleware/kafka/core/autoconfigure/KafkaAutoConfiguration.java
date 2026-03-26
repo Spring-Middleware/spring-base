@@ -51,6 +51,7 @@ import java.util.Map;
 @Slf4j
 @AutoConfiguration
 @ConditionalOnClass(KafkaTemplate.class)
+@ConditionalOnProperty(prefix = "middleware.kafka", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(KafkaProperties.class)
 public class KafkaAutoConfiguration {
 

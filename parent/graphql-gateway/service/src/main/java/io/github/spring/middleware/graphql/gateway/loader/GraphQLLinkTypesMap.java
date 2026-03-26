@@ -1,10 +1,16 @@
 package io.github.spring.middleware.graphql.gateway.loader;
 
+import graphql.schema.GraphQLType;
 import io.github.spring.middleware.graphql.metadata.GraphQLFieldLinkDefinition;
 import io.github.spring.middleware.graphql.metadata.GraphQLLinkedType;
+import io.github.spring.middleware.registry.model.SchemaLocation;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -12,13 +18,18 @@ public class GraphQLLinkTypesMap {
 
     private final Map<String, GraphQLLinkTypeData> linkTypesMap = new LinkedHashMap<>();
     private Map<FieldCoordinate, GraphQLResolvedLink> resolvedLinkMap;
+    private Map<String, SchemaLocation> namespaceToSchemaLocationMap;
 
-    public void addLinkTypes(String serviceName, String graphQLEndpoint, Collection<GraphQLLinkedType> linkedTypes) {
+    public GraphQLLinkTypesMap(Map<String, SchemaLocation> namespaceToSchemaLocationMap) {
+        this.namespaceToSchemaLocationMap = namespaceToSchemaLocationMap;
+    }
+
+    public void addLinkTypes(String serviceName, SchemaLocation schemaLocation, Collection<GraphQLLinkedType> linkedTypes) {
         Objects.requireNonNull(serviceName, "serviceName must not be null");
-        Objects.requireNonNull(graphQLEndpoint, "graphQLEndpoint must not be null");
+        Objects.requireNonNull(schemaLocation, "schemaLocation must not be null");
         Objects.requireNonNull(linkedTypes, "linkedTypes must not be null");
 
-        linkTypesMap.put(serviceName, new GraphQLLinkTypeData(graphQLEndpoint, linkedTypes));
+        linkTypesMap.put(serviceName, new GraphQLLinkTypeData(schemaLocation, linkedTypes));
         resolvedLinkMap = null;
     }
 
@@ -33,6 +44,32 @@ public class GraphQLLinkTypesMap {
         return resolvedLinkMap.get(new FieldCoordinate(typeName, fieldName));
     }
 
+    public List<FieldCoordinate> getAllLinkedFieldCoordinates() {
+        if (resolvedLinkMap == null) {
+            buildResolvedLinkMap();
+        }
+        return new ArrayList<>(resolvedLinkMap.keySet());
+    }
+
+    public List<GraphQLResolvedLink> findGraphQLResolvedLinksForSchemaAndTypeName(SchemaLocation schemaLocation, String typeName) {
+        Objects.requireNonNull(schemaLocation, "schemaLocation must not be null");
+
+        if (resolvedLinkMap == null) {
+            buildResolvedLinkMap();
+        }
+
+        List<GraphQLResolvedLink> resolvedLinks = new ArrayList<>();
+        resolvedLinkMap.forEach((coordinate, resolvedLink) -> {
+            if (resolvedLink.getSchemaLocation().equals(schemaLocation)) {
+                if (typeName == null || coordinate.typeName().equals(typeName)) {
+                    resolvedLinks.add(resolvedLink);
+                }
+            }
+        });
+        return resolvedLinks;
+    }
+
+
     public boolean isEmpty() {
         return linkTypesMap.isEmpty();
     }
@@ -41,7 +78,7 @@ public class GraphQLLinkTypesMap {
         Map<FieldCoordinate, GraphQLResolvedLink> resolvedLinks = new LinkedHashMap<>();
 
         linkTypesMap.forEach((serviceName, linkTypeData) -> {
-            String graphQLEndpoint = linkTypeData.graphQLEndpoint();
+            SchemaLocation schemaLocation = linkTypeData.schemaLocation();
 
             linkTypeData.linkedTypes().forEach(linkedType -> {
                 String typeName = linkedType.getTypeName();
@@ -54,8 +91,10 @@ public class GraphQLLinkTypesMap {
                     String fieldName = fieldLinkDefinition.getFieldName();
                     FieldCoordinate coordinate = new FieldCoordinate(typeName, fieldName);
 
+                    SchemaLocation targetSchemaLocation = namespaceToSchemaLocationMap.get(fieldLinkDefinition.getSchema());
+
                     GraphQLResolvedLink newResolvedLink =
-                            new GraphQLResolvedLink(serviceName, graphQLEndpoint, fieldLinkDefinition);
+                            new GraphQLResolvedLink(schemaLocation, targetSchemaLocation, fieldLinkDefinition);
 
                     GraphQLResolvedLink existingResolvedLink = resolvedLinks.putIfAbsent(coordinate, newResolvedLink);
                     if (existingResolvedLink != null) {
@@ -63,7 +102,7 @@ public class GraphQLLinkTypesMap {
                                 "Duplicated GraphQL linked field definition for coordinate [%s.%s]. "
                                         .formatted(typeName, fieldName)
                                         + "Already registered by service [%s] and attempted again by service [%s]"
-                                        .formatted(existingResolvedLink.serviceName(), serviceName)
+                                        .formatted(existingResolvedLink.getSchemaLocation().getNamespace(), serviceName)
                         );
                     }
                 });
@@ -74,17 +113,40 @@ public class GraphQLLinkTypesMap {
     }
 
     public record GraphQLLinkTypeData(
-            String graphQLEndpoint,
+            SchemaLocation schemaLocation,
             Collection<GraphQLLinkedType> linkedTypes
     ) {
     }
 
-    public record GraphQLResolvedLink(
-            String serviceName,
-            String graphQLEndpoint,
-            GraphQLFieldLinkDefinition fieldLinkDefinition
-    ) {
+    @Getter
+    @Setter
+    public static class GraphQLResolvedLink {
+
+        public GraphQLResolvedLink(SchemaLocation schemaLocation, SchemaLocation targetSchemaLocation, GraphQLFieldLinkDefinition fieldLinkDefinition) {
+            this.schemaLocation = schemaLocation;
+            this.targetSchemaLocation = targetSchemaLocation;
+            this.fieldLinkDefinition = fieldLinkDefinition;
+        }
+
+        private SchemaLocation schemaLocation;
+        private SchemaLocation targetSchemaLocation;
+        private GraphQLFieldLinkDefinition fieldLinkDefinition;
+        private GraphQLType originOperationReturnType;
+        private Map<String,GraphQLType> targetFieldArgumentTypes;
+
+        public String getFieldName() {
+            return fieldLinkDefinition.getFieldName();
+        }
+
+        public void addTargetFieldArgumentType(String argumentName, GraphQLType argumentType) {
+            if (targetFieldArgumentTypes == null) {
+                targetFieldArgumentTypes = new LinkedHashMap<>();
+            }
+            targetFieldArgumentTypes.put(argumentName, argumentType);
+        }
+
     }
+
 
     public record FieldCoordinate(
             String typeName,
