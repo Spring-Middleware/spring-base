@@ -551,6 +551,104 @@ Example:
 
 The query builder preserves fragment structures when generating downstream service queries.
 
+### GraphQL Link Resolution Model (New)
+
+Spring Middleware introduces a **declarative GraphQL link model** to resolve fields across services.
+
+Fields annotated with `@GraphQLLink` represent **remote field resolution boundaries**.
+
+Example:
+
+```java
+@GraphQLLink(
+    schema = "product",
+    type = "Product",
+    query = "productsByIds",
+    arguments = {
+        @GraphQLArgument(name = "ids")
+    },
+    collection = true
+)
+private List<UUID> productIds;
+```
+
+Key characteristics:
+
+- links are resolved dynamically at runtime
+- the gateway determines the target schema and operation
+- arguments are extracted from the source object
+- remote GraphQL queries are constructed automatically
+- responses are normalized and merged into the parent result
+
+### GraphQL Link Argument Transport
+
+GraphQL links support **multi-argument resolution** through a dedicated transport mechanism.
+
+To support dynamic argument passing across services, Spring Middleware introduces:
+
+```text
+GraphQLLinkArguments (scalar)
+```
+
+This scalar acts as an **internal transport container** for argument maps.
+
+Design principles:
+
+- hides `Map<String,Object>` from the GraphQL schema
+- avoids SPQR object mapping issues
+- allows leaf-level GraphQL fields (no subselection required)
+- enables dynamic argument composition
+
+Example:
+
+```java
+@GraphQLQuery(name = "productsByName")
+@GraphQLLink(
+    schema = "product",
+    type = "Product",
+    query = "products",
+    arguments = {
+        @GraphQLArgument(name = "q"),
+        @GraphQLArgument(name = "catalogId")
+    },
+    collection = true
+)
+public GraphQLLinkArguments getProductsByName(@GraphQLArgument(name = "name") String name) {
+    return new GraphQLLinkArguments(Map.of("q", name, "catalogId", id));
+}
+```
+
+Execution behavior:
+
+- the subgraph returns a scalar value (no subselection required)
+- the gateway extracts the underlying map
+- arguments are mapped to the target operation
+- remote query is executed with constructed variables
+
+### GraphQL Type Mapping Customization
+
+Spring Middleware extends SPQR type mapping using a custom `TypeMapper`.
+
+Purpose:
+
+- force specific Java types to be treated as GraphQL scalars
+- avoid incorrect object type generation
+- integrate internal transport types into the schema generation pipeline
+
+Example:
+
+```java
+GraphQLSchemaGenerator generator = new GraphQLSchemaGenerator()
+    .withTypeMappersPrepended(new GraphQLLinkArgumentsTypeMapper());
+```
+
+The custom mapper ensures:
+
+- `GraphQLLinkArguments` is mapped to a scalar
+- no object type is generated for internal transport classes
+- schema generation remains stable
+- runtime execution aligns with federation behavior
+
 ---
 
 ## Messaging Infrastructure (RabbitMQ)
@@ -1074,6 +1172,9 @@ GraphQL improvements:
 - inline fragment support in query builder
 - scalar normalization during response merging
 - polymorphic GraphQL response handling across services
+- declarative GraphQL link model for cross-service field resolution
+- scalar-based argument transport for GraphQL links
+- SPQR type mapping customization for internal transport types
 
 Kafka improvements:
 
@@ -1113,6 +1214,8 @@ Current capabilities:
 - BOM distribution via Maven Central
 - RabbitMQ-based cluster messaging
 - Kafka-based event streaming infrastructure
+- GraphQL federation with dynamic link resolution
+- scalar-based internal argument transport for GraphQL links
 
 ---
 
