@@ -12,17 +12,18 @@ import graphql.schema.GraphQLTypeUtil;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
+import io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryBuilder;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationKey;
 import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.registry.model.SchemaLocation;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.github.spring.middleware.graphql.gateway.fetcher.QueryBuilder.buildGraphQLQueryWithVariables;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.normalizeValue;
 
@@ -65,13 +66,17 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
         List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks = graphQLLinkTypesMap.findGraphQLResolvedLinksForSchemaAndTypeName(schemaLocation, getReturnedTypeName(environment));
         Map<String,GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName = graphQLResolvedLinks.stream().collect(Collectors.toMap(GraphQLLinkTypesMap.GraphQLResolvedLink::getFieldName, link -> link));
 
-        String query = buildGraphQLQueryWithVariables(environment, operationType, fieldName, resolvedLinksByFieldName);
         Map<String, Object> variables = environment.getArguments();
+        Map<String, Object> queryVariables = new LinkedHashMap<>(variables);
+
+        QueryBuilder queryBuilder = new QueryBuilder();
+        queryBuilder.appendGraphQLQueryWithVariables(environment, operationType, fieldName, resolvedLinksByFieldName, queryVariables);
+        String query = queryBuilder.build();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .operationName(fieldName)
-                .variables(variables)
+                .variables(queryVariables)
                 .graphQLContext(builder -> {
                     GraphQLContext originalContext = environment.getGraphQlContext();
                     builder.of(originalContext);

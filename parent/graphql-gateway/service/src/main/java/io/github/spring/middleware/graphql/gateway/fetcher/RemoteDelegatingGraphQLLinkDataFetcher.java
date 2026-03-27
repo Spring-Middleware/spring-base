@@ -3,11 +3,10 @@ package io.github.spring.middleware.graphql.gateway.fetcher;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.execution.DataFetcherResult;
-import graphql.language.SelectionSet;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLType;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
+import io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryLinkBuilder;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.spring.middleware.graphql.gateway.fetcher.QueryBuilder.appendSelectionSet;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLSourceFieldExtractor.extractFieldValue;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.normalizeValue;
@@ -73,7 +71,9 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
             }
         }
 
-        String query = buildGraphQLQuery(environment, resolvedLink);
+        QueryLinkBuilder queryLinkBuilder = new QueryLinkBuilder();
+        queryLinkBuilder.appendGraphQLQuery(environment, resolvedLink, variables);
+        String query = queryLinkBuilder.build();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -99,71 +99,5 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
                 .build();
 
     }
-
-
-    private String buildGraphQLQuery(
-            DataFetchingEnvironment environment,
-            GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink
-    ) {
-        String remoteQuery = resolvedLink.getFieldLinkDefinition().getQuery();
-        List<GraphQLArgumentLinkDefinition> arguments =
-                resolvedLink.getFieldLinkDefinition().getArgumentLinkDefinitions();
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("query");
-
-        if (arguments != null && !arguments.isEmpty()) {
-            sb.append("(");
-            for (int i = 0; i < arguments.size(); i++) {
-                GraphQLArgumentLinkDefinition argument = arguments.get(i);
-                GraphQLType argumentType = resolvedLink.getTargetFieldArgumentTypes().get(argument.getArgumentName());
-
-                if (argumentType == null) {
-                    throw new IllegalStateException(
-                            STR."Target argument type not found for argument: \{argument.getArgumentName()}"
-                    );
-                }
-
-                if (i > 0) {
-                    sb.append(", ");
-                }
-
-                sb.append("$")
-                        .append(argument.getArgumentName())
-                        .append(": ")
-                        .append(argumentType);
-            }
-            sb.append(")");
-        }
-
-        sb.append(" {\n");
-        sb.append("  ").append(remoteQuery);
-
-        if (arguments != null && !arguments.isEmpty()) {
-            sb.append("(");
-            for (int i = 0; i < arguments.size(); i++) {
-                GraphQLArgumentLinkDefinition argument = arguments.get(i);
-
-                if (i > 0) {
-                    sb.append(", ");
-                }
-
-                sb.append(argument.getArgumentName())
-                        .append(": $")
-                        .append(argument.getArgumentName());
-            }
-            sb.append(")");
-        }
-
-        SelectionSet selectionSet = environment.getField().getSelectionSet();
-        if (selectionSet != null && !selectionSet.getSelections().isEmpty()) {
-            appendSelectionSet(selectionSet, sb, "  ", Map.of());
-        }
-
-        sb.append("\n}");
-        return sb.toString();
-    }
-
 
 }
