@@ -292,3 +292,4 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 - `docs/jpa.md` — JPA module.
 - `docs/rabbitmq.md` — RabbitMQ module.
 - `docs/security.md` — HTTP security configuration.
+- `docs/graphql-links.md` — how `@GraphQLLink` and link metadata work (cross-service field resolution).
