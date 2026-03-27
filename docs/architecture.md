@@ -315,6 +315,7 @@ For **contributors**:
 
 - `README.md` – project overview
 - `AI_CONTEXT.md` – condensed machine-readable project summary
+- `docs/getting-started.md` – quick start guide for integrating Spring Middleware (new)
 - `docs/communication.md`
 - `docs/errors.md`
 - `docs/graphql.md`

@@ -2,6 +2,22 @@
 
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- Documentation updates and module version bump to 1.3.0 for platform BOM.
+- GraphQL links documentation and gateway improvements (query building and selection set preservation).
+- Kafka error handling configuration and documentation.
+
+### Improved
+
+- Documentation clarity and module docs linking.
+
+### Upgraded
+
+- BOM version set to 1.3.0 and core module versions aligned in docs.
+
 ## 1.2.0
 
 ### Added

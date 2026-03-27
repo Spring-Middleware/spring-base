@@ -1193,7 +1193,7 @@ Kafka improvements:
 
 ## Current Status
 
-Version: **1.1.0**  
+Version: **1.3.0**  
 Java: **21**  
 Spring Boot: **3.4.x**
 
