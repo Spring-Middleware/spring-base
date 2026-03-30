@@ -3,10 +3,10 @@ package io.github.spring.middleware.jpa.types;
 public enum CompareOperator {
 
     EQUAL("="),
-    GREATER(">"),
-    LESS("<"),
-    GREATER_OR_EQUAL(">="),
-    LESS_OR_EQUAL("<=");
+    GREATER_THAN(">"),
+    LESS_THAN("<"),
+    GREATER_OR_EQUAL_THAN(">="),
+    LESS_OR_EQUAL_THAN("<=");
 
     private String value;
 

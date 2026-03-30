@@ -12,14 +12,14 @@ import java.beans.BeanInfo;
 import java.lang.reflect.Field;
 
 @Service
-public class SearchPropertiesConditionBufferBuilderImplImpl<S extends Search> extends CommonConditionBufferBuilderImpl<S>
+public class SearchPropertiesConditionBufferBuilderImpl<S extends Search> extends CommonConditionBufferBuilderImpl<S>
         implements SearchPropertiesConditionBufferBuilder<S> {
 
-    public SearchPropertiesConditionBufferBuilderImplImpl() {
+    public SearchPropertiesConditionBufferBuilderImpl() {
 
     }
 
-    public SearchPropertiesConditionBufferBuilderImplImpl(JoinBuffer joinBuffer, ParameterCounter parameterCounter) {
+    public SearchPropertiesConditionBufferBuilderImpl(JoinBuffer joinBuffer, ParameterCounter parameterCounter) {
 
         super(joinBuffer, parameterCounter);
     }

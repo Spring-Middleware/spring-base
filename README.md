@@ -337,6 +337,7 @@ Spring Middleware is split into focused Maven modules.
 ## Redis Module
 Provides distributed locks, shared maps and caches.
 See `docs/redis.md` for details.
+See `docs/cache.md` for the cache module details and runtime API.
 
 ## Mongo Search Engine
 Dynamic search capabilities on top of MongoDB.
@@ -354,6 +355,9 @@ For implementation best-practices and handler/listener/error-handler recommendat
 ## Kafka Integration
 Provides auto-configuration for Kafka publishers and subscribers, topic creation support and a registry for named publishers/subscribers.
 See `docs/kafka.md` for details.
+
+## Client Resilience
+Client resilience (circuit-breaker, bulkhead, connection parameters) is documented in `docs/client-resilience.md`.
 
 ## Logging
 Request/response logging for the middleware is documented in `docs/logging.md`.

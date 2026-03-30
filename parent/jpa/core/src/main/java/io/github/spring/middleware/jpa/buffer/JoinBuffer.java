@@ -14,6 +14,20 @@ public class JoinBuffer {
 
     public void processJoinClass(Class<? super Search> clazzSearch) {
 
+        // Join is a meta-annotation (target ANNOTATION_TYPE). Detect annotations on the class whose
+        // annotation type is itself annotated with @Join and process the Join from the annotation type.
+        java.lang.annotation.Annotation[] annotations = clazzSearch.getAnnotations();
+        for (java.lang.annotation.Annotation ann : annotations) {
+            Class<? extends java.lang.annotation.Annotation> annType = ann.annotationType();
+            if (annType.isAnnotationPresent(Join.class)) {
+                Join join = annType.getAnnotation(Join.class);
+                if (!joins.contains(join.value())) {
+                    appendJoin(join);
+                }
+            }
+        }
+
+        // Keep backward compatibility: if class is directly annotated with @Join (unlikely due to @Target), handle it
         if (clazzSearch.isAnnotationPresent(Join.class)) {
             Join join = clazzSearch.getAnnotation(Join.class);
             if (!joins.contains(join.value())) {

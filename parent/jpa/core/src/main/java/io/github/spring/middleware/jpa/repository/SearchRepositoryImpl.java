@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Optional;
 
 @NoRepositoryBean
-public class SearchRepositoryImpl<T, S extends Search> implements SearchRepository<T, S> {
+public abstract class SearchRepositoryImpl<T, S extends Search> implements SearchRepository<T, S> {
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    private Logger logger = Logger.getLogger(SearchRepositoryImpl.class);
+    private final Logger logger = Logger.getLogger(SearchRepositoryImpl.class);
 
     @Override
     public Long countBySearch(S search) throws Exception {
@@ -45,39 +45,39 @@ public class SearchRepositoryImpl<T, S extends Search> implements SearchReposito
     @Override
     public List<T> findBySearch(S search, Pagination pagination) throws Exception {
 
-        QueryFilter queryFilter = new QueryFilter(search);
+        QueryFilter<T, S> queryFilter = new QueryFilter<>(search);
         Query query = createQueryForSearch(search, pagination, queryFilter, Boolean.FALSE);
         List<T> results = query.getResultList();
         queryFilter.applyFilters(results);
         if (pagination != null && queryFilter.hasFilters()) {
-            PaginableResultDB paginableResultDB = new PaginableResultDB(results);
+            PaginableResultDB<T> paginableResultDB = new PaginableResultDB<>(results);
             results = paginableResultDB.paginate(pagination);
         }
         return results;
     }
 
-    protected Query createQueryForSearch(S search, Pagination pagination, QueryFilter queryFilter, boolean isCount)
+    protected Query createQueryForSearch(S search, Pagination pagination, QueryFilter<T, S> queryFilter, boolean isCount)
             throws Exception {
 
         SortedSearch sortedSearch = null;
         if (search instanceof SortedSearch) {
             sortedSearch = (SortedSearch) search;
         }
-        QueryBufferParameters queryBufferParameters = new QueryBufferParameters(search,
+        QueryBufferParameters<T, S> queryBufferParameters = new QueryBufferParameters<>(search,
                 this.getEntityClass(),
                 new OrderBy(Optional.ofNullable(sortedSearch).map(s -> s.getSortCriteria())
-                        .map(c -> new ArrayList(c.getProperties()))
+                        .map(c -> new java.util.ArrayList<>(c.getProperties()))
                         .orElse(null), Optional.ofNullable(sortedSearch).map(s -> s.getSortCriteria())
                         .map(c -> OrderType.valueOf(c.getDirection().name())).orElse(null)),
                 isCount);
 
-        QueryBuffer queryBuffer = new QueryBuffer(queryBufferParameters);
-        logger.debug("Query: " + queryBuffer.toString());
+        QueryBuffer<T, S> queryBuffer = new QueryBuffer<>(queryBufferParameters);
+        logger.debug("Query: " + queryBuffer);
         Query query = entityManager.createQuery(queryBuffer.toString());
-        QueryParameterizer queryParameterizer = new QueryParameterizer();
+        QueryParameterizer<S> queryParameterizer = new QueryParameterizer<>();
         query = queryParameterizer.parameterizeQuery(query, search);
         Query pagedQuery = setPagination(query, pagination, queryFilter.hasFilters());
-        Optional.ofNullable(search.lockModeType()).ifPresent(lockModeType -> pagedQuery.setLockMode(lockModeType));
+        Optional.ofNullable(search.lockModeType()).ifPresent(pagedQuery::setLockMode);
         return pagedQuery;
     }
 
@@ -92,9 +92,8 @@ public class SearchRepositoryImpl<T, S extends Search> implements SearchReposito
         return query;
     }
 
-    private Class<S> getEntityClass() {
-
-        return (Class) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    @SuppressWarnings("unchecked")
+    protected Class<T> getEntityClass() {
+        return (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
-
 }

@@ -39,7 +39,7 @@ public class WhereBuffer<S extends Search> {
                     ConditionBufferBuilder conditionBufferBuilder = ConditionBufferBuilderFactory
                             .getConditionBufferBuilder(field, joinBuffer, parameterCounter);
                     if (conditionBufferBuilder != null) {
-                        io.github.spring.middleware.jpa.buffer.ConditionBuffer conditionBuffer = conditionBufferBuilder.build(search, field, beanInfo);
+                        ConditionBuffer conditionBuffer = conditionBufferBuilder.build(search, field, beanInfo);
                         Optional.ofNullable(conditionBuffer).filter(buff -> !buff.isEmpty())
                                 .ifPresent(buff -> conditions.add(buff));
                     }
