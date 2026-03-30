@@ -2,5 +2,6 @@
 
 # API Module
 
-This module contains the API contracts used across the spring-base project. For overarching documentation see `../../README.md`.
+This module contains the API contracts used across the spring-base project. For overarching documentation see [../../README.md](../../README.md).
 
+See module docs: [docs/api.md](../../docs/api.md)
