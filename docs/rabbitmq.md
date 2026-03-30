@@ -96,19 +96,20 @@ Further reading
 
 ## Related documentation
 
-- `README.md` — project overview.
-- `docs/architecture.md` — architecture overview.
-- `docs/communication.md` — service communication.
-- `docs/errors.md` — unified error model.
-- `docs/registry.md` — registry and topology.
-- `docs/kafka.md` — Kafka module.
-- `docs/client-security.md` — client security for declarative clients.
-- `docs/logging.md` — request/response logging.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/security.md` — HTTP security configuration.
-- `docs/rabbitmq.md` — this document.
+- [README.md](../README.md)
+- [Getting Started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [Registry](./registry.md)
+- [Kafka](./kafka.md)
+- [Client Security](./client-security.md)
+- [Logging](./logging.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [Security](./security.md)
+- [Core](./core.md)
 
 ## Examples & annotation mapping
 

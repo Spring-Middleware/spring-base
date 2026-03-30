@@ -2,8 +2,8 @@
 
 # Mongo Module
 
-MongoDB integration and dynamic search. See `../../README.md` for full project documentation.
+MongoDB integration and dynamic search. For overarching documentation see [../../README.md](../../README.md).
 
-## Documentation
+Documentation: [docs/mongo.md](../../docs/mongo.md)
 
-This module is documented in the central repository docs: `docs/mongo.md` (root `docs` folder). See `../../docs/mongo.md` for usage, configuration and examples.
+This module provides MongoDB-based search utilities and helpers used by the platform.

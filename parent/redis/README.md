@@ -2,8 +2,6 @@
 
 # Redis Module
 
-Redis integration and utilities. See `../../README.md` for full project documentation.
+Redis integration and utilities. For overarching documentation see [../../README.md](../../README.md).
 
-## Documentation
-
-This module is documented in the central repository docs: `docs/redis.md` (root `docs` folder). See `../../docs/redis.md` for usage, configuration and examples.
+Documentation: [docs/redis.md](../../docs/redis.md)

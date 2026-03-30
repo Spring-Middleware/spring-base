@@ -2,5 +2,6 @@
 
 # Cache Module
 
-Cache management based on Redis and Spring Cache. See `../../README.md` for full project documentation.
+Cache management based on Redis and Spring Cache. For overarching documentation see [../../README.md](../../README.md).
 
+See module docs: [docs/cache.md](../../docs/cache.md)

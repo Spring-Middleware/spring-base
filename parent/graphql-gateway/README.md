@@ -1,3 +1,15 @@
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spring-middleware/bom.svg)](https://search.maven.org/artifact/io.github.spring-middleware/bom)
+
+# GraphQL Gateway Module
+
+Gateway that composes service GraphQL schemas and exposes a unified API. For overarching documentation see `../../README.md`.
+
+See module docs: [docs/graphql.md](../../docs/graphql.md)
+
+This module contains Docker helper scripts and a runtime Dockerfile under `boot/`.
+
+---
+
 # GraphQL Gateway
 
 This module provides a **central GraphQL gateway** for Spring Middleware.
@@ -172,4 +184,3 @@ The current gateway focuses on **infrastructure integration and schema compositi
 Authentication and authorization can be implemented in front of the gateway (e.g. API gateway, OAuth2 proxy) or inside this service using the standard Spring Security patterns used elsewhere in the platform.
 
 Future iterations of the platform may provide a dedicated security configuration for the GraphQL gateway similar to other modules.
-

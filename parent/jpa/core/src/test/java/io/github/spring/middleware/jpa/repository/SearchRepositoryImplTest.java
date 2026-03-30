@@ -3,7 +3,6 @@ package io.github.spring.middleware.jpa.repository;
 import io.github.spring.middleware.data.Pagination;
 import io.github.spring.middleware.jpa.annotations.SearchFilter;
 import io.github.spring.middleware.jpa.filter.FilterDB;
-import io.github.spring.middleware.jpa.query.QueryFilter;
 import io.github.spring.middleware.jpa.search.Search;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;

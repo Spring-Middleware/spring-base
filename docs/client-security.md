@@ -165,17 +165,17 @@ Where to look in the codebase
 
 ## Related documentation
 
-- `README.md` — high-level project overview.
-- `docs/architecture.md` — architecture and control/data plane.
-- `docs/communication.md` — service communication and declarative clients.
-- `docs/errors.md` — unified error model and propagation.
-- `docs/registry.md` — registry and schema location metadata.
-- `docs/graphql.md` — GraphQL support and gateway.
-- `docs/kafka.md` — Kafka integration and configuration.
-- `docs/logging.md` — request/response logging and forced logging.
-- `docs/client-security.md` — this document.
-- `docs/security.md` — HTTP security configuration.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
+- [README.md](../README.md)
+- [Getting Started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [Registry](./registry.md)
+- [Kafka](./kafka.md)
+- [Logging](./logging.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Security](./security.md)
+- [Core](./core.md)

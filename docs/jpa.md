@@ -260,10 +260,19 @@ Changelog / notes
 -----------------
 - This documentation was expanded after adding comprehensive buffer tests which demonstrate join deduplication, LEFT/RIGHT/FETCH joins, concat, pre-conditions and sub-search embedding.
 
-Related documentation
----------------------
-- `README.md` — high-level project overview.
-- `docs/architecture.md` — architecture and control/data plane.
-- `docs/communication.md` — service communication and declarative clients.
-- `docs/errors.md` — unified error model and propagation.
-- `docs/graphql.md` — GraphQL support and gateway.
+## Related documentation
+
+- [README.md](../README.md) — high-level project overview
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [GraphQL](./graphql.md)
+- [Kafka](./kafka.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [Logging](./logging.md)
+- [Security](./security.md)
+- [Core](./core.md)
+- [Client Security](./client-security.md)
+- [Client Resilience](./client-resilience.md)

@@ -121,11 +121,12 @@ Related code pointers
 - `QueryLinkBuilder`, `SelectionSetBuilder`, `NestedFieldBuilder` (query rendering)
 - `RemoteGraphQLExecutionClient` (executing remote queries)
 
-See also
---------
+---
 
-- `docs/graphql.md` — high level GraphQL support in the platform
-- `parent/graphql-gateway/README.md` — gateway module details and runtime configuration
+## See also
+
+- [GraphQL overview](./graphql.md)
+- [GraphQL gateway README](../parent/graphql-gateway/README.md)
 
 ```json
 // Example response (single-argument case)
@@ -148,6 +149,3 @@ Contributions and troubleshooting
 --------------------------------
 
 If you find mismatches between the declared `@GraphQLLink` metadata and the remote schema (for example, missing target argument types), check the service schema registration in the registry and run the gateway in debug mode to inspect the built `GraphQLLinkTypesMap`.
-
-
-

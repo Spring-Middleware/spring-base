@@ -83,7 +83,6 @@ The **Registry Service** is the central control-plane component. It maintains:
 - **node health** and cleanup of dead nodes
 
 The Registry exposes a model including:
-
 - `RegistryEntry` – describes a registered service
   - `clusterEndpoint`
   - `nodeEndpoints`
@@ -95,7 +94,7 @@ The Registry exposes a model including:
   - `pathApi`
   - `schemaLocationNodes`
 
-See `docs/registry.md` for full details.
+See [docs/registry.md](docs/registry.md) for full details.
 
 ### 2.3 Resources and Schemas
 
@@ -110,7 +109,7 @@ See `docs/registry.md` for full details.
 - node selection and load distribution
 - context and error propagation
 
-See `docs/communication.md` for more details.
+See [docs/communication.md](docs/communication.md) for more details.
 
 ---
 
@@ -202,7 +201,7 @@ Every communication:
   - requestId and spanId
   - full call chain
 
-See `docs/communication.md` and `docs/errors.md` for details.
+See [docs/communication.md](docs/communication.md) and [docs/errors.md](docs/errors.md) for details.
 
 ---
 
@@ -235,7 +234,7 @@ In addition, every request and remote call participates in a **lightweight trace
 
 This enables debugging and log correlation without requiring a full tracing stack.
 
-GraphQL requests participate in the same error and tracing model via centralized exception handling. See `docs/errors.md` and `docs/graphql.md` for more information.
+GraphQL requests participate in the same error and tracing model via centralized exception handling. See [docs/errors.md](docs/errors.md) and [docs/graphql.md](docs/graphql.md) for more information.
 
 ---
 
@@ -314,7 +313,6 @@ For **contributors**:
 ## 8. Related Documentation
 
 - `README.md` – project overview
-- `AI_CONTEXT.md` – condensed machine-readable project summary
 - `docs/getting-started.md` – quick start guide for integrating Spring Middleware (new)
 - `docs/communication.md`
 - `docs/errors.md`

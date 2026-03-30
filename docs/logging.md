@@ -90,15 +90,16 @@ Where to look in the code
 
 ## Related documentation
 
-- `README.md` — project overview.
-- `docs/architecture.md` — architecture and control/data plane.
-- `docs/communication.md` — how request context propagates and client headers are forwarded.
-- `docs/errors.md` — error model and how errors include request/trace metadata.
-- `docs/client-security.md` — security for declarative clients.
-- `docs/kafka.md` — Kafka module.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/security.md` — HTTP security configuration.
-- `docs/logging.md` — this document.
+- [README.md](../README.md)
+- [Getting Started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [Client Security](./client-security.md)
+- [Kafka](./kafka.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Security](./security.md)
+- [Core](./core.md)

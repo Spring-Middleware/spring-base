@@ -335,17 +335,16 @@ true)` in `MiddlewareSecurityConfiguration`, so you can combine URL-based rules 
 
 ## Related documentation
 
-- `README.md` — high-level project overview.
-- `docs/architecture.md` — platform architecture.
-- `docs/communication.md` — how clients use the Registry and how auth propagates in service calls.
-- `docs/errors.md` — unified error model and security failure mapping.
-- `docs/registry.md` — registry responsibilities.
-- `docs/client-security.md` — security applied to declarative middleware clients.
-- `docs/logging.md` — request/response logging and forced logging.
-- `docs/kafka.md` — Kafka module.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/security.md` — this document.
-
+- [README.md](../README.md) — high-level project overview
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [Registry](./registry.md)
+- [Client Security](./client-security.md)
+- [Logging](./logging.md)
+- [Kafka](./kafka.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Core](./core.md)

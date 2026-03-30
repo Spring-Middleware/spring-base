@@ -185,16 +185,17 @@ See the middleware Kafka module source for advanced configuration and extension 
 
 ## Related documentation
 
-- `README.md` — project overview and modules.
-- `docs/architecture.md` — architecture and control/data plane.
-- `docs/communication.md` — declarative clients and communication flow.
-- `docs/errors.md` — unified error model and propagation.
-- `docs/registry.md` — registry model used for discovery and schema locations.
-- `docs/client-security.md` — security for declarative clients (auth modes relevant to publishers/subscribers).
-- `docs/logging.md` — request/response logging and middleware log properties.
-- `docs/kafka.md` — Kafka module (this document).
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/security.md` — HTTP security configuration.
+- [README.md](../README.md)
+- [Getting Started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [Errors](./errors.md)
+- [Registry](./registry.md)
+- [Client Security](./client-security.md)
+- [Logging](./logging.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [Security](./security.md)
+- [Core](./core.md)

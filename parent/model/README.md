@@ -2,5 +2,6 @@
 
 # Model Module
 
-Domain model utilities and audit support. See `../../README.md` for full project documentation.
+Domain model utilities and audit support. For overarching documentation see [../../README.md](../../README.md).
 
+See module docs: [docs/core.md](../../docs/core.md)

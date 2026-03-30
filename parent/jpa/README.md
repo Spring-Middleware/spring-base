@@ -2,8 +2,6 @@
 
 # JPA Module
 
-JPA/Hibernate dynamic search utilities. See `../../README.md` for full project documentation.
+This module provides JPA-based dynamic search utilities used by the platform.
 
-## Documentation
-
-This module is documented in the central repository docs: `docs/jpa.md` (root `docs` folder). See `../../docs/jpa.md` for usage, configuration and examples.
+See central docs: [docs/jpa.md](../../docs/jpa.md)

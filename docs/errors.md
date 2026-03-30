@@ -97,7 +97,7 @@ This representation is used consistently for local errors and for errors propaga
 
 ## 4. Error propagation across services
 
-Spring Middleware integrates the error model with **service communication** (see `docs/communication.md`).
+Spring Middleware integrates the error model with **service communication** (see [Service Communication](./communication.md)).
 
 When a service calls another service via a `@MiddlewareClient` and the remote call fails:
 
@@ -282,9 +282,9 @@ To take full advantage of the error model:
 
 The error model is tightly integrated with other parts of Spring Middleware:
 
-- **Service communication** – see `docs/communication.md` for how errors propagate across `@MiddlewareClient` calls.
-- **Registry** – see `docs/registry.md` for how service metadata and topology can influence error handling (e.g. missing service or node).
-- **GraphQL** – see `docs/graphql.md` for GraphQL-specific behavior and examples.
+- **Service communication** – see [Service Communication](./communication.md) for how errors propagate across `@MiddlewareClient` calls.
+- **Registry** – see [Registry](./registry.md) for how service metadata and topology can influence error handling (e.g. missing service or node).
+- **GraphQL** – see [GraphQL](./graphql.md) for GraphQL-specific behavior and examples.
 
 Together, these components provide a consistent, observable error story across the entire platform.
 
@@ -292,17 +292,17 @@ Together, these components provide a consistent, observable error story across t
 
 ## Related documentation
 
-- `README.md` — high-level project overview.
-- `docs/architecture.md` — architecture and control/data plane.
-- `docs/communication.md` — how errors propagate across middleware clients.
-- `docs/errors.md` — this document.
-- `docs/graphql.md` — GraphQL error mapping and handler.
-- `docs/registry.md` — registry and topology implications on error handling.
-- `docs/client-security.md` — security for declarative clients (auth failures and propagation).
-- `docs/logging.md` — request/response logging and correlation.
-- `docs/kafka.md` — Kafka integration and error-handling for consumers.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/security.md` — HTTP security configuration.
+- [README.md](../README.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [GraphQL](./graphql.md)
+- [Registry](./registry.md)
+- [Client Security](./client-security.md)
+- [Logging](./logging.md)
+- [Kafka](./kafka.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Security](./security.md)
+- [Core](./core.md)

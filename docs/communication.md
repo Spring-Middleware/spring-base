@@ -137,7 +137,7 @@ Spring Middleware carries two context identifiers across every request:
 
 This creates a simple but effective tracing chain without requiring a full tracing stack.
 
-### 4.2 Example propagation chain
+### 2.4 Example propagation chain
 
 ```
 Client Request
@@ -162,7 +162,7 @@ spanId = C11A...
 
 Each hop preserves the `requestId` and creates or updates a `spanId`, enabling log correlation and debugging.
 
-For more details on how context appears in error responses, see `docs/errors.md`.
+For more details on how context appears in error responses, see [docs/errors.md](docs/errors.md).
 
 ---
 
@@ -232,7 +232,7 @@ Service-to-service communication involving GraphQL endpoints still benefits from
 - the same `X-Request-ID` / `X-Span-ID` propagation,
 - the same structured error semantics.
 
-See `docs/errors.md` and `docs/graphql.md` for more details.
+See [docs/errors.md](docs/errors.md) and [docs/graphql.md](docs/graphql.md) for more details.
 
 ---
 
@@ -254,16 +254,45 @@ Refer to the `app` module documentation and code for concrete property names and
 
 ## 7. Related documentation
 
-- `README.md` — high-level overview and examples of `@MiddlewareClient`.
-- `docs/architecture.md` — overall architecture and control/data plane.
-- `docs/errors.md` — detailed error model and error propagation.
-- `docs/registry.md` — Registry model (`RegistryEntry`, `SchemaLocation`) and flows.
-- `docs/graphql.md` — GraphQL support and centralized error handling.
-- `docs/client-security.md` — security for declarative clients and configuration.
-- `docs/logging.md` — request/response logging and forced logging.
-- `docs/kafka.md` — Kafka integration and configuration.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/security.md` — HTTP security configuration.
+- [README.md](../README.md)
+- [Architecture](./architecture.md)
+- [Errors](./errors.md)
+- [GraphQL](./graphql.md)
+- [Registry](./registry.md)
+- [Client Security](./client-security.md)
+- [Logging](./logging.md)
+- [Kafka](./kafka.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Security](./security.md)
+
+---
+
+## 8. Configuration overview
+
+The exact configuration options for clients depend on the concrete modules (primarily the `app` module and any communication-specific configuration classes). Typical configuration aspects include:
+
+- **Registry endpoint** – where the service finds the Registry Service (usually via Spring Boot properties or environment variables).
+- **Timeouts** – connection and read timeouts for HTTP clients.
+- **Retry behavior** – number of retries, backoff strategy for idempotent operations.
+- **Load-balancing / node selection strategy** – how nodes are picked for each call.
+- **Spread call behavior** – whether and how to aggregate responses from multiple nodes.
+
+Configuration is usually done via **Spring Boot configuration properties** and/or auto-configuration classes provided by Spring Middleware.
+
+Refer to the `app` module documentation and code for concrete property names and defaults.
+
+---
+
+## 9. Where to look in the code
+
+- `parent/app/src/main/java/io/github/spring/middleware/client/proxy/ProxyClient.java`
+- `parent/app/src/main/java/io/github/spring/middleware/client/proxy/ClusterCircuitBreakerRegistry.java`
+- `parent/app/src/main/java/io/github/spring/middleware/client/proxy/ClusterBulkheadRegistry.java`
+- `parent/app/src/main/java/io/github/spring/middleware/client/config/ProxyClientResilienceConfigurator.java`
+- `parent/app/src/main/java/io/github/spring/middleware/client/proxy/MethodMetaDataExtractor.java`
+
+
+

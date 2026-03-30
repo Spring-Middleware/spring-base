@@ -2,6 +2,8 @@
 
 Spring Middleware is not another framework on top of Spring Boot.
 
+**Adoption:** Used or evaluated by 60+ companies via Maven Central
+
 It is a platform layer designed to standardize microservice infrastructure while keeping services autonomous and architecture explicit.
 
 
@@ -79,7 +81,7 @@ Instead of every microservice reimplementing infrastructure concerns, Spring Mid
 - **schema federation and a GraphQL gateway**
 - **distributed data utilities**
 
-For a deeper architectural view, see `docs/architecture.md`.
+For a deeper architectural view, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
@@ -185,7 +187,7 @@ Each service automatically:
 - participates in topology updates
 - communicates via middleware clients
 
-See `docs/architecture.md` for a full architecture description.
+See [docs/architecture.md](docs/architecture.md) for a full architecture description.
 
 ---
 
@@ -218,7 +220,7 @@ The framework automatically handles:
 
 Security for declarative clients
 --------------------------------
-Declarative clients support several security modes (passthrough, api-key, OAuth2 client-credentials, none). See `docs/client-security.md` for detailed explanation, configuration examples and the annotations you can use on proxy interfaces and methods.
+Declarative clients support several security modes (passthrough, api-key, OAuth2 client-credentials, none). See [docs/client-security.md](docs/client-security.md) for detailed explanation, configuration examples and the annotations you can use on proxy interfaces and methods.
 
 ---
 
@@ -248,7 +250,7 @@ requestId = 4C7F...
 spanId = B992...
 ```
 
-Note: request/response logging is configurable via `middleware.log` properties, see `docs/logging.md` for details.
+Note: request/response logging is configurable via `middleware.log` properties, see [docs/logging.md](docs/logging.md) for details.
 
 ---
 
@@ -310,7 +312,7 @@ Capabilities include:
 
 For a detailed explanation see:
 
-`docs/graphql.md`
+[docs/graphql.md](docs/graphql.md)
 
 ---
 
@@ -335,32 +337,32 @@ All modes share a unified authorization model for public and protected endpoints
 Spring Middleware is split into focused Maven modules.
 
 ## Redis Module
-Provides distributed locks, shared maps and caches.
-See `docs/redis.md` for details.
-See `docs/cache.md` for the cache module details and runtime API.
+Provides distributed locks, shared maps and caches.  
+See [docs/redis.md](docs/redis.md) for details.  
+See [docs/cache.md](docs/cache.md) for the cache module details and runtime API.
 
 ## Mongo Search Engine
-Dynamic search capabilities on top of MongoDB.
-See `docs/mongo.md` for details.
+Dynamic search capabilities on top of MongoDB.  
+See [docs/mongo.md](docs/mongo.md) for details.
 
 ## JPA Search Engine
-Dynamic search capabilities for relational databases.
-See `docs/jpa.md` for details.
+Dynamic search capabilities for relational databases.  
+See [docs/jpa.md](docs/jpa.md) for details.
 
 ## RabbitMQ Integration
-Opinionated RabbitMQ integration for producers and consumers.
-See `docs/rabbitmq.md` for details and `parent/rabbitmq/README.md` for module-specific guidance and examples.
-For implementation best-practices and handler/listener/error-handler recommendations, see `docs/rabbitmq-best-practices.md`.
+Opinionated RabbitMQ integration for producers and consumers.  
+See [docs/rabbitmq.md](docs/rabbitmq.md) for details and [parent/rabbitmq/README.md](parent/rabbitmq/README.md) for module-specific guidance and examples.  
+For implementation best-practices and handler/listener/error-handler recommendations, see [docs/rabbitmq-best-practices.md](docs/rabbitmq-best-practices.md).
 
 ## Kafka Integration
-Provides auto-configuration for Kafka publishers and subscribers, topic creation support and a registry for named publishers/subscribers.
-See `docs/kafka.md` for details.
+Provides auto-configuration for Kafka publishers and subscribers, topic creation support and a registry for named publishers/subscribers.  
+See [docs/kafka.md](docs/kafka.md) for details.
 
 ## Client Resilience
-Client resilience (circuit-breaker, bulkhead, connection parameters) is documented in `docs/client-resilience.md`.
+Client resilience (circuit-breaker, bulkhead, connection parameters) is documented in [docs/client-resilience.md](docs/client-resilience.md).
 
 ## Logging
-Request/response logging for the middleware is documented in `docs/logging.md`.
+Request/response logging for the middleware is documented in [docs/logging.md](docs/logging.md).
 
 ---
 
@@ -475,26 +477,27 @@ Planned improvements include:
 
 The project contains detailed documentation under the `docs/` directory. Start with the high-level guides and then drill down into module-specific docs.
 
-- Architecture overview: `docs/architecture.md`
-- Registry and schema metadata: `docs/registry.md`
-- Service communication and `@MiddlewareClient`: `docs/communication.md`
-- Error model and propagation: `docs/errors.md`
-- GraphQL support and gateway: `docs/graphql.md`
-- HTTP security configuration: `docs/security.md`
-- Declarative client security (client-side modes): `docs/client-security.md`
-- Kafka integration and configuration: `docs/kafka.md`
-- Request/response logging and forced logging: `docs/logging.md`
+- Architecture overview: [docs/architecture.md](docs/architecture.md)
+- Getting Started: [docs/getting-started.md](docs/getting-started.md)
+- Registry and schema metadata: [docs/registry.md](docs/registry.md)
+- Service communication and `@MiddlewareClient`: [docs/communication.md](docs/communication.md)
+- Error model and propagation: [docs/errors.md](docs/errors.md)
+- GraphQL support and gateway: [docs/graphql.md](docs/graphql.md)
+- HTTP security configuration: [docs/security.md](docs/security.md)
+- Declarative client security (client-side modes): [docs/client-security.md](docs/client-security.md)
+- Kafka integration and configuration: [docs/kafka.md](docs/kafka.md)
+- Request/response logging and forced logging: [docs/logging.md](docs/logging.md)
 
 ## Module-specific documentation
 
-- Redis: `docs/redis.md`
-- Mongo: `docs/mongo.md`
-- JPA: `docs/jpa.md`
-- RabbitMQ: `docs/rabbitmq.md`
+- Redis: [docs/redis.md](docs/redis.md)
+- Mongo: [docs/mongo.md](docs/mongo.md)
+- JPA: [docs/jpa.md](docs/jpa.md)
+- RabbitMQ: [docs/rabbitmq.md](docs/rabbitmq.md)
 
 ## How to find code and examples
 
-- Module READMEs: `parent/*/README.md` (for module-specific setup and examples, e.g. `parent/graphql-gateway/README.md`).
+- Module READMEs: [parent/*/README.md](parent/*/README.md) (for module-specific setup and examples, e.g. [parent/graphql-gateway/README.md](parent/graphql-gateway/README.md)).
 - Use your IDE to jump to implementation classes referenced from the docs.
 
 ---

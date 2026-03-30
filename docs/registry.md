@@ -193,16 +193,7 @@ When your code calls a method on a `@MiddlewareClient` interface:
 
 If the Registry has removed a node due to failed health checks or missing heartbeat, that node will no longer be selected.
 
-### 6.2 Impact on error handling
-
-If a cluster or node cannot be found in the Registry, the communication layer can:
-
-- surface a **structured error** indicating service unavailability
-- include details in the error `extensions` such as:
-  - missing service/cluster name
-  - attempted lookup
-
-See `docs/errors.md` and `docs/communication.md` for more details on error propagation and client behavior.
+See [docs/errors.md](docs/errors.md) and [docs/communication.md](docs/communication.md) for more details on error propagation and client behavior.
 
 ---
 
@@ -232,7 +223,7 @@ A future GraphQL gateway service can:
 
 Spring Middleware’s role is to **expose accurate and up-to-date schema metadata** through the Registry.
 
-For more details on GraphQL, see `docs/graphql.md`.
+For more details on GraphQL, see [docs/graphql.md](docs/graphql.md).
 
 ---
 
@@ -251,7 +242,7 @@ Consumers of Spring Middleware generally:
 - run the Registry service as part of their platform infrastructure
 - point their microservices at the Registry via configuration
 
-See the `parent/registry` module in the repository for implementation details.
+For implementation details, see the `parent/registry` module and [parent/registry/README.md](parent/registry/README.md).
 
 ---
 
@@ -274,11 +265,18 @@ Operationally, the Registry should be treated as a **critical infrastructure com
 
 ---
 
-## 10. Related documentation
+## Related documentation
 
-- `README.md` – high-level overview and architecture diagram.
-- `AI_CONTEXT.md` – concise description of registry responsibilities.
-- `docs/architecture.md` – overall architecture and registry’s role in the control plane.
-- `docs/communication.md` – how service clients use the Registry for discovery.
-- `docs/graphql.md` – how GraphQL schemas use `SchemaLocation` and discovery.
-- `parent/registry/*` – implementation details for the registry service and model.
+- [README.md](../README.md)
+- [Getting Started](./getting-started.md)
+- [Architecture](./architecture.md)
+- [Communication](./communication.md)
+- [GraphQL](./graphql.md)
+- [Errors](./errors.md)
+- [Kafka](./kafka.md)
+- [Redis](./redis.md)
+- [Mongo](./mongo.md)
+- [JPA](./jpa.md)
+- [RabbitMQ](./rabbitmq.md)
+- [Client Security](./client-security.md)
+- [Core](./core.md)

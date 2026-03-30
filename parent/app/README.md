@@ -2,5 +2,6 @@
 
 # App Module
 
-Application core utilities and infrastructure. See `../../README.md` for full project documentation.
+Application core utilities and infrastructure. For overarching documentation see `../../README.md`.
 
+See module docs: [docs/core.md](../../docs/core.md)

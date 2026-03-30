@@ -2,5 +2,6 @@
 
 # BOM (Bill of Materials)
 
-This BOM aggregates versions used across the spring-base multi-module project. See the root README for full project documentation: `../README.md`.
+This BOM aggregates versions used across the spring-base multi-module project. See the root README for full project documentation: [../README.md](../README.md).
 
+See docs: [docs/bom.md](../docs/bom.md)

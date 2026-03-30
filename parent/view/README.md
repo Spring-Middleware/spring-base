@@ -2,5 +2,6 @@
 
 # View Module
 
-View transformation system module. See `../../README.md` for full project documentation.
+View transformation system module. For overarching documentation see [../../README.md](../../README.md).
 
+See module docs: [docs/core.md](../../docs/core.md)

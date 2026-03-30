@@ -151,3 +151,5 @@ Further recommendations
 -----------------------
 - Keep handlers and listeners small and well-named so other developers can understand the intent quickly.
 - Prefer configuration-driven behavior (properties) for retry counts and DLT suffixes to make production tuning easier.
+
+<!-- no related documentation block required here; navigation links are provided in module README -->

@@ -2,5 +2,6 @@
 
 # Commons Module
 
-Shared utilities used across modules. See `../../README.md` for full project documentation.
+Shared utilities used across modules. For overarching documentation see `../../README.md`.
 
+See module docs: [docs/core.md](../../docs/core.md)

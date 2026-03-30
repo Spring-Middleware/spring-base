@@ -120,7 +120,7 @@ The gateway:
 
 Clients interact only with the gateway and do not talk directly to individual service schemas.
 
-For more details, see `parent/graphql-gateway/README.md`.
+For more details, see [parent/graphql-gateway/README.md](parent/graphql-gateway/README.md).
 
 ---
 
@@ -252,7 +252,7 @@ Example:
 }
 ```
 
-See `docs/errors.md` for details.
+See [docs/errors.md](docs/errors.md) for details.
 
 ---
 
@@ -278,18 +278,21 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 
 # 9. Related documentation
 
-- `README.md` — high-level overview and GraphQL concept snippet.
-- `AI_CONTEXT.md` — concise summary of GraphQL capabilities in the platform.
-- `docs/registry.md` — details on `SchemaLocation` and registry responsibilities.
-- `docs/errors.md` — unified error model and GraphQL error representation.
-- `parent/graphql-gateway/README.md` — GraphQL gateway module details.
-- `docs/communication.md` — service-to-service communication and how queries are routed.
-- `docs/kafka.md` — Kafka integration (event-driven patterns may interact with GraphQL resolvers).
-- `docs/client-security.md` — security for declarative clients.
-- `docs/logging.md` — request/response logging and correlation.
-- `docs/redis.md` — Redis module.
-- `docs/mongo.md` — Mongo module.
-- `docs/jpa.md` — JPA module.
-- `docs/rabbitmq.md` — RabbitMQ module.
-- `docs/security.md` — HTTP security configuration.
-- `docs/graphql-links.md` — how `@GraphQLLink` and link metadata work (cross-service field resolution).
+- [README.md](../README.md) — project overview
+- [Getting Started](./getting-started.md) — quick start guide
+- [Architecture](./architecture.md) — overall system architecture
+- [Communication](./communication.md) — service-to-service communication and clients
+- [Errors](./errors.md) — unified error model and propagation
+- [Registry](./registry.md) — registry and schema location metadata
+- [GraphQL Links](./graphql-links.md) — metadata-driven cross-service links
+- [Kafka](./kafka.md) — Kafka integration and configuration
+- [RabbitMQ](./rabbitmq.md) — RabbitMQ integration
+- [Redis](./redis.md) — Redis module
+- [Mongo](./mongo.md) — Mongo module
+- [JPA](./jpa.md) — JPA module
+- [Cache](./cache.md) — cache module
+- [Client Security](./client-security.md) — security for declarative clients
+- [Client Resilience](./client-resilience.md) — resilience and circuit breakers for clients
+- [Logging](./logging.md) — request/response logging and middleware logging properties
+- [Security](./security.md) — HTTP security configuration
+- [Core](./core.md) — core modules overview
