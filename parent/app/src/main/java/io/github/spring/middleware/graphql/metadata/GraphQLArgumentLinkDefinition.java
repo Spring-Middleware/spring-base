@@ -7,4 +7,6 @@ public class GraphQLArgumentLinkDefinition {
 
     private String argumentName;
     private String targetTypeName;
+    private String targetFieldName;
+    private boolean batched;
 }

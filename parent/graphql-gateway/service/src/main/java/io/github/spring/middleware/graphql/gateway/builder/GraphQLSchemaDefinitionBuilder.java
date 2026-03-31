@@ -16,6 +16,8 @@ import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.isRootType;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mergeTypeDefinitions;
 

@@ -18,4 +18,6 @@ public @interface GraphQLLink {
     GraphQLLinkArgument[] arguments();
 
     boolean collection() default false;
+
+    boolean batched() default false;
 }

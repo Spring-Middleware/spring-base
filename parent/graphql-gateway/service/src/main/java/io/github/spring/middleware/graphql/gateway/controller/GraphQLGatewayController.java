@@ -3,6 +3,9 @@ package io.github.spring.middleware.graphql.gateway.controller;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.schema.DataFetchingEnvironment;
+import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatchedRegistry;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLGatewayHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,6 +37,8 @@ public class GraphQLGatewayController {
                 .ofNullable((Map<String, Object>) request.get("variables"))
                 .orElse(Collections.emptyMap());
 
+
+
         String operationName = Optional
                 .ofNullable((String) request.get("operationName"))
                 .orElse(null);
@@ -42,10 +47,12 @@ public class GraphQLGatewayController {
                 .query((String) request.get("query"))
                 .operationName(operationName)
                 .variables(variables)
+                .graphQLContext(Map.of("batchedRegistry", new GraphQLLinkResolvedBatchedRegistry()))
                 .build();
 
         ExecutionResult result = graphQL.execute(executionInput);
 
         return result.toSpecification();
     }
+
 }

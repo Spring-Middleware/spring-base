@@ -11,6 +11,7 @@ public class GraphQLFieldLinkDefinition {
     private String targetTypeName;
     private String schema;
     private String query;
+    private boolean batched;
     private List<GraphQLArgumentLinkDefinition> argumentLinkDefinitions;
     private boolean collection;
 }

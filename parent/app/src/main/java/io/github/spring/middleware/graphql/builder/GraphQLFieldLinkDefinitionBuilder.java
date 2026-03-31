@@ -31,6 +31,7 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setQuery(graphQLLink.query());
         definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
         definition.setCollection(graphQLLink.collection());
+        definition.setBatched(graphQLLink.batched());
         return definition;
     }
 
@@ -47,6 +48,7 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setQuery(graphQLLink.query());
         definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
         definition.setCollection(graphQLLink.collection());
+        definition.setBatched(graphQLLink.batched());
         return definition;
     }
 
@@ -55,6 +57,10 @@ public class GraphQLFieldLinkDefinitionBuilder {
             GraphQLArgumentLinkDefinition argumentLinkDefinition = new GraphQLArgumentLinkDefinition();
             argumentLinkDefinition.setArgumentName(graphQLLinkArgument.name());
             argumentLinkDefinition.setTargetTypeName(graphQLLinkArgument.type());
+            argumentLinkDefinition.setBatched(graphQLLinkArgument.batch());
+            if (!graphQLLinkArgument.targetFieldName().isBlank()) {
+                argumentLinkDefinition.setTargetFieldName(graphQLLinkArgument.targetFieldName());
+            }
             return argumentLinkDefinition;
         }).toList();
     }

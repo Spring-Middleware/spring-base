@@ -4,7 +4,7 @@ REM Usage: build-registry-image.bat [--jar <path>] [--dockerfile <path>] [--tag 
 
 setlocal EnableDelayedExpansion
 
-set "JAR=parent/registry/boot/target/registry-boot-1.3.0.jar"
+set "JAR=parent/registry/boot/target/registry-boot-1.4.0.jar"
 set "DOCKERFILE=parent/registry/boot/Dockerfile.runtime"
 set "TAG=spring-base_registry:latest"
 set "NO_CACHE=0"

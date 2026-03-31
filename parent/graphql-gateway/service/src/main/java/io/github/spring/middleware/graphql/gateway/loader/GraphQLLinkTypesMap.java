@@ -1,6 +1,8 @@
 package io.github.spring.middleware.graphql.gateway.loader;
 
 import graphql.schema.GraphQLType;
+import io.github.spring.middleware.graphql.gateway.fetcher.GraphQLRemoteLinkExecutor;
+import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 import io.github.spring.middleware.graphql.metadata.GraphQLFieldLinkDefinition;
 import io.github.spring.middleware.graphql.metadata.GraphQLLinkedType;
 import io.github.spring.middleware.registry.model.SchemaLocation;
@@ -9,10 +11,12 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class GraphQLLinkTypesMap {
 
@@ -41,8 +45,16 @@ public class GraphQLLinkTypesMap {
             buildResolvedLinkMap();
         }
 
-        return resolvedLinkMap.get(new FieldCoordinate(typeName, fieldName));
+        return resolvedLinkMap.get(new FieldCoordinate(typeName, getWrapperTypeNamesForType(typeName), fieldName));
     }
+
+    private List<String> getWrapperTypeNamesForType(String typeName) {
+        return linkTypesMap.values().stream()
+                .flatMap(linkTypeData -> linkTypeData.getWrapperTypeNamesForType(typeName).stream())
+                .distinct()
+                .toList();
+    }
+
 
     public List<FieldCoordinate> getAllLinkedFieldCoordinates() {
         if (resolvedLinkMap == null) {
@@ -61,7 +73,7 @@ public class GraphQLLinkTypesMap {
         List<GraphQLResolvedLink> resolvedLinks = new ArrayList<>();
         resolvedLinkMap.forEach((coordinate, resolvedLink) -> {
             if (resolvedLink.getSchemaLocation().equals(schemaLocation)) {
-                if (typeName == null || coordinate.typeName().equals(typeName)) {
+                if (typeName == null || coordinate.typeName().equals(typeName) || coordinate.wrappedTypeNames().contains(typeName)) {
                     resolvedLinks.add(resolvedLink);
                 }
             }
@@ -89,7 +101,7 @@ public class GraphQLLinkTypesMap {
 
                 linkedType.getGraphQLFieldLinkDefinitions().forEach(fieldLinkDefinition -> {
                     String fieldName = fieldLinkDefinition.getFieldName();
-                    FieldCoordinate coordinate = new FieldCoordinate(typeName, fieldName);
+                    FieldCoordinate coordinate = new FieldCoordinate(typeName, linkedType.getWrapperTypeNames(), fieldName);
 
                     SchemaLocation targetSchemaLocation = namespaceToSchemaLocationMap.get(fieldLinkDefinition.getSchema());
 
@@ -116,6 +128,14 @@ public class GraphQLLinkTypesMap {
             SchemaLocation schemaLocation,
             Collection<GraphQLLinkedType> linkedTypes
     ) {
+
+        public List<String> getWrapperTypeNamesForType(String typeName) {
+            return linkedTypes.stream()
+                    .filter(linkedType -> linkedType.getTypeName().equals(typeName))
+                    .flatMap(linkedType -> linkedType.getWrapperTypeNames().stream())
+                    .toList();
+        }
+
     }
 
     @Getter
@@ -132,7 +152,7 @@ public class GraphQLLinkTypesMap {
         private SchemaLocation targetSchemaLocation;
         private GraphQLFieldLinkDefinition fieldLinkDefinition;
         private GraphQLType originOperationReturnType;
-        private Map<String,GraphQLType> targetFieldArgumentTypes;
+        private Map<String, GraphQLType> targetFieldArgumentTypes;
 
         public String getFieldName() {
             return fieldLinkDefinition.getFieldName();
@@ -145,12 +165,115 @@ public class GraphQLLinkTypesMap {
             targetFieldArgumentTypes.put(argumentName, argumentType);
         }
 
+        public boolean isBatched() {
+            return fieldLinkDefinition.isBatched();
+        }
+
+        public boolean isBatcheArgument(String argumentName) {
+            if (fieldLinkDefinition.getArgumentLinkDefinitions() == null) {
+                return false;
+            }
+            return fieldLinkDefinition.getArgumentLinkDefinitions().stream()
+                    .filter(argDef -> argDef.getArgumentName().equals(argumentName))
+                    .anyMatch(GraphQLArgumentLinkDefinition::isBatched);
+        }
+
+        public BatchKey getBatchKey(Map<String, Object> variables) {
+            Map<String, Object> args = fieldLinkDefinition.getArgumentLinkDefinitions().stream()
+                    .filter(GraphQLArgumentLinkDefinition::isBatched)
+                    .sorted(Comparator.comparing(GraphQLArgumentLinkDefinition::getArgumentName)) // orden estable
+                    .collect(Collectors.toMap(
+                            GraphQLArgumentLinkDefinition::getArgumentName,
+                            argDef -> variables.get(argDef.getArgumentName()),
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
+
+            return new BatchKey(fieldLinkDefinition.getQuery(), args);
+        }
+    }
+
+    public boolean isFieldLinked(String typeName, String fieldName) {
+        if (resolvedLinkMap == null) {
+            buildResolvedLinkMap();
+        }
+        return resolvedLinkMap.containsKey(new FieldCoordinate(typeName, getWrapperTypeNamesForType(typeName), fieldName));
     }
 
 
     public record FieldCoordinate(
             String typeName,
+            List<String> wrappedTypeNames,
             String fieldName
     ) {
+    }
+
+    public record BatchKey(String query, Map<String, Object> args) {
+
+        public List<GraphQLRemoteLinkExecutor.ItemKey> splitIntoItemKeys(GraphQLResolvedLink resolvedLink) {
+            List<String> batchedArgumentNames = resolvedLink.getFieldLinkDefinition()
+                    .getArgumentLinkDefinitions().stream()
+                    .filter(GraphQLArgumentLinkDefinition::isBatched)
+                    .map(GraphQLArgumentLinkDefinition::getArgumentName)
+                    .sorted()
+                    .toList();
+
+            if (batchedArgumentNames.isEmpty()) {
+                throw new IllegalStateException(
+                        "No batched arguments defined for query '%s'".formatted(query)
+                );
+            }
+
+            Map<String, List<?>> batchedValues = new LinkedHashMap<>();
+
+            for (String argumentName : batchedArgumentNames) {
+                Object value = args.get(argumentName);
+
+                if (value == null) {
+                    throw new IllegalStateException(
+                            "Missing batch argument '%s' for query '%s'".formatted(argumentName, query)
+                    );
+                }
+
+                if (!(value instanceof Collection<?> collection)) {
+                    throw new IllegalStateException(
+                            "Batch argument '%s' for query '%s' must be a collection".formatted(argumentName, query)
+                    );
+                }
+
+                if (collection.isEmpty()) {
+                    throw new IllegalStateException(
+                            "Batch argument '%s' for query '%s' cannot be an empty collection".formatted(argumentName, query)
+                    );
+                }
+
+                batchedValues.put(argumentName, List.copyOf(collection));
+            }
+
+            int expectedSize = batchedValues.values().iterator().next().size();
+
+            for (Map.Entry<String, List<?>> entry : batchedValues.entrySet()) {
+                if (entry.getValue().size() != expectedSize) {
+                    throw new IllegalStateException(
+                            "All batch argument collections for query '%s' must have the same size. Argument '%s' has size %d but expected %d"
+                                    .formatted(query, entry.getKey(), entry.getValue().size(), expectedSize)
+                    );
+                }
+            }
+
+            List<GraphQLRemoteLinkExecutor.ItemKey> itemKeys = new ArrayList<>(expectedSize);
+
+            for (int i = 0; i < expectedSize; i++) {
+                Map<String, Object> itemArgs = new LinkedHashMap<>();
+
+                for (String argumentName : batchedArgumentNames) {
+                    itemArgs.put(argumentName, batchedValues.get(argumentName).get(i));
+                }
+
+                itemKeys.add(new GraphQLRemoteLinkExecutor.ItemKey(query, itemArgs));
+            }
+
+            return itemKeys;
+        }
     }
 }

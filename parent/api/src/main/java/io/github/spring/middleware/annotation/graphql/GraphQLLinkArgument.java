@@ -11,5 +11,7 @@ public @interface GraphQLLinkArgument {
 
     String name();
     String type() default "";
+    String targetFieldName() default "";
+    boolean batch() default false;
 
 }

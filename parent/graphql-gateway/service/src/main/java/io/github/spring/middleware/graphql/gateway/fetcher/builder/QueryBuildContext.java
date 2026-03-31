@@ -57,13 +57,16 @@ public class QueryBuildContext {
         return "String"; // fallback
     }
 
-    public static String buildVariablesDefinition(DataFetchingEnvironment environment, Map<String, GraphQLVariableDefinition> variableDefinitions) {
+    public static String buildVariablesDefinition(DataFetchingEnvironment environment, Map<String, GraphQLVariableDefinition> variableDefinitions, Map<String, Object> queryVariables) {
         List<String> definitions = new ArrayList<>();
 
         // 1. Variables originales del schema (ej: $id: UUID)
         List<GraphQLArgument> arguments = environment.getFieldDefinition().getArguments();
         if (arguments != null && !arguments.isEmpty()) {
             for (GraphQLArgument argument : arguments) {
+                if (!queryVariables.containsKey(argument.getName())) {
+                    continue; // Solo incluir si el valor está presente en queryVariables
+                }
                 definitions.add(STR."$\{argument.getName()}: \{renderInputType(argument.getType())}");
             }
         }

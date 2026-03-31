@@ -31,7 +31,7 @@ public class QueryLinkBuilder extends CommonBuilder {
         builder.append("query");
 
         VariablesDefinitionBuilder variablesDefinitionBuilder = new VariablesDefinitionBuilder();
-        variablesDefinitionBuilder.appendVariablesDefinition(baseDefinitions, variableDefinitions);
+        variablesDefinitionBuilder.appendVariablesDefinition(baseDefinitions, variableDefinitions, variables);
         builder.append(variablesDefinitionBuilder.build());
 
         builder.append(" {");

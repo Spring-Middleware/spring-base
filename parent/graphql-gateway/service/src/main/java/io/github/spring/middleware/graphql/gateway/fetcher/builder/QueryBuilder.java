@@ -28,7 +28,7 @@ public class QueryBuilder extends CommonBuilder {
         operationWithSelectionSetBuilder.append("\n}");
 
         VariablesDefinitionBuilder variablesDefinitionBuffer = new VariablesDefinitionBuilder();
-        variablesDefinitionBuffer.appendVariablesDefinition(environment, variableDefinitions);
+        variablesDefinitionBuffer.appendVariablesDefinition(environment, variableDefinitions, queryVariables);
 
         builder.append(variablesDefinitionBuffer.build()).append(operationWithSelectionSetBuilder.build());
     }

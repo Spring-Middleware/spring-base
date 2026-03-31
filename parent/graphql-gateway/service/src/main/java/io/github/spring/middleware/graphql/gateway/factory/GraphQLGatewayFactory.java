@@ -7,8 +7,11 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.graphql.gateway.batch.GraphQLBatchExecutor;
+import io.github.spring.middleware.graphql.gateway.batch.GraphQLBatchInstrumentation;
 import io.github.spring.middleware.graphql.gateway.builder.GraphQLSchemaDefinitionBuilder;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
+import io.github.spring.middleware.graphql.gateway.fetcher.GraphQLRemoteLinkExecutor;
 import io.github.spring.middleware.graphql.gateway.fetcher.RemoteDelegatingDataFetcher;
 import io.github.spring.middleware.graphql.gateway.fetcher.RemoteDelegatingGraphQLLinkDataFetcher;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
@@ -34,12 +37,14 @@ import static io.github.spring.middleware.graphql.gateway.util.RuntimeWiringUtil
 @RequiredArgsConstructor
 public class GraphQLGatewayFactory {
 
+    private final GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor;
     private final RemoteGraphQLExecutionClient remoteGraphQLExecutionClient;
     private final GraphQLTypeRegistryMerger typeRegistryMerger;
     private final GraphQLSchemaDefinitionBuilder schemaDefinitionBuilder;
     private final GraphQLTypeRegistryLoader registryLoader;
     private final GraphQLSchemaMetadataLoader schemaMetadataLoader;
     private final Optional<ScalarsProvider> scalarsProviderOptional;
+    private final GraphQLBatchExecutor graphQLBatchExecutor;
     private final RegistryClient registryClient;
 
     public GraphQL build() {
@@ -55,7 +60,9 @@ public class GraphQLGatewayFactory {
                             buildRuntimeWiring(graphQLMerged, graphQLLinkTypesMap, schemaRegistry)
                     );
 
-            return GraphQL.newGraphQL(graphQLSchema).build();
+            return GraphQL.newGraphQL(graphQLSchema)
+                    .instrumentation(new GraphQLBatchInstrumentation(graphQLBatchExecutor, graphQLLinkTypesMap))
+                    .build();
         } else {
             return null;
         }
@@ -66,7 +73,7 @@ public class GraphQLGatewayFactory {
                 new RemoteDelegatingDataFetcher(merged, remoteGraphQLExecutionClient, graphQLLinkTypesMap);
 
         final RemoteDelegatingGraphQLLinkDataFetcher remoteDelegatingGraphQLLinkDataFetcher =
-                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, remoteGraphQLExecutionClient);
+                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, graphQLRemoteLinkExecutor);
 
         RuntimeWiring.Builder builder = RuntimeWiring.newRuntimeWiring();
 

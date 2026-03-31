@@ -54,7 +54,7 @@ public class GraphQLMessagingBootstrap {
                             .switchIfEmpty(Mono.defer(() -> {
                                 CreateQueueRequest queueRequest = new CreateQueueRequest();
                                 queueRequest.setQueueName(queueName);
-                                queueRequest.setDurable(false);
+                                queueRequest.setDurable(true);
                                 queueRequest.setAutoDelete(false);
                                 queueRequest.setArguments(Map.of("x-expires", 60000));
 

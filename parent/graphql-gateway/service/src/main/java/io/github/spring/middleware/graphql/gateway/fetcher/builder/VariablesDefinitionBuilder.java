@@ -11,8 +11,8 @@ import static io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryB
 
 public class VariablesDefinitionBuilder extends CommonBuilder {
 
-    public void appendVariablesDefinition(DataFetchingEnvironment environment, Map<String, GraphQLVariableDefinition> variableDefinitions) {
-        String variablesDefinition = buildVariablesDefinition(environment, variableDefinitions);
+    public void appendVariablesDefinition(DataFetchingEnvironment environment, Map<String, GraphQLVariableDefinition> variableDefinitions, Map<String, Object> queryVariables) {
+        String variablesDefinition = buildVariablesDefinition(environment, variableDefinitions, queryVariables);
         if (!variablesDefinition.isEmpty()) {
             builder.append("(").append(variablesDefinition).append(")");
         }
@@ -20,13 +20,16 @@ public class VariablesDefinitionBuilder extends CommonBuilder {
 
     public void appendVariablesDefinition(
             List<GraphQLVariableDefinition> baseDefinitions,
-            Map<String, GraphQLVariableDefinition> variableDefinitions
+            Map<String, GraphQLVariableDefinition> variableDefinitions,
+            Map<String, Object> queryVariables
     ) {
         List<String> definitions = new ArrayList<>();
 
         if (baseDefinitions != null && !baseDefinitions.isEmpty()) {
             for (GraphQLVariableDefinition argument : baseDefinitions) {
-                definitions.add(STR."$\{argument.getName()}: \{argument.getType()}");
+                if (queryVariables.containsKey(argument.getName())) {
+                    definitions.add(STR."$\{argument.getName()}: \{argument.getType()}");
+                }
             }
         }
 
