@@ -90,11 +90,6 @@ public class GraphQLLinkBatched {
         pending.values().forEach(future -> future.completeExceptionally(ex));
     }
 
-    public void completeMissing(Set<GraphQLLinkTypesMap.BatchKey> completedKeys) {
-        pending.entrySet().stream()
-                .filter(entry -> !completedKeys.contains(entry.getKey()))
-                .forEach(entry -> entry.getValue().complete(null));
-    }
 
     public DataFetchingEnvironment getDataFetchingEnvironment() {
         return dataFetchingEnvironment;

@@ -3,6 +3,14 @@ server:
   servlet:
     context-path: ${SERVER_CONTEXT_PATH:/}
 
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+
 middleware:
   log:
     apiKey: ${LOG_API_KEY}
@@ -12,6 +20,12 @@ middleware:
       enabled: ${LOG_RESPONSE_ENABLED:true}
     responseTime:
       enabled: ${LOG_RESPONSE_TIME_ENABLED:false}
+    exclude:
+      urlPatterns:
+        - /api-docs/**
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /_alive
 
   jms:
     base-packages: io.github.spring.middleware.graphql.gateway.jms
@@ -50,7 +64,10 @@ middleware:
     port: ${PUBLIC_SERVER_PORT:8070}
 
   graphql:
-    enabled: ${GRAPHQL_ENABLED:false}
+    gateway:
+      batching:
+        enabled: ${GRAPHQL_GATEWAY_BATCHING_ENABLED:false}
+
 
   registryConsistencyScheduler:
     enabled: ${REGISTRY_CONSISTENCY_SCHEDULER_ENABLED:false}

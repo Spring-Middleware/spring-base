@@ -561,13 +561,13 @@ Example:
 
 ```java
 @GraphQLLink(
-    schema = "product",
-    type = "Product",
-    query = "productsByIds",
-    arguments = {
-        @GraphQLArgument(name = "ids")
-    },
-    collection = true
+        schema = "product",
+        type = "Product",
+        query = "productsByIds",
+        arguments = {
+                @GraphQLArgument(name = "ids")
+        },
+        collection = true
 )
 private List<UUID> productIds;
 ```
@@ -604,14 +604,14 @@ Example:
 ```java
 @GraphQLQuery(name = "productsByName")
 @GraphQLLink(
-    schema = "product",
-    type = "Product",
-    query = "products",
-    arguments = {
-        @GraphQLArgument(name = "q"),
-        @GraphQLArgument(name = "catalogId")
-    },
-    collection = true
+        schema = "product",
+        type = "Product",
+        query = "products",
+        arguments = {
+                @GraphQLArgument(name = "q"),
+                @GraphQLArgument(name = "catalogId")
+        },
+        collection = true
 )
 public GraphQLLinkArguments getProductsByName(@GraphQLArgument(name = "name") String name) {
     return new GraphQLLinkArguments(Map.of("q", name, "catalogId", id));
@@ -639,7 +639,7 @@ Example:
 
 ```java
 GraphQLSchemaGenerator generator = new GraphQLSchemaGenerator()
-    .withTypeMappersPrepended(new GraphQLLinkArgumentsTypeMapper());
+        .withTypeMappersPrepended(new GraphQLLinkArgumentsTypeMapper());
 ```
 
 The custom mapper ensures:
@@ -648,6 +648,103 @@ The custom mapper ensures:
 - no object type is generated for internal transport classes
 - schema generation remains stable
 - runtime execution aligns with federation behavior
+
+### Dynamic GraphQL Link Batching
+
+Spring Middleware introduces **dynamic GraphQL batching** for declarative links resolved through `@GraphQLLink`.
+
+This batching model is designed to reduce **distributed N+1 remote calls** without requiring resolver-specific batching code or explicit `DataLoader` wiring.
+
+The batching mechanism works at the **gateway execution layer** and is driven by link metadata.
+
+Main ideas:
+
+- batched links are identified declaratively from `@GraphQLLink` metadata
+- individual resolver invocations register pending batched requests into a request-scoped registry
+- request keys and item keys are separated internally
+- batched remote queries are executed automatically when the execution flow reaches the correct dispatch point
+- the gateway reconstructs per-request results from the remote batch response
+
+Conceptually, the model distinguishes between:
+
+- **BatchKey** – represents the logical request issued by a field resolver
+- **ItemKey** – represents an individual result item returned by the remote service
+
+This separation allows the gateway to:
+
+- batch one or more collection-based GraphQL link arguments
+- execute a single remote query for multiple pending link resolutions
+- reconstruct the correct result list for each original field request
+- preserve transparent resolver semantics for the user
+
+Typical example:
+
+- multiple `Catalog.products` field resolutions register product id lists
+- the gateway aggregates ids into a single `productsByIds` remote GraphQL query
+- the remote response is indexed by item keys
+- each original `Catalog.products` field is reconstructed from the batch response
+
+This enables execution patterns such as:
+
+```text
+100 catalogs × products link
+↓
+single aggregated remote query
+↓
+batched reconstruction of field results
+```
+
+Observed impact in testing:
+
+- many remote requests in the non-batched execution path
+- a single remote request in the batched execution path
+- end-to-end latency reduction from roughly ~1 second to roughly ~100–200 ms in sample scenarios
+
+### Dynamic GraphQL Batch Dispatch Instrumentation
+
+To support dynamic batching, Spring Middleware introduces a dedicated GraphQL instrumentation layer in the gateway.
+
+Main component:
+
+```text
+GraphQLBatchInstrumentation
+```
+
+Responsibilities:
+
+- detect execution points where batched link dispatch is safe
+- coordinate request-scoped batch execution through `GraphQLContext`
+- avoid duplicate dispatch triggers for the same `(parentTypeName, fieldName)` while a dispatch is in flight
+- support both direct field execution and list completion scenarios
+
+The batching instrumentation uses:
+
+- `beginFieldExecution(...)` for direct linked fields
+- `beginFieldListCompletion(...)` for lists whose selected children contain linked fields
+- `ExecutionStepInfo` to resolve the real parent type during execution
+- `MergedField` selection analysis to inspect only the fields actually requested by the client
+
+This avoids relying on static schema-wide field-name lookups and allows the dispatch logic to react to the real query structure.
+
+### GraphQL Link Batch Toggle
+
+Spring Middleware is designed so that GraphQL batching can be enabled or disabled at runtime through a global toggle.
+
+This allows the execution strategy of the GraphQL gateway to change without redeploying or restarting the application.
+
+Typical use cases:
+
+- compare batched vs non-batched execution behavior
+- demo performance impact in real time
+- disable batching quickly if troubleshooting is needed
+
+The intended model is:
+
+- a global runtime flag controls whether the gateway uses batched link execution
+- when disabled, links fall back to immediate remote execution
+- when enabled, links participate in the request-scoped batching flow
+
+This makes batching not only an optimization feature, but a runtime execution strategy that can be switched dynamically.
 
 ---
 
@@ -1175,6 +1272,14 @@ GraphQL improvements:
 - declarative GraphQL link model for cross-service field resolution
 - scalar-based argument transport for GraphQL links
 - SPQR type mapping customization for internal transport types
+- dynamic batching for GraphQL links resolved through `@GraphQLLink`
+- request-scoped batch registry coordinated through `GraphQLContext`
+- separation between logical batch requests and individual response items through `BatchKey` and `ItemKey`
+- instrumentation-based batch dispatch integrated into GraphQL execution flow
+- selected-field analysis through `MergedField` for list completion dispatch decisions
+- runtime toggle support for enabling or disabling GraphQL batching at the gateway level
+- demonstrated reduction from many remote GraphQL requests to a single batched request in test scenarios
+- observed latency reduction from roughly ~1 second to roughly ~100–200 ms in sample batched queries
 
 Kafka improvements:
 
@@ -1193,7 +1298,7 @@ Kafka improvements:
 
 ## Current Status
 
-Version: **1.3.0**  
+Version: **1.4.0**  
 Java: **21**  
 Spring Boot: **3.4.x**
 
@@ -1216,6 +1321,9 @@ Current capabilities:
 - Kafka-based event streaming infrastructure
 - GraphQL federation with dynamic link resolution
 - scalar-based internal argument transport for GraphQL links
+- dynamic GraphQL batching for declarative remote links
+- request-scoped batch aggregation and reconstruction of distributed GraphQL results
+- runtime-switchable GraphQL gateway batching strategy
 
 ---
 
@@ -1259,4 +1367,3 @@ Additional clarification:
     - `[... contenido ...]`
     - `[... SIN MODIFICAR ...]`
 - The assistant must always return the **full explicit content**, even if sections are unchanged.
-~~~~markdown

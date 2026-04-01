@@ -3,17 +3,16 @@ package io.github.spring.middleware.graphql.gateway.controller;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.schema.DataFetchingEnvironment;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatchedRegistry;
-import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
+import io.github.spring.middleware.graphql.gateway.runtime.GraphQLBatchingToggle;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLGatewayHolder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
@@ -26,6 +25,19 @@ import java.util.Optional;
 public class GraphQLGatewayController {
 
     private final GraphQLGatewayHolder holder;
+    private final GraphQLBatchingToggle batchingToggle;
+
+    @PostMapping("/batching-toggle")
+    public void setBatchingEnabled(@RequestParam("enabled") Boolean enabled) {
+        if (enabled != null) {
+            batchingToggle.setEnabled(enabled);
+        }
+    }
+
+    @GetMapping("/batching-toggle")
+    public Map<String, Object> getBatchingStatus() {
+        return Map.of("enabled", batchingToggle.isEnabled());
+    }
 
 
     @PostMapping
@@ -36,7 +48,6 @@ public class GraphQLGatewayController {
         Map<String, Object> variables = Optional
                 .ofNullable((Map<String, Object>) request.get("variables"))
                 .orElse(Collections.emptyMap());
-
 
 
         String operationName = Optional

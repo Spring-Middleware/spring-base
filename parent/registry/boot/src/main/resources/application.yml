@@ -18,6 +18,12 @@ middleware:
       enabled: ${LOG_RESPONSE_ENABLED:true}
     responseTime:
       enabled: ${LOG_RESPONSE_TIME_ENABLED:false}
+    exclude:
+      urlPatterns:
+        - /api-docs/**
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /_alive
 
   jms:
     base-packages: io.github.spring.middleware.registry.jms

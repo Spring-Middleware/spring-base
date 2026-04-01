@@ -10,6 +10,7 @@ import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatc
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryLinkBuilder;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
+import io.github.spring.middleware.graphql.gateway.runtime.GraphQLBatchingToggle;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 
 import java.util.HashMap;
@@ -25,10 +26,12 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
 
     private GraphQLLinkTypesMap graphQLLinkTypesMap;
     private GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor;
+    private GraphQLBatchingToggle batchingToggle;
 
-    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor) {
+    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor, GraphQLBatchingToggle batchingToggle) {
         this.graphQLLinkTypesMap = graphQLLinkTypesMap;
         this.graphQLRemoteLinkExecutor = graphQLRemoteLinkExecutor;
+        this.batchingToggle = batchingToggle;
     }
 
     @Override
@@ -86,7 +89,7 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
                     builder.of(originalContext);
                 });
 
-        if (resolvedLink.isBatched()) {
+        if (resolvedLink.isBatched() && batchingToggle.isEnabled()) {
             GraphQLLinkResolvedBatchedRegistry batchedRegistry = getOrCreateBatchedRegistry(environment, resolvedLink);
             GraphQLLinkBatched graphQLLinkBatched = batchedRegistry.getOrCreate(resolvedLink, executionInputBuilder, environment);
             return graphQLLinkBatched.register(resolvedLink, variables);

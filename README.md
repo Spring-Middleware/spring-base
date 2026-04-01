@@ -14,7 +14,7 @@ It is a platform layer designed to standardize microservice infrastructure while
 [![Architecture](https://img.shields.io/badge/Architecture-Microservices%20Platform-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Current Version:** `1.3.0`  
+**Current Version:** `1.4.0`  
 **Status:** Active Development
 
 **Spring Middleware** is a modular framework designed to build **consistent, resilient, and discoverable Spring Boot microservices**.
@@ -376,7 +376,7 @@ Spring Middleware is distributed via Maven Central using a BOM.
     <dependency>
       <groupId>io.github.spring-middleware</groupId>
       <artifactId>bom</artifactId>
-      <version>1.3.0</version>
+      <version>1.4.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -386,24 +386,24 @@ Spring Middleware is distributed via Maven Central using a BOM.
 
 ## Module versions (platform BOM)
 
-The platform BOM `io.github.spring-middleware:bom:1.3.0` manages the versions of core modules used by Spring Middleware. Key module versions included in the BOM are:
+The platform BOM `io.github.spring-middleware:bom:1.4.0` manages the versions of core modules used by Spring Middleware. Key module versions included in the BOM are:
 
 | Module property | Version |
 |-----------------|---------|
-| core.commons.version | 1.4.0 |
-| core.view.version | 1.3.0 |
-| core.cache.version | 1.3.0 |
-| core.api.version | 1.3.0 |
-| core.app.version | 1.6.0 |
-| core.mongo.version | 1.4.0 |
-| core.rabbitmq.version | 1.3.0 |
-| core.kafka.version | 1.3.0 |
-| core.jpa.version | 1.4.0 |
-| core.redis.version | 1.3.0 |
-| core.model.version | 1.3.0 |
-| core.registry.version | 1.4.0 |
-| core.graphql.version | 1.3.0 |
-| core.graphql.gateway.version | 1.2.0 |
+| core.commons.version | 1.5.0 |
+| core.view.version | 1.4.0 |
+| core.cache.version | 1.4.0 |
+| core.api.version | 1.4.0 |
+| core.app.version | 1.7.0 |
+| core.mongo.version | 1.5.0 |
+| core.rabbitmq.version | 1.4.0 |
+| core.kafka.version | 1.4.0 |
+| core.jpa.version | 1.5.0 |
+| core.redis.version | 1.4.0 |
+| core.model.version | 1.4.0 |
+| core.registry.version | 1.5.0 |
+| core.graphql.version | 1.4.0 |
+| core.graphql.gateway.version | 1.3.0 |
 
 Use the BOM to manage consistency of module versions across your projects.
 

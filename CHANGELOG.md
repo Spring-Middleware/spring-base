@@ -1,6 +1,16 @@
 # Changelog
 
-# Changelog
+## 1.4.0
+
+### Added
+
+- Declarative GraphQL Batching support for resolving N+1 distributed queries automatically via API Gateway.
+- New `@GraphQLLink` settings (`batched`, `targetFieldName`) to declare grouped remote relationships without writing manual resolvers.
+- Complete documentation for GraphQL Query Batching and Links (`docs/graphql-query-batching.md`).
+
+### Upgraded
+
+- Platform BOM and all base modules versions bumped to 1.4.0 (some inner modules to 1.5.0/1.7.0).
 
 ## 1.3.0
 
