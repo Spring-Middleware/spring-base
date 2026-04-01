@@ -1,20 +1,62 @@
 # Declarative GraphQL Batching and Links
 
-This document explains how Spring Middleware implements links between GraphQL schemas using the `@GraphQLLink` annotation family. Through these tools, the GraphQL API Gateway composes queries and resolves linked fields distributed across different microservices.
+This document explains how Spring Middleware implements cross-service GraphQL resolution using the `@GraphQLLink` annotation family.
 
-One of the most advanced and unique features of Spring Middleware is **Declarative GraphQL Batching**. This innovative approach allows grouping multiple queries (N+1 problem) to microservices without needing to implement complex resolvers in code, purely through configuration and annotations.
+Spring Middleware does not treat GraphQL as a local concern inside a single service.  
+It provides a **platform-level execution model** where the GraphQL Gateway composes queries, resolves linked fields, and coordinates execution across multiple microservices.
+
+One of the most advanced capabilities of this model is **Declarative GraphQL Batching**.
 
 ---
 
-## Declarative Batching (NEW and TOP!)
+## What this solves
 
-The N+1 problem commonly occurs in GraphQL when resolving a list of entities (e.g., several `Catalog` items) and each needs to fetch additional data from another entity or microservice (e.g., `Product`).
+In distributed GraphQL systems, the classic N+1 problem becomes a **network problem**.
 
-Spring Middleware introduces a declarative and transparent solution to batch these subqueries from multiple requests into a single automatic call.
+Example:
 
-### Configuration
+- A query returns 100 `Catalog` items
+- Each `Catalog` resolves `products`
+- Each resolution triggers a remote call to `product-service`
 
-To use this feature, you first need to enable the gateway feature in the configuration, for example from `application.yml` or via environment variables in the `graphql-gateway` microservice:
+Result:
+
+```
+100 catalogs → 100 remote GraphQL calls
+```
+
+This is not just inefficient — it introduces:
+
+- network overhead
+- latency amplification
+- unnecessary load on downstream services
+
+Spring Middleware solves this at the **platform level**, not at the resolver level.
+
+---
+
+## Declarative Batching
+
+Declarative batching allows the gateway to:
+
+- detect batchable links from metadata
+- aggregate requests across multiple parent objects
+- execute a single downstream query
+- reconstruct results transparently
+
+This happens without:
+
+- manual `DataLoader` wiring
+- resolver-specific batching logic
+- custom orchestration code
+
+Batching is driven entirely by annotations and gateway execution behavior.
+
+---
+
+## Configuration
+
+Batching is enabled at the gateway level:
 
 ```yaml
 graphql:
@@ -23,185 +65,221 @@ graphql:
       enabled: ${GRAPHQL_GATEWAY_BATCHING_ENABLED:true}
 ```
 
-### Batching Annotations
+This allows:
 
-To declare a batched link relationship, use the following parameters in the annotations:
+- runtime enable/disable
+- comparison of execution strategies
+- safe rollout in production environments
 
-- `@GraphQLLink(..., batched = true)` – Informs the Gateway that list resolutions for this field should be batched.
-- `@GraphQLLinkArgument(..., batch = true, targetFieldName = "id")` – Specifies which remote argument will receive the list of batched values, and on which field (`targetFieldName`) of the remote response the in-memory match should be performed to reassign the results to the original parent entities.
+---
 
-### Full Example: Catalog and Product
+## Batching Annotations
 
-In the following distributed example, the `Catalog` entity links to `Products`, delegating the query to the catalog service:
+Batching is declared through link metadata:
 
-**Catalog Service (Domain)**:
+- `@GraphQLLink(..., batched = true)`
+- `@GraphQLLinkArgument(..., batch = true, targetFieldName = "...")`
+
+Meaning:
+
+- the link participates in batch execution
+- multiple values are aggregated into a single argument
+- results are matched back using `targetFieldName`
+
+---
+
+## Full Example: Catalog → Product
+
+### Catalog Service (Domain)
 
 ```java
-package io.github.spring.middleware.catalog.domain;
-
-import io.github.spring.middleware.annotation.graphql.GraphQLLink;
-import io.github.spring.middleware.annotation.graphql.GraphQLLinkArgument;
-import io.github.spring.middleware.annotation.graphql.GraphQLLinkClass;
-import io.github.spring.middleware.annotation.graphql.GraphQLType;
-import io.github.spring.middleware.graphql.arguments.GraphQLLinkArguments;
-import io.leangen.graphql.annotations.GraphQLArgument;
-import io.leangen.graphql.annotations.GraphQLQuery;
-import lombok.Data;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-@Data
-@GraphQLLinkClass(types = {@GraphQLType(names = "Catalog"), @GraphQLType(names = "Page_Catalog", isWrapper = true)})
-public class Catalog {
-
-    private UUID id;
-    private String name;
-    private String description;
-    private CatalogStatus status;
-    private Instant createdAt;
-    private Instant updatedAt;
-
-    // MAGIC: Resolution with Declarative Batching
-    @GraphQLLink(
-        schema = "product", 
-        type = "Product", 
-        query = "productsByIds", 
-        collection = true, 
-        batched = true,
-        arguments = {
-            @GraphQLLinkArgument(name = "ids", targetFieldName = "id", batch = true)
-        }
-    )
-    private List<UUID> productIds;
-
-    @GraphQLQuery(name = "products")
-    public List<UUID> getProductIds() {
-        return productIds;
+@GraphQLLink(
+    schema = "product", 
+    type = "Product", 
+    query = "productsByIds", 
+    collection = true, 
+    batched = true,
+    arguments = {
+        @GraphQLLinkArgument(name = "ids", targetFieldName = "id", batch = true)
     }
+)
+private List<UUID> productIds;
+```
 
-    // Multi-variable Link (without batching)
-    @GraphQLLink(
-        schema = "product", 
-        type = "Page_Product", 
-        query = "products", 
-        arguments = {
-            @GraphQLLinkArgument(name = "catalogId"), 
-            @GraphQLLinkArgument(name = "q")
-        }
-    )
-    @GraphQLQuery(name = "productsByNames")
-    public GraphQLLinkArguments getProductNames(@GraphQLArgument(name = "name") String name) {
-        return new GraphQLLinkArguments(Map.of("catalogId", id, "q", name));
-    }
+This declares:
+
+- a cross-service relationship
+- a batched resolution strategy
+- a mapping between local IDs and remote results
+
+### Product Service (GraphQL Controller)
+
+```java
+@GraphQLQuery(name = "productsByIds")
+public List<Product> getProductsByIds(@GraphQLArgument(name = "ids") List<UUID> ids) {
+    return productService.getProductsByIds(ids);
 }
 ```
 
-**Product Service (GraphQL Controller)**:
+The downstream service remains simple:
 
-This component must provide the target method `productsByIds` that will receive the flat batched list and return the associated objects:
+- no batching logic
+- no gateway awareness
+- no execution orchestration
 
-```java
-package io.github.spring.middleware.product.controller;
+---
 
-import io.github.spring.middleware.graphql.annotations.GraphQLService;
-import io.github.spring.middleware.product.domain.Product;
-import io.github.spring.middleware.product.domain.ProductStatus;
-import io.github.spring.middleware.product.dto.graphql.DigitalProductInput;
-import io.github.spring.middleware.product.dto.graphql.PhysicalProductInput;
-import io.github.spring.middleware.product.dto.graphql.ProductInput;
-import io.github.spring.middleware.product.mapper.ProductMapper;
-import io.github.spring.middleware.product.service.ProductService;
-import io.leangen.graphql.annotations.GraphQLArgument;
-import io.leangen.graphql.annotations.GraphQLMutation;
-import io.leangen.graphql.annotations.GraphQLQuery;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+## Execution Model
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+### Without batching
 
-@Component
-@GraphQLService
-public class ProductGraphqlController {
-
-    private final ProductService productService;
-    private final ProductMapper productMapper;
-
-    public ProductGraphqlController(ProductService productService, ProductMapper productMapper) {
-        this.productService = productService;
-        this.productMapper = productMapper;
-    }
-
-    // Exposes the list used to resolve the relationship to catalogs in a batched way:
-    @GraphQLQuery(name = "productsByIds")
-    public List<Product> getProductsByIds(@GraphQLArgument(name = "ids") List<UUID> ids) {
-        return productService.getProductsByIds(ids);
-    }
-
-    @GraphQLQuery(name = "product")
-    public Product getProduct(@GraphQLArgument(name = "id") UUID id) {
-        return productService.getProduct(id);
-    }
-
-    @GraphQLQuery(name = "products")
-    public Page<Product> listProducts(
-            @GraphQLArgument(name = "q") String q,
-            @GraphQLArgument(name = "status") ProductStatus status,
-            @GraphQLArgument(name = "catalogId") UUID catalogId,
-            @GraphQLArgument(name = "page") Integer page,
-            @GraphQLArgument(name = "size") Integer size,
-            @GraphQLArgument(name = "sort") String sort) {
-
-        Pageable pageable = PageRequest.of(
-                page != null ? page : 0,
-                size != null ? size : 20,
-                sort != null ? Sort.by(sort.split(",")) : Sort.unsorted()
-        );
-        return productService.listProducts(q, status, catalogId, pageable);
-    }
-    
-    // ...rest of mutations...
-}
 ```
+Catalog.products (100 items)
+↓
+100 remote calls → product-service
+```
+
+### With declarative batching
+
+```
+Catalog.products (100 items)
+↓
+Gateway aggregates IDs
+↓
+1 remote call → productsByIds(ids)
+↓
+Gateway reconstructs results
+```
+
+---
+
+## How it works internally
+
+At the GraphQL Gateway level:
+
+1. **Field resolution starts**
+    - Linked fields are detected from metadata
+
+2. **Batch registration**
+    - Requests are stored in a request-scoped registry
+
+3. **Aggregation**
+    - IDs are grouped across multiple parent objects
+
+4. **Dispatch**
+    - A single downstream GraphQL query is executed
+
+5. **Reconstruction**
+    - Results are matched using `targetFieldName`
+    - Data is mapped back to each original parent object
+
+This process is:
+
+- transparent to services
+- independent from resolver code
+- driven entirely by metadata
+
+---
+
+## Platform-level responsibility
+
+Spring Middleware makes a clear distinction:
+
+| Concern | Responsibility |
+|--------|----------------|
+| Schema & resolvers | Service |
+| Execution orchestration | Gateway |
+| Batching strategy | Platform |
+
+This allows:
+
+- services to remain simple
+- execution to remain consistent
+- optimizations to be applied globally
 
 ---
 
 ## Basic GraphQL Links (Non-Batched)
 
-Besides advanced declarative batching, the `@GraphQLLink` family supports the following basic styles:
+Besides batching, the `@GraphQLLink` family supports:
 
-- **Simple argument mapping (Single argument)**: the underlying field value is passed directly as an argument to the remote service.
-- **Multi-argument mapping**: the method returns a Map object or the `GraphQLLinkArguments` helper defining the different target names and their respective values.
+- **Simple argument mapping**  
+  Field value → single remote argument
 
-### Collection architecture in microservices
+- **Multi-argument mapping**  
+  Method returns `Map` or `GraphQLLinkArguments`
 
-During startup, each microservice:
-1. Uses `GraphQLLinkedTypeBuilder` to map models marked with `@GraphQLLinkClass` / `@GraphQLType`.
-2. Generates definitions (`GraphQLFieldLinkDefinition`) with the remote schema name, target queries, and corresponding IDs.
+Example:
 
-### How it works behind the Gateway
+```java
+@GraphQLLink(
+    schema = "product", 
+    type = "Page_Product", 
+    query = "products", 
+    arguments = {
+        @GraphQLLinkArgument(name = "catalogId"), 
+        @GraphQLLinkArgument(name = "q")
+    }
+)
+```
 
-On the API Gateway side (`graphql-gateway`):
-1. Intercepts invocations for "Linked" fields.
-2. Delegates to `RemoteDelegatingGraphQLLinkDataFetcher`.
-3. For the Batching option, resolvers identify pending fields at the ExecutionTree level (DataLoader / DataFetcher) based on identifiers, and build the batched GraphQL request requesting everything at once via `InLineFragmentBuilder` and `SelectionSetBuilder`.
-4. Once the response returns with the flat array of remote objects, a matching system extracts the `targetFieldName` of each object and associates them accordingly to the original required entity, transparently solving the N+1 problem across the entire distributed network.
+---
+
+## Collection architecture in microservices
+
+During startup:
+
+1. `GraphQLLinkedTypeBuilder` scans annotated types
+2. Builds `GraphQLFieldLinkDefinition`
+3. Registers link metadata in the platform
+
+---
+
+## Gateway execution flow
+
+At runtime:
+
+1. Gateway intercepts linked field resolution
+2. Delegates to `RemoteDelegatingGraphQLLinkDataFetcher`
+3. Applies batching logic when enabled
+4. Builds downstream query using:
+    - `InLineFragmentBuilder`
+    - `SelectionSetBuilder`
+5. Executes remote call
+6. Maps results back to parent entities
+
+---
+
+## Why this matters
+
+Declarative batching changes where complexity lives.
+
+Instead of:
+
+- pushing complexity into resolvers
+- duplicating logic across services
+
+It centralizes execution in the platform:
+
+- consistent behavior across all services
+- fewer bugs and edge cases
+- better performance by default
+
+Most importantly:
+
+> N+1 is solved at the platform level, not at the resolver level.
 
 ---
 
 ## Tips for microservice developers
 
-- Apply the `@GraphQLLink` tag on the **field** when mapping the relationship directly against its IDs.
-- Apply `@GraphQLLink` on the **function (getter)** if returning a map and it's a multi-argument link (Multi-variable).
-- Must always be accompanied by `@GraphQLQuery(name = "xxx")`.
-- For polymorphic responses (e.g., returning Interface subtypes), the framework manages and preserves them correctly within the execution tree.
+- Use `@GraphQLLink` on fields for ID-based relationships
+- Use method-based links for multi-argument scenarios
+- Always combine with `@GraphQLQuery`
+- Let the gateway handle batching and execution
 
-### Related Links
+---
+
+## Related Links
+
 - [GraphQL Overview](./graphql.md)

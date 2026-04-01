@@ -284,7 +284,7 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 - [Communication](./communication.md) — service-to-service communication and clients
 - [Errors](./errors.md) — unified error model and propagation
 - [Registry](./registry.md) — registry and schema location metadata
-- [GraphQL Links](./graphql-links.md) — metadata-driven cross-service links
+- [GraphQL Batching y Links](./graphql-query-batching.md) — metadata-driven cross-service links and query batching
 - [Kafka](./kafka.md) — Kafka integration and configuration
 - [RabbitMQ](./rabbitmq.md) — RabbitMQ integration
 - [Redis](./redis.md) — Redis module
