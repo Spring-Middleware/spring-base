@@ -25,7 +25,7 @@ public class ConstraintErrorResolver {
                 .map(m -> m.mapAnnotation(annotationType))
                 .flatMap(Optional::stream)
                 .findFirst()
-                .orElse(FrameworkErrorCodes.VALIDATION_ERROR); // default validation
+                .orElse(new DefaultErrorDescriptor(FrameworkErrorCodes.VALIDATION_ERROR)); // default validation
     }
 
     public ErrorDescriptor resolveFromDbConstraintName(String constraintName) {
@@ -33,7 +33,7 @@ public class ConstraintErrorResolver {
                 .map(m -> m.mapConstraintName(constraintName))
                 .flatMap(Optional::stream)
                 .findFirst()
-                .orElse(FrameworkErrorCodes.DATABASE_CONSTRAINT_ERROR); // default database
+                .orElse(new DefaultErrorDescriptor(FrameworkErrorCodes.DATABASE_CONSTRAINT_ERROR)); // default database
     }
 
 }

@@ -5,11 +5,13 @@ import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(JmsResources.class)
 public class ClusterMessagingShutdown {
 
     private final JmsResources jmsResources;

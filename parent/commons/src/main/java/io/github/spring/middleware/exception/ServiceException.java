@@ -1,5 +1,6 @@
 package io.github.spring.middleware.exception;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
 import org.springframework.http.HttpStatus;
@@ -41,8 +42,8 @@ public abstract class ServiceException extends RuntimeException implements Error
     }
 
     @Override
-    public String getCode() {
-        return descriptor != null ? descriptor.getCode() : FrameworkErrorCodes.UNKNOWN_ERROR.getCode();
+    public ErrorCodes getCode() {
+        return descriptor != null ? descriptor.getCode() : FrameworkErrorCodes.UNKNOWN_ERROR;
     }
 
     @Override

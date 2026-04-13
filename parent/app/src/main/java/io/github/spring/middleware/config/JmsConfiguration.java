@@ -9,6 +9,7 @@ import io.github.spring.middleware.rabbitmq.configuration.JmsConnectionPoolConfi
 import io.github.spring.middleware.rabbitmq.core.JmsResources;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import java.util.List;
 @Configuration
 @EnableScheduling
 @ConfigurationProperties(prefix = "middleware.jms")
+@ConditionalOnProperty(name = "middleware.jms.enabled", havingValue = "true")
 public class JmsConfiguration {
 
     private List<String> basePackages = new ArrayList<>();

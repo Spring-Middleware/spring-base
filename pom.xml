@@ -66,6 +66,8 @@
         <core.registry.version>1.5.0</core.registry.version>
         <core.graphql.version>1.4.0</core.graphql.version>
         <core.graphql.gateway.version>1.3.0</core.graphql.gateway.version>
+        <core.ai.version>1.0.0</core.ai.version>
+        <core.ai.ollama.version>1.0.0</core.ai.ollama.version>
     </properties>
 
     <dependencyManagement>
@@ -216,6 +218,18 @@
                 <groupId>io.github.spring-middleware</groupId>
                 <artifactId>graphql-gateway-boot</artifactId>
                 <version>${core.graphql.gateway.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>ai-core</artifactId>
+                <version>${core.ai.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
+                <artifactId>ai-ollama</artifactId>
+                <version>${core.ai.ollama.version}</version>
             </dependency>
 
 

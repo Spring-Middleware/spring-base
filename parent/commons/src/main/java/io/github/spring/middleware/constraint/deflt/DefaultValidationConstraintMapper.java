@@ -2,6 +2,7 @@ package io.github.spring.middleware.constraint.deflt;
 
 import io.github.spring.middleware.constraint.ValidationConstraintMapper;
 import io.github.spring.middleware.error.ConstraintErrorCodes;
+import io.github.spring.middleware.error.DefaultErrorDescriptor;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
 import org.springframework.stereotype.Service;
@@ -17,8 +18,8 @@ public class DefaultValidationConstraintMapper implements ValidationConstraintMa
     private final Map<Class<? extends Annotation>, ErrorDescriptor> map = new HashMap<>();
 
     public DefaultValidationConstraintMapper() {
-        map.put(jakarta.validation.constraints.NotNull.class, ConstraintErrorCodes.NOT_NULL_CONSTRAINT_ERROR);
-        map.put(jakarta.validation.constraints.Size.class, ConstraintErrorCodes.SIZE_CONSTRAINT_ERROR);
+        map.put(jakarta.validation.constraints.NotNull.class, new DefaultErrorDescriptor(ConstraintErrorCodes.NOT_NULL_CONSTRAINT_ERROR));
+        map.put(jakarta.validation.constraints.Size.class, new DefaultErrorDescriptor(ConstraintErrorCodes.SIZE_CONSTRAINT_ERROR));
         // etc
     }
 

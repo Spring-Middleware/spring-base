@@ -1,6 +1,7 @@
 package io.github.spring.middleware.graphql.builder;
 
 import io.github.spring.middleware.annotation.graphql.GraphQLLinkClass;
+import io.github.spring.middleware.graphql.metadata.GraphQLLinkedType;
 import io.github.spring.middleware.graphql.metadata.GraphQLSchemaMetadata;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class GraphQLSchemaMetadataBuilder {
         final Set<Class<?>> linkClasses = reflections.getTypesAnnotatedWith(GraphQLLinkClass.class);
         linkClasses.stream().map(linkClazz -> {
                     try {
+                        GraphQLLinkedType graphQLLinkedType = linkedTypeBuilder.build(linkClazz);
                         return linkedTypeBuilder.build(linkClazz);
                     } catch (IntrospectionException e) {
                         log.warn("Skipping class {} due to introspection error: {}", linkClazz.getName(), e.getMessage());

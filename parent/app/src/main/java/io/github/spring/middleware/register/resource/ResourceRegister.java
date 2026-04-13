@@ -7,6 +7,7 @@ import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.model.PublicServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ConditionalOnBean(RegistryClient.class)
 public class ResourceRegister {
 
     private final Set<ResourceRegisterTask> resourceRegisterTasks = Collections.synchronizedSet(new HashSet<>());

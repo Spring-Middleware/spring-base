@@ -1,6 +1,7 @@
 package io.github.spring.middleware.resolver;
 
 import io.github.spring.middleware.error.ConstraintErrorResolver;
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
@@ -18,7 +19,7 @@ import java.util.*;
 @Order(10)
 public class ConstraintViolationExceptionResolver implements ThrowableErrorResolver {
 
-    private static final ErrorDescriptor VALIDATION_ERROR_CODE = FrameworkErrorCodes.VALIDATION_ERROR;
+    private static final FrameworkErrorCodes VALIDATION_ERROR_CODE = FrameworkErrorCodes.VALIDATION_ERROR;
 
     private final ConstraintErrorResolver errorResolver;
 
@@ -44,7 +45,7 @@ public class ConstraintViolationExceptionResolver implements ThrowableErrorResol
         return Optional.of(new ErrorMessage(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                VALIDATION_ERROR_CODE.getCode(),
+                VALIDATION_ERROR_CODE,
                 buildTopLevelMessage(violations),
                 extensions
         ));

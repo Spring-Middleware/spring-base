@@ -9,7 +9,7 @@ public interface ErrorDescriptor extends HasExtensions {
         return "Error occurred";
     }
 
-    String getCode();          // string (no enum) para no acoplar
+    ErrorCodes getCode();          // string (no enum) para no acoplar
 
     default Map<String, Object> getExtensions() {
         return new HashMap<>();

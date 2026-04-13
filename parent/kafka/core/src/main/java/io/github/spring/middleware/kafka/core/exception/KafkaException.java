@@ -1,31 +1,28 @@
 package io.github.spring.middleware.kafka.core.exception;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class KafkaException extends RuntimeException implements ErrorDescriptor {
 
-    private ErrorDescriptor errorDescriptor;
+    private KafkaErrorCodes errorCodes;
 
-    public KafkaException(ErrorDescriptor errorDescriptor, String message) {
+    public KafkaException(KafkaErrorCodes errorCodes, String message) {
         super(message);
-        this.errorDescriptor = errorDescriptor;
+        this.errorCodes = errorCodes;
     }
 
-    public KafkaException(ErrorDescriptor errorDescriptor, String message, Throwable cause) {
+    public KafkaException(KafkaErrorCodes errorCodes, String message, Throwable cause) {
         super(message, cause);
-        this.errorDescriptor = errorDescriptor;
+        this.errorCodes = errorCodes;
     }
 
     @Override
-    public String getCode() {
-        return errorDescriptor.getCode();
-    }
-
-    @Override
-    public Map<String, Object> getExtensions() {
-        return errorDescriptor.getExtensions();
+    public ErrorCodes getCode() {
+        return errorCodes;
     }
 
     @Override

@@ -2,7 +2,6 @@ package io.github.spring.middleware.graphql.gateway.batch;
 
 import graphql.ExecutionInput;
 import graphql.schema.DataFetchingEnvironment;
-import io.github.spring.middleware.graphql.gateway.fetcher.GraphQLRemoteLinkExecutor;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,6 +18,7 @@ public class GraphQLLinkBatched {
     private GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink;
     private Map<String, List<Object>> argumentValuesMap = new LinkedHashMap<>();
     private DataFetchingEnvironment dataFetchingEnvironment;
+    private Map<String, Object> variablesNonBatching = new LinkedHashMap<>();
     private final Map<GraphQLLinkTypesMap.BatchKey, CompletableFuture<Object>> pending = new LinkedHashMap<>();
     private final AtomicBoolean executed = new AtomicBoolean(false);
 
@@ -57,6 +56,9 @@ public class GraphQLLinkBatched {
                     } else {
                         values.add(val);
                     }
+                } else {
+                    // si no es batch, lo guardo aparte para agregarlo a la query al momento de ejecutar el batch
+                    variablesNonBatching.putIfAbsent(arg, val);
                 }
             });
             return new CompletableFuture<>();
@@ -101,5 +103,9 @@ public class GraphQLLinkBatched {
 
     public List<GraphQLLinkTypesMap.BatchKey> getBatchKeys() {
         return new ArrayList<>(pending.keySet());
+    }
+
+    public Map<String, Object> getVariablesNonBatching() {
+        return variablesNonBatching;
     }
 }

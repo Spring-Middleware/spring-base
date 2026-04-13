@@ -15,7 +15,7 @@
     <artifactId>kafka</artifactId>
     <version>${core.kafka.version}</version>
     <name>kafka</name>
-    <description>Core Kafka</description>
+    <description>Kafka Modules</description>
 
     <modules>
         <module>api</module>

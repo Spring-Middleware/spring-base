@@ -1,6 +1,7 @@
 package io.github.spring.middleware.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.spring.middleware.error.DefaultErrorDescriptor;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.ErrorMessageFactory;
@@ -46,13 +47,13 @@ public class MiddlewareAuthenticationEntryPoint implements AuthenticationEntryPo
 
     private ErrorDescriptor mapAuthenticationException(AuthenticationException ex) {
         if (ex instanceof BadCredentialsException) {
-            return SecurityErrorCodes.INVALID_CREDENTIALS;
+            return new DefaultErrorDescriptor(SecurityErrorCodes.INVALID_CREDENTIALS);
         }
 
         if (ex instanceof InsufficientAuthenticationException) {
-            return SecurityErrorCodes.MISSING_CREDENTIALS;
+            return new DefaultErrorDescriptor(SecurityErrorCodes.MISSING_CREDENTIALS);
         }
 
-        return SecurityErrorCodes.AUTHENTICATION_FAILED;
+        return new DefaultErrorDescriptor(SecurityErrorCodes.AUTHENTICATION_FAILED);
     }
 }

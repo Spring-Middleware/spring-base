@@ -1,6 +1,7 @@
 package io.github.spring.middleware.resolver;
 
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.spring.middleware.error.DefaultErrorDescriptor;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,6 @@ public class CallNotPermittedExceptionResolver implements ThrowableErrorResolver
         if (!(t instanceof CallNotPermittedException ex)) {
             return Optional.empty();
         }
-        return Optional.of(CALL_NOT_PERMITTED);
+        return Optional.of(new DefaultErrorDescriptor(CALL_NOT_PERMITTED));
     }
 }

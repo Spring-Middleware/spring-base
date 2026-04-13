@@ -19,6 +19,7 @@ import io.github.spring.middleware.client.proxy.security.SecurityManagerApplier;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
+@ConditionalOnBean(RegistryClient.class)
 public class ProxyClientResilienceConfigurator {
 
     private final Set<ProxyClientConfigurationTask> configurationTasks = new HashSet<>();

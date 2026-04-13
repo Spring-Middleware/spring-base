@@ -1,5 +1,6 @@
 package io.github.spring.middleware.resolver;
 
+import io.github.spring.middleware.error.DefaultErrorDescriptor;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
 import org.springframework.core.annotation.Order;
@@ -13,6 +14,6 @@ public class UnknownErrorResolver implements ThrowableErrorResolver {
 
     @Override
     public Optional<ErrorDescriptor> resolve(Throwable t) {
-        return Optional.of(FrameworkErrorCodes.UNKNOWN_ERROR);
+        return Optional.of(new DefaultErrorDescriptor(FrameworkErrorCodes.UNKNOWN_ERROR));
     }
 }

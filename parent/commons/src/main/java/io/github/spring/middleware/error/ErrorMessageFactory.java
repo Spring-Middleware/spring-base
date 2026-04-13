@@ -65,7 +65,7 @@ public class ErrorMessageFactory {
     }
 
     private ErrorDescriptor resolveDescriptor(Throwable t) {
-        return throwableResolvers.resolve(t).orElse(FrameworkErrorCodes.UNKNOWN_ERROR);
+        return throwableResolvers.resolve(t).orElse(new DefaultErrorDescriptor(FrameworkErrorCodes.UNKNOWN_ERROR));
     }
 
     private int resolveStatusCode(ErrorDescriptor error) {

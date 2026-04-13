@@ -1,5 +1,6 @@
 package io.github.spring.middleware.controller;
 
+
 import io.github.spring.middleware.error.ErrorClient;
 import io.github.spring.middleware.error.ErrorRecoveryService;
 import io.github.spring.middleware.error.api.ErrorRecoveryAttemptView;

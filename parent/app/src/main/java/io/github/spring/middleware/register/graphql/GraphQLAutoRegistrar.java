@@ -5,6 +5,8 @@ import io.github.spring.middleware.graphql.annotations.GraphQLEndpoint;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
@@ -16,26 +18,35 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-@Component
+
 @Slf4j
+@Component
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class GraphQLAutoRegistrar implements ApplicationListener<ApplicationReadyEvent> {
 
-    private final GraphQLSchemaRegister graphQLSchemaRegister;
+    private final ObjectProvider<GraphQLSchemaRegister> graphQLSchemaRegisterProvider;
     private final ServerPortProvider serverPortProvider;
     private final NodeInfoRetriever nodeInfoRetriever;
 
     private volatile Set<Class<?>> schemasToRegister = Set.of();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    public GraphQLAutoRegistrar(final GraphQLSchemaRegister graphQLSchemaRegister, final ServerPortProvider serverPortProvider, final NodeInfoRetriever nodeInfoRetriever) {
-        this.graphQLSchemaRegister = graphQLSchemaRegister;
+    public GraphQLAutoRegistrar(
+            ObjectProvider<GraphQLSchemaRegister> graphQLSchemaRegisterProvider,
+            ServerPortProvider serverPortProvider,
+            NodeInfoRetriever nodeInfoRetriever) {
+        this.graphQLSchemaRegisterProvider = graphQLSchemaRegisterProvider;
         this.serverPortProvider = serverPortProvider;
         this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        GraphQLSchemaRegister graphQLSchemaRegister = graphQLSchemaRegisterProvider.getIfAvailable();
+        if (graphQLSchemaRegister == null) {
+            return;
+        }
+
         if (event.getApplicationContext().getParent() != null) return;
         if (!initialized.compareAndSet(false, true)) return;
 
@@ -62,6 +73,11 @@ public class GraphQLAutoRegistrar implements ApplicationListener<ApplicationRead
     }
 
     public void reRegister() {
+        GraphQLSchemaRegister graphQLSchemaRegister = graphQLSchemaRegisterProvider.getIfAvailable();
+        if (graphQLSchemaRegister == null) {
+            return;
+        }
+
         if (schemasToRegister.isEmpty()) return;
         graphQLSchemaRegister.register(schemasToRegister);
     }

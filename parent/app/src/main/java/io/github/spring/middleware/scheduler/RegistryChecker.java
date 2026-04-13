@@ -2,6 +2,7 @@ package io.github.spring.middleware.scheduler;
 
 import io.github.spring.middleware.http.AbstractWebClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -9,6 +10,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(name = "middleware.client.registry-endpoint")
 public class RegistryChecker extends AbstractWebClient {
 
     @Value("${middleware.client.registry-endpoint}")

@@ -1,5 +1,6 @@
 package io.github.spring.middleware.resolver;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorProperties;
 import org.springframework.core.annotation.Order;
@@ -12,7 +13,7 @@ import java.util.Optional;
 @Order(100)
 public class FrameworkHttpStatusResolver implements HttpStatusCodeResolver {
 
-    private final Map<String, Integer> statusByCode;
+    private final Map<ErrorCodes, Integer> statusByCode;
 
     public FrameworkHttpStatusResolver(FrameworkErrorProperties properties) {
         this.statusByCode = properties.getErrors();

@@ -1,10 +1,11 @@
 package io.github.spring.middleware.error;
 
-public enum SecurityErrorCodes implements ErrorDescriptor {
+public enum SecurityErrorCodes implements ErrorCodes {
 
     MISSING_CREDENTIALS("MISSING_CREDENTIALS", "Authentication credentials are missing or invalid."),
     INVALID_CREDENTIALS("INVALID_CREDENTIALS", "Authentication credentials are invalid."),
-    AUTHENTICATION_FAILED("AUTHENTICATION_FAILED", "Authentication failed due to invalid credentials or other issues.");
+    AUTHENTICATION_FAILED("AUTHENTICATION_FAILED", "Authentication failed due to invalid credentials or other issues."),
+    OAUTH2_TOKEN_ACQUISITION_ERROR("OAUTH2_TOKEN_ACQUISITION_ERROR", "Failed to acquire OAuth2 token from the authentication provider.");
 
     private String code;
     private String message;
@@ -19,7 +20,6 @@ public enum SecurityErrorCodes implements ErrorDescriptor {
         return this.code;
     }
 
-    @Override
     public String getMessage() {
         return this.message;
     }

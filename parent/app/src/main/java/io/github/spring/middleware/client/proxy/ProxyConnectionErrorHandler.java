@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.spring.middleware.config.PropertyNames;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.ErrorSpanStep;
+import io.github.spring.middleware.error.FrameworkErrorCodes;
 import io.github.spring.middleware.register.resource.ResourceRegisterConfiguration;
 import io.github.spring.middleware.utils.ErrorSpanUtils;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +74,7 @@ public class ProxyConnectionErrorHandler {
             HttpStatus httpStatus = HttpStatus.resolve(statusCode);
             fallback.setStatusMessage(httpStatus != null ? httpStatus.getReasonPhrase() : "Remote Error");
 
-            fallback.setCode("REMOTE_SERVICE_ERROR");
+            fallback.setCode(FrameworkErrorCodes.REMOTE_SERVICE_ERROR);
             fallback.setMessage("Error calling remote service");
             fallback.setExtensions(new HashMap<>());
 

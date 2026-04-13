@@ -1,5 +1,6 @@
 package io.github.spring.middleware.graphql.gateway.exception;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 
 public class GraphQLException extends RuntimeException implements ErrorDescriptor {
@@ -20,7 +21,7 @@ public class GraphQLException extends RuntimeException implements ErrorDescripto
     }
 
     @Override
-    public String getCode() {
-        return errorCode != null ? errorCode.getCode() : "GRAPHQL_ERROR";
+    public ErrorCodes getCode() {
+        return errorCode != null ? errorCode : GraphQLErrorCodes.GRAPHQL_UNKNOWN_ERROR;
     }
 }

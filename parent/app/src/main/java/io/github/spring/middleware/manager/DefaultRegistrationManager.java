@@ -10,6 +10,7 @@ import io.github.spring.middleware.register.resource.ResourceAutoRegistrar;
 import io.github.spring.middleware.utils.EndpointUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownHostException;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@ConditionalOnBean(RegistryClient.class)
 public class DefaultRegistrationManager implements RegistrationManager {
 
     private final GraphQLAutoRegistrar graphQLAutoRegistrar;

@@ -74,6 +74,7 @@ public class GraphQLBatchExecutor {
             // aquí puedes decidir cómo agregar los valores, por ejemplo, como una lista
             aggregatedVariables.put(argName, values);
         });
+        batchedLink.getVariablesNonBatching().forEach(aggregatedVariables::put);
         return aggregatedVariables;
     }
 

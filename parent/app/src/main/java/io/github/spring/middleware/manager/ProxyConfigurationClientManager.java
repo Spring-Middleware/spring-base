@@ -4,6 +4,7 @@ import io.github.spring.middleware.client.config.ProxyClientResilienceConfigurat
 import io.github.spring.middleware.client.proxy.ProxyClient;
 import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.Ordered;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@ConditionalOnBean(ProxyClientResilienceConfigurator.class)
 public class ProxyConfigurationClientManager implements ApplicationListener<ContextRefreshedEvent> {
 
     private final ProxyClientResilienceConfigurator clientConfigurator;

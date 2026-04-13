@@ -9,6 +9,7 @@ import io.github.spring.middleware.rabbitmq.core.destination.type.DestinationTyp
 import io.github.spring.middleware.rabbitmq.core.resource.consumer.JmsConsumerResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
@@ -18,6 +19,7 @@ import java.util.Properties;
 @RequiredArgsConstructor
 @JmsConsumer
 @JmsDestination(name = "client-events", destinationType = DestinationType.QUEUE, clazzSuffix = NodeIdBasedSuffix.class, expires = 60000)
+@ConditionalOnBean(ProxyClientResilienceConfigurator.class)
 public class ProxyClientEventResourceConsumer extends JmsConsumerResource<ProxyClientEvent> {
 
     private final ProxyClientResilienceConfigurator clientResilienceConfigurator;

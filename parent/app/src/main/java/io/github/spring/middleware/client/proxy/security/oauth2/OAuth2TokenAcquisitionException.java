@@ -1,20 +1,20 @@
 package io.github.spring.middleware.client.proxy.security.oauth2;
 
 import io.github.spring.middleware.client.proxy.ProxyClientException;
+import io.github.spring.middleware.error.ErrorCodes;
+import io.github.spring.middleware.error.SecurityErrorCodes;
 
 import java.util.Map;
 
 public class OAuth2TokenAcquisitionException extends ProxyClientException {
-
-    private static final String ERROR_CODE = "OAUTH2_TOKEN_ACQUISITION_ERROR";
 
     public OAuth2TokenAcquisitionException(String message, Throwable cause) {
         super(message, cause);
     }
 
     @Override
-    public String getCode() {
-        return ERROR_CODE;
+    public ErrorCodes getCode() {
+        return SecurityErrorCodes.OAUTH2_TOKEN_ACQUISITION_ERROR;
     }
 
     public Map<String, Object> getExtensions() {

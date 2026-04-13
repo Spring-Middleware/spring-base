@@ -32,7 +32,11 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
         definition.setCollection(graphQLLink.collection());
         definition.setBatched(graphQLLink.batched());
-        return definition;
+        if (isValidGraphQLFieldLinkDefinition(definition, graphQLLink.collection())) {
+            return definition;
+        } else {
+            throw new IllegalArgumentException(STR."Invalid GraphQLFieldLinkDefinition for field \{field.getName()} on bean \{beanInfo.getBeanDescriptor().getName()}");
+        }
     }
 
     public GraphQLFieldLinkDefinition buildFromMethod(BeanInfo beanInfo, Method method, GraphQLLink graphQLLink) {
@@ -49,7 +53,11 @@ public class GraphQLFieldLinkDefinitionBuilder {
         definition.setArgumentLinkDefinitions(buildArgumentLinkDefinitions(graphQLLink));
         definition.setCollection(graphQLLink.collection());
         definition.setBatched(graphQLLink.batched());
-        return definition;
+        if (isValidGraphQLFieldLinkDefinition(definition, graphQLLink.collection())) {
+            return definition;
+        } else {
+            throw new IllegalArgumentException(STR."Invalid GraphQLFieldLinkDefinition for method \{method.getName()} on bean \{beanInfo.getBeanDescriptor().getName()}");
+        }
     }
 
     private List<GraphQLArgumentLinkDefinition> buildArgumentLinkDefinitions(GraphQLLink graphQLLink) {
@@ -78,6 +86,18 @@ public class GraphQLFieldLinkDefinitionBuilder {
                         return null;
                     }
                 }).filter(Objects::nonNull).findFirst().orElse(null);
+    }
+
+    private boolean isValidGraphQLFieldLinkDefinition(GraphQLFieldLinkDefinition graphQLFieldLinkDefinition, boolean isCollection) {
+        return !graphQLFieldLinkDefinition.isBatched() || isBatchedValid(graphQLFieldLinkDefinition, isCollection);
+    }
+
+    private boolean isBatchedValid(GraphQLFieldLinkDefinition graphQLFieldLinkDefinition, boolean isCollection) {
+        return graphQLFieldLinkDefinition.isBatched() &&
+                graphQLFieldLinkDefinition.getArgumentLinkDefinitions().stream().anyMatch(GraphQLArgumentLinkDefinition::isBatched) &&
+                graphQLFieldLinkDefinition.getArgumentLinkDefinitions().stream().filter(arg -> arg.isBatched())
+                        .allMatch(arg -> arg.getTargetFieldName() != null && !arg.getTargetFieldName().isBlank())
+                && isCollection;
     }
 
 }

@@ -14,7 +14,7 @@ public class ErrorMessage implements ErrorDescriptor {
 
     private int statusCode;
     private String statusMessage;
-    private String code;
+    private ErrorCodes code;
     private String message;
     private Map<String, Object> extensions = new HashMap<>();
 

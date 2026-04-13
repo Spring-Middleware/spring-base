@@ -6,6 +6,7 @@ import io.github.spring.middleware.manager.ProxyConfigurationClientManager;
 import io.github.spring.middleware.manager.RegistrationManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(RegistryChecker.class)
 @ConditionalOnProperty(
         name = "middleware.registry-consistency-scheduler.enabled",
         havingValue = "true",

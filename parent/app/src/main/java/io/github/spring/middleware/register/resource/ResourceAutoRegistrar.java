@@ -8,6 +8,7 @@ import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 @Order(Ordered.LOWEST_PRECEDENCE)
+@ConditionalOnBean(RegistryClient.class)
 public class ResourceAutoRegistrar implements ApplicationListener<ApplicationReadyEvent> {
 
     private final ResourceRegister resourceRegister;

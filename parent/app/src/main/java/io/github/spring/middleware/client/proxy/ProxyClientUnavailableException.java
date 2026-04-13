@@ -1,6 +1,8 @@
 package io.github.spring.middleware.client.proxy;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
+import io.github.spring.middleware.error.FrameworkErrorCodes;
 
 import java.io.Serial;
 import java.util.Collections;
@@ -11,7 +13,6 @@ public class ProxyClientUnavailableException extends RuntimeException implements
 
     @Serial
     private static final long serialVersionUID = 1L;
-    private static final String ERROR_CODE = "PROXY_CLIENT_UNAVAILABLE_ERROR";
 
     private final Map<String, Object> extensions;
 
@@ -30,8 +31,8 @@ public class ProxyClientUnavailableException extends RuntimeException implements
     }
 
     @Override
-    public String getCode() {
-        return ERROR_CODE;
+    public ErrorCodes getCode() {
+        return FrameworkErrorCodes.PROXY_CLIENT_UNAVAILABLE_ERROR;
     }
 
     @Override

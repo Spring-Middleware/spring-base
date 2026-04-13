@@ -1,8 +1,11 @@
 package io.github.spring.middleware.error;
 
-public enum FrameworkErrorCodes implements ErrorDescriptor {
+public enum FrameworkErrorCodes implements ErrorCodes {
 
     UNKNOWN_ERROR("FRAMEWORK:UNKNOWN_ERROR", "An unknown error occurred"),
+    PROXY_CLIENT_ERROR("FRAMEWORK:PROXY_CLIENT_ERROR", "An error occurred while calling an external service"),
+    PROXY_CLIENT_UNAVAILABLE_ERROR("FRAMEWORK:PROXY_CLIENT_UNAVAILABLE_ERROR", "The external service is currently unavailable"),
+    REMOTE_SERVICE_ERROR("FRAMEWORK:REMOTE_SERVICE_ERROR", "An error occurred in a remote service"),
     VALIDATION_ERROR("FRAMEWORK:VALIDATION_ERROR", "A validation error occurred"),
     NOT_FOUND("FRAMEWORK:NOT_FOUND", "The requested resource was not found"),
     ALREADY_EXISTS("FRAMEWORK:ALREADY_EXISTS", "The resource already exists"),
@@ -19,7 +22,6 @@ public enum FrameworkErrorCodes implements ErrorDescriptor {
         this.message = message;
     }
 
-    @Override
     public String getMessage() {
         return message;
     }

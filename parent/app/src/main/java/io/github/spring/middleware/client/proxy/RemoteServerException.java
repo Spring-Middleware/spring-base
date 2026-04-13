@@ -1,5 +1,6 @@
 package io.github.spring.middleware.client.proxy;
 
+import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.RemoteError;
 import org.apache.commons.lang3.StringUtils;
@@ -57,8 +58,8 @@ public class RemoteServerException extends RuntimeException implements RemoteErr
     }
 
     @Override
-    public String getCode() {
-        return errorMessage != null ? errorMessage.getCode() : StringUtils.EMPTY;
+    public ErrorCodes getCode() {
+        return errorMessage != null ? errorMessage.getCode() : null;
     }
 
     @Override

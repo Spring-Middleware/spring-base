@@ -1,6 +1,6 @@
 package io.github.spring.middleware.error;
 
-public enum ConstraintErrorCodes implements ErrorDescriptor {
+public enum ConstraintErrorCodes implements ErrorCodes {
 
     NOT_NULL_CONSTRAINT_ERROR("NOT_NULL", "A required value was null"),
     SIZE_CONSTRAINT_ERROR("SIZE_CONSTRAINT", "A value did not meet size constraints");
