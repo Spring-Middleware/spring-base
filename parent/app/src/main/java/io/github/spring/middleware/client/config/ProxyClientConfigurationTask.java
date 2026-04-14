@@ -22,6 +22,7 @@ public class ProxyClientConfigurationTask implements Runnable {
 
     private final ProxyClient<?> proxyClient;
     private final RegistryClient registryClient;
+    private final RegistryType registryType;
     private final MiddlewareClientConfigParameters clientConfigParameters;
     private final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties;
     private final ProxyConnectionErrorHandler errorHandler;
@@ -50,6 +51,7 @@ public class ProxyClientConfigurationTask implements Runnable {
     ) {
         this.proxyClient = Objects.requireNonNull(proxyClient, "proxyClient");
         this.registryClient = Objects.requireNonNull(registryClient, "registryClient");
+        this.registryType = RegistryType.resolve(registryClient);
         this.clientConfigParameters = Objects.requireNonNull(clientConfigParameters, "clientConfigParameters");
         this.taskConfigProperties = Objects.requireNonNull(taskConfigProperties, "taskConfigProperties");
         this.errorHandler = Objects.requireNonNull(proxyConnectionErrorHandler, "proxyConnectionErrorHandler");
@@ -62,6 +64,12 @@ public class ProxyClientConfigurationTask implements Runnable {
 
     @Override
     public void run() {
+        if (registryType == RegistryType.NO_OP) {
+            log.info("Registry type is NO_OP. Skipping configuration for {}.",
+                    proxyClient.getInterf().getSimpleName());
+            return;
+        }
+
         // Evita doble arranque
         if (this.subscription != null && !this.subscription.isDisposed()) {
             log.debug("Configuration task already running for {}", proxyClient.getInterf().getSimpleName());

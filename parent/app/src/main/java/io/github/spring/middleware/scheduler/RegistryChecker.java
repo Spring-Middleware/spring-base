@@ -10,10 +10,9 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @Component
-@ConditionalOnProperty(name = "middleware.client.registry-endpoint")
 public class RegistryChecker extends AbstractWebClient {
 
-    @Value("${middleware.client.registry-endpoint}")
+    @Value("${middleware.client.registry-endpoint:}")
     private String registryEndpoint;
 
     @Override

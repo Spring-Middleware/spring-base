@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@ConditionalOnBean(ProxyClientResilienceConfigurator.class)
 public class ProxyConfigurationClientManager implements ApplicationListener<ContextRefreshedEvent> {
 
     private final ProxyClientResilienceConfigurator clientConfigurator;

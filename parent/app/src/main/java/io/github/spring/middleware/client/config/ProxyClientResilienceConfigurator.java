@@ -20,6 +20,7 @@ import io.github.spring.middleware.registry.model.RegistryEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,6 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
-@ConditionalOnBean(RegistryClient.class)
 public class ProxyClientResilienceConfigurator {
 
     private final Set<ProxyClientConfigurationTask> configurationTasks = new HashSet<>();
@@ -49,7 +49,7 @@ public class ProxyClientResilienceConfigurator {
     private final ObjectMapper objectMapper;
 
     public ProxyClientResilienceConfigurator(final RegistryClient registryClient,
-                                             @Value("${middleware.client.registry-endpoint}") final String registryEndpoint,
+                                             @Value("${middleware.client.registry-endpoint:}") final String registryEndpoint,
                                              final ProxyClientConfigurationTaskConfigurationProperties taskConfigProperties,
                                              final ProxyConnectionErrorHandler proxyConnectionErrorHandler,
                                              final Environment environment,

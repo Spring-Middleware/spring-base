@@ -2,6 +2,7 @@ package io.github.spring.middleware.register.resource;
 
 import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.model.RegistryEntry;
@@ -25,13 +26,13 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 @Order(Ordered.LOWEST_PRECEDENCE)
-@ConditionalOnBean(RegistryClient.class)
 public class ResourceAutoRegistrar implements ApplicationListener<ApplicationReadyEvent> {
 
     private final ResourceRegister resourceRegister;
     private Set<Class<?>> resourcesToRegister = Set.of();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final RegistryClient registryClient;
+    private final RegistryType registryType;
     private final ServerPortProvider serverPortProvider;
     private final NodeInfoRetriever nodeInfoRetriever;
 
@@ -39,6 +40,7 @@ public class ResourceAutoRegistrar implements ApplicationListener<ApplicationRea
                                  final NodeInfoRetriever nodeInfoRetriever, final ServerPortProvider serverPortProvider) {
         this.resourceRegister = resourceRegister;
         this.registryClient = registryClient;
+        this.registryType = RegistryType.resolve(registryClient);
         this.nodeInfoRetriever = nodeInfoRetriever;
         this.serverPortProvider = serverPortProvider;
     }
@@ -85,6 +87,11 @@ public class ResourceAutoRegistrar implements ApplicationListener<ApplicationRea
     }
 
     public void registerResourcesNotRegistered() {
+        if (registryType == RegistryType.NO_OP) {
+            log.info("Registry type is NO_OP, skipping resource registration check");
+            return;
+        }
+
         final Map<String, RegistryEntry> registries;
         final RegistryMap currentRegistryMap = registryClient.getRegistryMap();
         try {

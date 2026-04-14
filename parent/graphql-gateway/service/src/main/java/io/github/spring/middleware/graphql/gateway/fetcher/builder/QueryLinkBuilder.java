@@ -18,7 +18,8 @@ public class QueryLinkBuilder extends CommonBuilder {
     public void appendGraphQLQuery(
             DataFetchingEnvironment environment,
             GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink,
-            Map<String, Object> variables
+            Map<String, Object> variables,
+            Map<String, GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName
     ) {
         String remoteQuery = resolvedLink.getFieldLinkDefinition().getQuery();
         List<GraphQLArgumentLinkDefinition> arguments =
@@ -42,7 +43,8 @@ public class QueryLinkBuilder extends CommonBuilder {
                 remoteQuery,
                 arguments,
                 variables,
-                variableDefinitions
+                variableDefinitions,
+                resolvedLinksByFieldName
         );
         builder.append(linkOperationBuilder.build());
 

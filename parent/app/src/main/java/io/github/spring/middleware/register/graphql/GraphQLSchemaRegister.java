@@ -1,6 +1,7 @@
 package io.github.spring.middleware.register.graphql;
 
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.provider.ServerPortProvider;
 import io.github.spring.middleware.registry.params.SchemaRegisterParameters;
@@ -16,13 +17,13 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
-@ConditionalOnBean(RegistryClient.class)
 public class GraphQLSchemaRegister {
 
     private final RegistryClient registryClient;
     private final GraphQLRegisterProperties props;
     private final ServerPortProvider serverPortProvider;
     private final NodeInfoRetriever nodeInfoRetriever;
+    private final RegistryType registryType;
     @Value("${server.servlet.context-path:}")
     private String contextPath;
 
@@ -31,12 +32,18 @@ public class GraphQLSchemaRegister {
                                  final GraphQLRegisterProperties props,
                                  final NodeInfoRetriever nodeInfoRetriever) {
         this.registryClient = registryClient;
+        this.registryType = RegistryType.resolve(registryClient);
         this.props = props;
         this.serverPortProvider = serverPortProvider;
         this.nodeInfoRetriever = nodeInfoRetriever;
     }
 
     public void register(Set<Class<?>> endpoints) {
+        if (registryType == RegistryType.NO_OP) {
+            log.info("Registry client is NO_OP, skipping GraphQL schema registration");
+            return;
+        }
+
         if (!props.isEnabled()) {
             log.info("GraphQL schema register disabled");
             return;

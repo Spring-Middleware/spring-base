@@ -15,5 +15,21 @@ public interface ErrorDescriptor extends HasExtensions {
         return new HashMap<>();
     }
 
+    static DefaultErrorDescriptor fromErrorCodes(ErrorCodes errorCodes) {
+
+        return new DefaultErrorDescriptor(errorCodes) {
+
+            @Override
+            public String getMessage() {
+                return errorCodes.getMessage();
+            }
+
+            @Override
+            public ErrorCodes getCode() {
+                return errorCodes;
+            }
+        };
+    }
+
 }
 

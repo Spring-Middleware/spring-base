@@ -26,6 +26,7 @@ middleware:
         - /_alive
 
   jms:
+    enabled: true
     base-packages: io.github.spring.middleware.registry.jms
     profile: ${JMS_PROFILE:LOCAL}
     host: ${JMS_HOST:amqp://rabbitmq:5672}

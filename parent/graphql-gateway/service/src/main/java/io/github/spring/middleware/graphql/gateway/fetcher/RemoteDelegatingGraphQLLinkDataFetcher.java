@@ -5,18 +5,29 @@ import graphql.GraphQLContext;
 import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkBatched;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatchedRegistry;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
+import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
+import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryLinkBuilder;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
+import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
+import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationKey;
+import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLBatchingToggle;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
+import io.github.spring.middleware.registry.model.SchemaLocation;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLSourceFieldExtractor.extractFieldValue;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
@@ -27,11 +38,13 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
     private GraphQLLinkTypesMap graphQLLinkTypesMap;
     private GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor;
     private GraphQLBatchingToggle batchingToggle;
+    private GraphQLMerged graphQLMerged;
 
-    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor, GraphQLBatchingToggle batchingToggle) {
+    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor, GraphQLBatchingToggle batchingToggle, GraphQLMerged graphQLMerged) {
         this.graphQLLinkTypesMap = graphQLLinkTypesMap;
         this.graphQLRemoteLinkExecutor = graphQLRemoteLinkExecutor;
         this.batchingToggle = batchingToggle;
+        this.graphQLMerged = graphQLMerged;
     }
 
     @Override
@@ -78,8 +91,21 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
             }
         }
 
+        List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks = graphQLLinkTypesMap.findGraphQLResolvedLinksForSchemaAndTypeName(resolvedLink.getTargetSchemaLocation(), getReturnedTypeName(environment));
+        List<GraphQLLinkTypesMap.GraphQLResolvedLink> normalizedLinks = graphQLResolvedLinks.stream()
+                .filter(link -> link.getOriginOperationReturnType() != null)
+                .toList();
+
+        Map<String, GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName =
+                normalizedLinks.stream()
+                        .collect(Collectors.toMap(
+                                GraphQLLinkTypesMap.GraphQLResolvedLink::getFieldName,
+                                Function.identity(),
+                                (left, right) -> left
+                        ));
+
         QueryLinkBuilder queryLinkBuilder = new QueryLinkBuilder();
-        queryLinkBuilder.appendGraphQLQuery(environment, resolvedLink, variables);
+        queryLinkBuilder.appendGraphQLQuery(environment, resolvedLink, variables, resolvedLinksByFieldName);
         String query = queryLinkBuilder.build();
 
         ExecutionInput.Builder executionInputBuilder = ExecutionInput.newExecutionInput()
@@ -96,13 +122,27 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
         } else {
             ExecutionInput executionInput = executionInputBuilder.variables(variables).build();
             // Para enlaces no batched, ejecutamos inmediatamente
-            return graphQLRemoteLinkExecutor.executeLink(environment, resolvedLink, executionInput);
+            return graphQLRemoteLinkExecutor.executeLink(environment, resolvedLink, executionInput, normalizedLinks);
         }
     }
 
     private GraphQLLinkResolvedBatchedRegistry getOrCreateBatchedRegistry(DataFetchingEnvironment environment, GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink) {
         GraphQLLinkResolvedBatchedRegistry graphQLLinkResolvedBatchedRegistry = environment.getGraphQlContext().computeIfAbsent("batchedRegistry", key -> new GraphQLLinkResolvedBatchedRegistry());
         return graphQLLinkResolvedBatchedRegistry;
+    }
+
+    private String getReturnedTypeName(DataFetchingEnvironment environment) {
+        GraphQLType fieldType = environment.getFieldDefinition().getType();
+        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
+
+        if (!(unwrappedType instanceof GraphQLNamedType namedType)) {
+            throw new GraphQLException(
+                    GraphQLErrorCodes.REMOTE_EXECUTION_ERROR,
+                    STR."Unsupported return type for remote execution: \{fieldType.getClass()}"
+            );
+        }
+        String typeName = namedType.getName();
+        return typeName;
     }
 
 }

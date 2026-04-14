@@ -13,7 +13,7 @@ import java.util.Optional;
 @Order(100)
 public class FrameworkHttpStatusResolver implements HttpStatusCodeResolver {
 
-    private final Map<ErrorCodes, Integer> statusByCode;
+    private final Map<String, Integer> statusByCode;
 
     public FrameworkHttpStatusResolver(FrameworkErrorProperties properties) {
         this.statusByCode = properties.getErrors();
@@ -21,7 +21,7 @@ public class FrameworkHttpStatusResolver implements HttpStatusCodeResolver {
 
     @Override
     public Optional<Integer> resolve(ErrorDescriptor error) {
-        Integer status = statusByCode.get(error.getCode());
+        Integer status = statusByCode.get(error.getCode().getCode());
         return Optional.ofNullable(status);
     }
 }

@@ -24,7 +24,7 @@ public abstract class AbstractWebClient {
 
         String baseUrl = getBaseUrl();
 
-        if (baseUrl != null) {
+        if (baseUrl != null && !baseUrl.isBlank()) {
 
             WebClient.Builder builder = WebClient.builder().exchangeStrategies(strategies);
             Optional.ofNullable(getExchangeFilterFunction()).ifPresent(exchangeFilterFunction -> {

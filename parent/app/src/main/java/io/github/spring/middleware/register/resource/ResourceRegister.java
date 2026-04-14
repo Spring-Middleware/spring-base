@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
-@ConditionalOnBean(RegistryClient.class)
 public class ResourceRegister {
 
     private final Set<ResourceRegisterTask> resourceRegisterTasks = Collections.synchronizedSet(new HashSet<>());

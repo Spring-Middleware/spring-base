@@ -1,6 +1,7 @@
 package io.github.spring.middleware.client;
 
 import io.github.spring.middleware.annotation.MiddlewareContract;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import io.github.spring.middleware.registry.model.SchemaLocation;

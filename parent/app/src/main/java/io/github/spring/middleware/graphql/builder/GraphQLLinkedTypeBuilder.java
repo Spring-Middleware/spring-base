@@ -15,6 +15,7 @@ import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -71,27 +72,31 @@ public class GraphQLLinkedTypeBuilder {
     }
 
     private List<String> getTypesName(Class<?> clazz, boolean isWrapper) {
+        Set<String> names = new LinkedHashSet<>();
 
-        GraphQLLinkClass linkClass = clazz.getAnnotation(GraphQLLinkClass.class);
-
-        if (linkClass == null || linkClass.types().length == 0) {
-            return List.of(clazz.getSimpleName());
+        if (!isWrapper) {
+            names.add(clazz.getSimpleName());
         }
 
-        List<String> names = Arrays.stream(linkClass.types())
-                .filter(graphQLType -> {
-                    return graphQLType == null || graphQLType.isWrapper() == isWrapper;
-                })
-                .map(GraphQLType::names)
-                .map(String::trim)
-                .filter(name -> !name.isEmpty())
-                .toList();
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            GraphQLLinkClass linkClass = current.getDeclaredAnnotation(GraphQLLinkClass.class);
 
-        if (names.isEmpty()) {
-            return List.of(clazz.getSimpleName());
+            if (linkClass != null && linkClass.types().length > 0) {
+                Class<?> finalCurrent = current;
+                Arrays.stream(linkClass.types())
+                        .filter(graphQLType -> graphQLType.isWrapper() == isWrapper)
+                        .map(GraphQLType::names)
+                        .map(String::trim)
+                        .filter(name -> !name.isEmpty())
+                        .filter(name -> isWrapper || finalCurrent == clazz)
+                        .forEach(names::add);
+            }
+
+            current = current.getSuperclass();
         }
 
-        return names;
+        return List.copyOf(names);
     }
 }
 

@@ -2,6 +2,8 @@ package io.github.spring.middleware.client.registar;
 
 import io.github.spring.middleware.annotation.MiddlewareContract;
 import io.github.spring.middleware.annotations.EnableMiddlewareClients;
+import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.client.config.NoOpRegistryClient;
 import io.github.spring.middleware.client.proxy.ProxyClient;
 import io.github.spring.middleware.client.proxy.ProxyClientRegistry;
 import org.jspecify.annotations.NonNull;
@@ -11,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
@@ -23,6 +26,7 @@ import java.util.Set;
 public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
     private Environment environment;
+    private boolean registryClientRegistered = false;
     private static final Logger log = LoggerFactory.getLogger(MiddlewareClientRegistrar.class);
 
     @Override
@@ -43,6 +47,10 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
             for (Class<?> candidate : reflections.getTypesAnnotatedWith(MiddlewareContract.class)) {
                 String className = candidate.getName();
                 log.debug("Found candidate: {}", className);
+                if (className.equalsIgnoreCase(NoOpRegistryClient.class.getName()))  {
+                    log.info("Skipping {} because it's the NoOpRegistryClient", className);
+                    continue;
+                }
                 try {
                     Class<?> clazz = Class.forName(className);
                     if (!clazz.isInterface()) {
@@ -51,9 +59,12 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
                     }
 
                     // 2) Si ya existe una implementación (server-side), NO registrar proxy
+                    // pero tambien hay que cubrir el caso de la implementacion de NoOpRegistryClient para RegistryClient,
+                    // en ese caso SI registrar el proxy, porque NoOpRegistryClient es una implementacion de RegistryClient pero no es un cliente real,
+                    // sino un placeholder que se usa cuando no se encuentra una implementacion real.
                     //    (Esto cubre el caso: Controller implements CatalogsApi)
                     Set<?> implementations = reflections.getSubTypesOf((Class<Object>) clazz);
-                    if (implementations != null && !implementations.isEmpty()) {
+                    if (implementations != null && !implementations.isEmpty() && !isRegistryClientWithNoOpImplementation(clazz, implementations)) {
                         // Puedes afinar el filtro si quieres (ej: solo si alguna es @RestController)
                         log.info(
                                 "Skipping proxy registration for {} because implementations were found: {}",
@@ -82,24 +93,45 @@ public class MiddlewareClientRegistrar implements ImportBeanDefinitionRegistrar,
                         AbstractBeanDefinition beanDefinition = getAbstractBeanDefinition(builder, clazz, clientAnnotation);
                         log.info("Registering MiddlewareClient bean: {} -> {}", beanName, className);
                         registry.registerBeanDefinition(beanName, beanDefinition);
+
+                        if (clazz == RegistryClient.class) {
+                            registryClientRegistered = true;
+                        }
+
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to create proxy for " + className, e);
+                    throw new RuntimeException(STR."Failed to create proxy for \{className}", e);
                 }
             }
         }
+
+        String registryBeanName = Introspector.decapitalize(RegistryClient.class.getSimpleName());
+        if (!registryClientRegistered && !registry.containsBeanDefinition(registryBeanName)) {
+            log.info("RegistryClient proxy not registered. Registering NoOpRegistryClient fallback");
+            registry.registerBeanDefinition(
+                    registryBeanName,
+                    BeanDefinitionBuilder.genericBeanDefinition(NoOpRegistryClient.class).getBeanDefinition()
+            );
+        }
+
+    }
+
+    private boolean isRegistryClientWithNoOpImplementation(Class<?> clazz, Set<?> implementations) {
+        return clazz.getName().equalsIgnoreCase("io.github.spring.middleware.client.RegistryClient") &&
+                implementations.stream().map(Class.class::cast).anyMatch(impl -> impl.getName().equalsIgnoreCase("io.github.spring.middleware.client.config.NoOpRegistryClient"));
     }
 
     private static @NonNull AbstractBeanDefinition getAbstractBeanDefinition(BeanDefinitionBuilder builder, Class<?> clazz, MiddlewareContract clientAnnotation) {
-        AbstractBeanDefinition beanDefinition =
-                builder.getBeanDefinition();
+        RootBeanDefinition beanDefinition = new RootBeanDefinition();
+        beanDefinition.setTargetType(org.springframework.core.ResolvableType.forClass(clazz));
         beanDefinition.setInstanceSupplier(() -> {
             ProxyClient<?> proxyClient = new ProxyClient<>(clazz);
             ProxyClientRegistry.add(proxyClient);
             try {
                 return proxyClient.wrappedInstance();
             } catch (Exception e) {
-                throw new RegistarClientException(STR."Error registering client \{Introspector.decapitalize(clazz.getSimpleName())}", e);
+                throw new RegistarClientException(
+                        STR."Error registering client \{Introspector.decapitalize(clazz.getSimpleName())}", e);
             }
         });
         return beanDefinition;

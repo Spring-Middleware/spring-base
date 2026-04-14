@@ -3,6 +3,7 @@ package io.github.spring.middleware.graphql.gateway.fetcher.builder;
 import graphql.language.SelectionSet;
 import graphql.schema.DataFetchingEnvironment;
 import io.github.spring.middleware.graphql.gateway.fetcher.GraphQLVariableDefinition;
+import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 
 
@@ -16,7 +17,8 @@ public class LinkOperationBuilder extends CommonBuilder {
             String remoteQuery,
             List<GraphQLArgumentLinkDefinition> arguments,
             Map<String, Object> variables,
-            Map<String, GraphQLVariableDefinition> variableDefinitions
+            Map<String, GraphQLVariableDefinition> variableDefinitions,
+            Map<String, GraphQLLinkTypesMap.GraphQLResolvedLink> resolvedLinksByFieldName
     ) {
         builder.append("\n  ").append(remoteQuery);
 
@@ -30,10 +32,10 @@ public class LinkOperationBuilder extends CommonBuilder {
             selectionSetBuilder.appendSelectionSet(
                     selectionSet,
                     "  ",
-                    Map.of(),
+                    resolvedLinksByFieldName,
                     variables,
                     variableDefinitions,
-                    false
+                    true
             );
             builder.append(selectionSetBuilder.build());
         }

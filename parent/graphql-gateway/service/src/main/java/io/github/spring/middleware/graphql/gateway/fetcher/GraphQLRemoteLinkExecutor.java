@@ -29,7 +29,7 @@ public class GraphQLRemoteLinkExecutor {
         this.remoteGraphQLExecutionClient = remoteGraphQLExecutionClient;
     }
 
-    public Object executeLink(DataFetchingEnvironment environment, GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink, ExecutionInput executionInput) {
+    public Object executeLink(DataFetchingEnvironment environment, GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink, ExecutionInput executionInput, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
         Map<String, Object> response = remoteGraphQLExecutionClient.execute(resolvedLink.getTargetSchemaLocation(), executionInput);
         if (response == null || response.isEmpty()) {
             return null;
@@ -38,7 +38,7 @@ public class GraphQLRemoteLinkExecutor {
         Map<?, ?> dataMap = response.get("data") instanceof Map<?, ?> m ? m : null;
         Object fieldData = dataMap != null ? dataMap.get(resolvedLink.getFieldLinkDefinition().getQuery()) : null;
 
-        Object normalizedData = normalizeValue(fieldData, environment, List.of());
+        Object normalizedData = normalizeValue(fieldData, environment, graphQLResolvedLinks);
 
         return DataFetcherResult.newResult()
                 .data(normalizedData)
@@ -48,7 +48,7 @@ public class GraphQLRemoteLinkExecutor {
 
 
     public CompletableFuture<Map<ItemKey, Object>> executeLink(ExecutionInput executionInput, GraphQLLinkBatched batchedLink) {
-        DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult) executeLink(batchedLink.getDataFetchingEnvironment(), batchedLink.getResolvedLink(), executionInput);
+        DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult) executeLink(batchedLink.getDataFetchingEnvironment(), batchedLink.getResolvedLink(), executionInput, List.of());
 
         Object data = dataFetcherResult.getData();
 

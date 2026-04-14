@@ -2,6 +2,7 @@ package io.github.spring.middleware.register.resource;
 
 import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.component.NodeInfoRetriever;
 import io.github.spring.middleware.registry.model.PublicServer;
 import io.github.spring.middleware.registry.params.ResourceRegisterParameters;
@@ -16,9 +17,11 @@ public class ResourceRegisterTask implements Runnable {
     private final Class<?> clazz;
     private final ResourceRegister resourceRegister;
     private final NodeInfoRetriever nodeInfoRetriever;
+    private final RegistryType registryType;
 
     public ResourceRegisterTask(RegistryClient registryClient, Class<?> clazz, ResourceRegister resourceRegister, NodeInfoRetriever nodeInfoRetriever) {
         this.registryClient = registryClient;
+        registryType = RegistryType.resolve(registryClient);
         this.clazz = clazz;
         this.resourceRegister = resourceRegister;
         this.nodeInfoRetriever = nodeInfoRetriever;
@@ -26,6 +29,9 @@ public class ResourceRegisterTask implements Runnable {
 
     @Override
     public void run() {
+        if (registryType == RegistryType.NO_OP) {
+            return;
+        }
         try {
             Register register = clazz.getAnnotation(Register.class);
             ResourceRegisterParameters params = buildParameters(register);

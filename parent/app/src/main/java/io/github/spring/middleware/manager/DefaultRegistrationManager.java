@@ -2,15 +2,13 @@ package io.github.spring.middleware.manager;
 
 import io.github.spring.middleware.annotation.Register;
 import io.github.spring.middleware.client.RegistryClient;
-import io.github.spring.middleware.component.NodeInfoRetriever;
-import io.github.spring.middleware.provider.ServerPortProvider;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.register.graphql.GraphQLAutoRegistrar;
 import io.github.spring.middleware.register.graphql.GraphQLRegisterProperties;
 import io.github.spring.middleware.register.resource.ResourceAutoRegistrar;
 import io.github.spring.middleware.utils.EndpointUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownHostException;
@@ -18,25 +16,24 @@ import java.util.Set;
 
 @Slf4j
 @Component
-@ConditionalOnBean(RegistryClient.class)
 public class DefaultRegistrationManager implements RegistrationManager {
 
     private final GraphQLAutoRegistrar graphQLAutoRegistrar;
     private final ResourceAutoRegistrar resourceAutoRegistrar;
     private final GraphQLRegisterProperties graphQLRegisterProperties;
     private final RegistryClient registryClient;
+    private final RegistryType registryType;
 
     public DefaultRegistrationManager(@Value("${server.port:8080}") final int port,
                                       final GraphQLAutoRegistrar graphQLAutoRegistrar,
                                       final ResourceAutoRegistrar resourceAutoRegistrar,
                                       final GraphQLRegisterProperties graphQLRegisterProperties,
-                                      final RegistryClient registryClient,
-                                      final ServerPortProvider serverPortProvider,
-                                      final NodeInfoRetriever nodeInfoRetriever) {
+                                      final RegistryClient registryClient) {
         this.graphQLAutoRegistrar = graphQLAutoRegistrar;
         this.resourceAutoRegistrar = resourceAutoRegistrar;
         this.graphQLRegisterProperties = graphQLRegisterProperties;
         this.registryClient = registryClient;
+        this.registryType = RegistryType.resolve(registryClient);
     }
 
 
@@ -69,6 +66,10 @@ public class DefaultRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean isSchemaNodeRegistered() {
+        if (registryType == RegistryType.NO_OP) {
+            log.debug("Registry type is NO_OP, assuming schema node is registered");
+            return true;
+        }
         try {
             if (!hasSchemasToRegister()) return true; // si no hay schemas, no aplica
             String me = graphQLAutoRegistrar.getSchemaLocationNodeName();
@@ -85,6 +86,10 @@ public class DefaultRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean isEndpointRegistered(Register register) {
+        if (registryType == RegistryType.NO_OP) {
+            log.debug("Registry type is NO_OP, assuming endpoint for resource {} is registered", register.name());
+            return true;
+        }
 
         var registryEntry = registryClient.getRegistryEntry(register.name());
         if (registryEntry == null || registryEntry.getNodeEndpoints() == null) return false;

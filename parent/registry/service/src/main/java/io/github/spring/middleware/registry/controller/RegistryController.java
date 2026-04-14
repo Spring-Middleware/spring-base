@@ -2,6 +2,7 @@ package io.github.spring.middleware.registry.controller;
 
 
 import io.github.spring.middleware.annotation.Register;
+import io.github.spring.middleware.client.config.RegistryType;
 import io.github.spring.middleware.registry.model.RegistryEntry;
 import io.github.spring.middleware.registry.model.RegistryMap;
 import io.github.spring.middleware.registry.model.SchemaLocation;

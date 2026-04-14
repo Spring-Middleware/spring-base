@@ -268,7 +268,7 @@ public class JmsResourceFactory implements ApplicationContextAware {
                 jmsConsumerResource.setDurabilityFunctionExecutor(destinationTypeFunctionExecutor);
                 jmsConsumerResource.setId(id);
             } catch (Exception ex) {
-                logger.error(STR."Error creating consumer for class \{clazz.getSimpleName()}");
+                logger.error(STR."Error creating consumer for class \{clazz.getSimpleName()}", ex);
             }
             return jmsConsumerResource;
         }).filter(Objects::nonNull).collect(Collectors.toSet());

@@ -20,19 +20,19 @@ import static io.github.spring.middleware.error.SecurityErrorCodes.MISSING_CREDE
 @ConfigurationProperties(prefix = "middleware")
 public class FrameworkErrorProperties {
 
-    private Map<ErrorCodes, Integer> errors = new HashMap<>();
+    private Map<String, Integer> errors = new HashMap<>();
 
     @PostConstruct
     public void init() {
         // Set default HTTP status codes for common exceptions
-        errors.putIfAbsent(PROXY_CLIENT_ERROR, 502);
-        errors.putIfAbsent(PROXY_CLIENT_UNAVAILABLE_ERROR, 503);
-        errors.putIfAbsent(UNKNOWN_ERROR, 500);
-        errors.putIfAbsent(VALIDATION_ERROR, 400);
-        errors.putIfAbsent(CALL_NOT_PERMITTED, 503);
-        errors.putIfAbsent(MISSING_CREDENTIALS, 401);
-        errors.putIfAbsent(INVALID_CREDENTIALS, 401);
-        errors.putIfAbsent(AUTHENTICATION_FAILED, 403);
+        errors.putIfAbsent(PROXY_CLIENT_ERROR.getCode(), 502);
+        errors.putIfAbsent(PROXY_CLIENT_UNAVAILABLE_ERROR.getCode(), 503);
+        errors.putIfAbsent(UNKNOWN_ERROR.getCode(), 500);
+        errors.putIfAbsent(VALIDATION_ERROR.getCode(), 400);
+        errors.putIfAbsent(CALL_NOT_PERMITTED.getCode(), 503);
+        errors.putIfAbsent(MISSING_CREDENTIALS.getCode(), 401);
+        errors.putIfAbsent(INVALID_CREDENTIALS.getCode(), 401);
+        errors.putIfAbsent(AUTHENTICATION_FAILED.getCode(), 403);
     }
 
 }

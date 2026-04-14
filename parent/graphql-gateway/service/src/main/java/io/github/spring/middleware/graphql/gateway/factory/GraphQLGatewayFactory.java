@@ -76,7 +76,7 @@ public class GraphQLGatewayFactory {
                 new RemoteDelegatingDataFetcher(merged, remoteGraphQLExecutionClient, graphQLLinkTypesMap);
 
         final RemoteDelegatingGraphQLLinkDataFetcher remoteDelegatingGraphQLLinkDataFetcher =
-                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, graphQLRemoteLinkExecutor, batchingToggle);
+                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, graphQLRemoteLinkExecutor, batchingToggle, merged);
 
         RuntimeWiring.Builder builder = RuntimeWiring.newRuntimeWiring();
 
