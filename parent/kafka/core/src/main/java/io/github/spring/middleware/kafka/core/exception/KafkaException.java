@@ -21,7 +21,7 @@ public class KafkaException extends RuntimeException implements ErrorDescriptor 
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return errorCodes;
     }
 

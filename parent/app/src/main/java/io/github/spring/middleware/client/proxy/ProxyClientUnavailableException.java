@@ -31,7 +31,7 @@ public class ProxyClientUnavailableException extends RuntimeException implements
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return FrameworkErrorCodes.PROXY_CLIENT_UNAVAILABLE_ERROR;
     }
 

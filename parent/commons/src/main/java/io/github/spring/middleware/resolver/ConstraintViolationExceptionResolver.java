@@ -1,7 +1,6 @@
 package io.github.spring.middleware.resolver;
 
 import io.github.spring.middleware.error.ConstraintErrorResolver;
-import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.ErrorMessage;
 import io.github.spring.middleware.error.FrameworkErrorCodes;
@@ -45,7 +44,7 @@ public class ConstraintViolationExceptionResolver implements ThrowableErrorResol
         return Optional.of(new ErrorMessage(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                VALIDATION_ERROR_CODE,
+                VALIDATION_ERROR_CODE.getCode(),
                 buildTopLevelMessage(violations),
                 extensions
         ));
@@ -60,7 +59,7 @@ public class ConstraintViolationExceptionResolver implements ThrowableErrorResol
         String path = String.valueOf(violation.getPropertyPath());
 
         Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("code", baseDescriptor.getCode());
+        detail.put("code", baseDescriptor.getErrorCode());
         detail.put("message", violation.getMessage());
         detail.put("field", extractFieldName(path));
         detail.put("path", path);

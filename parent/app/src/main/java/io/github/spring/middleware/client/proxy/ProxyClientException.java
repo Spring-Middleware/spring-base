@@ -31,7 +31,7 @@ public class ProxyClientException extends RuntimeException implements ErrorDescr
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return FrameworkErrorCodes.PROXY_CLIENT_ERROR;
     }
 

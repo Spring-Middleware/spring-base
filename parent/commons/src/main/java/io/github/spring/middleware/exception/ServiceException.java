@@ -42,8 +42,8 @@ public abstract class ServiceException extends RuntimeException implements Error
     }
 
     @Override
-    public ErrorCodes getCode() {
-        return descriptor != null ? descriptor.getCode() : FrameworkErrorCodes.UNKNOWN_ERROR;
+    public ErrorCodes getErrorCode() {
+        return descriptor != null ? descriptor.getErrorCode() : FrameworkErrorCodes.UNKNOWN_ERROR;
     }
 
     @Override

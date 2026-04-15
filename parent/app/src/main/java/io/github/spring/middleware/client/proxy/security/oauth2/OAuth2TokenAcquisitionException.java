@@ -13,7 +13,7 @@ public class OAuth2TokenAcquisitionException extends ProxyClientException {
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return SecurityErrorCodes.OAUTH2_TOKEN_ACQUISITION_ERROR;
     }
 

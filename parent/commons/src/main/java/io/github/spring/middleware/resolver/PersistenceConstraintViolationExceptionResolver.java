@@ -48,7 +48,7 @@ public class PersistenceConstraintViolationExceptionResolver implements Throwabl
         ErrorMessage error = new ErrorMessage(
                 HttpStatus.CONFLICT.value(),
                 HttpStatus.CONFLICT.getReasonPhrase(),
-                baseDescriptor.getCode(),
+                baseDescriptor.getErrorCode().getCode(),
                 baseDescriptor.getMessage(),
                 extensions
         );

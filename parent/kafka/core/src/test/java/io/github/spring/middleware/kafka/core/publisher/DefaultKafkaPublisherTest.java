@@ -48,7 +48,7 @@ class DefaultKafkaPublisherTest {
         assertThatThrownBy(() -> publisher.publishWithKey(null, "key"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Event to publish cannot be null")
-                .hasFieldOrPropertyWithValue("code", KafkaErrorCodes.KAFKA_EVENT_NULL);
+                .hasFieldOrPropertyWithValue("errorCode", KafkaErrorCodes.KAFKA_EVENT_NULL);
 
     }
 
@@ -63,7 +63,7 @@ class DefaultKafkaPublisherTest {
         assertThatThrownBy(() -> publisher.publish(null))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Event to publish cannot be null")
-                .hasFieldOrPropertyWithValue("code", KafkaErrorCodes.KAFKA_EVENT_NULL);
+                .hasFieldOrPropertyWithValue("errorCode", KafkaErrorCodes.KAFKA_EVENT_NULL);
     }
 
     @Test
@@ -77,7 +77,7 @@ class DefaultKafkaPublisherTest {
         assertThatThrownBy(() -> publisher.publishWithKey("event", "key"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Kafka publisher order-created is not configured")
-                .hasFieldOrPropertyWithValue("code", KafkaErrorCodes.KAFKA_PUBLISHER_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", KafkaErrorCodes.KAFKA_PUBLISHER_NOT_FOUND);
     }
 
     @Test
@@ -90,7 +90,7 @@ class DefaultKafkaPublisherTest {
         assertThatThrownBy(() -> publisher.publishWithKey("event", "key"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Kafka topic for publisher order-created is not configured")
-                .hasFieldOrPropertyWithValue("code", KafkaErrorCodes.KAFKA_TOPIC_NOT_CONFIGURED);
+                .hasFieldOrPropertyWithValue("errorCode", KafkaErrorCodes.KAFKA_TOPIC_NOT_CONFIGURED);
     }
 
     @Test
@@ -103,7 +103,7 @@ class DefaultKafkaPublisherTest {
         assertThatThrownBy(() -> publisher.publishWithKey("event", "key"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Kafka topic for publisher order-created is not configured")
-                .hasFieldOrPropertyWithValue("code", KafkaErrorCodes.KAFKA_TOPIC_NOT_CONFIGURED);
+                .hasFieldOrPropertyWithValue("errorCode", KafkaErrorCodes.KAFKA_TOPIC_NOT_CONFIGURED);
     }
 
     @Test

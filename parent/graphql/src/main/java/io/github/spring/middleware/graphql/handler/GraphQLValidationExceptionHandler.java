@@ -1,7 +1,6 @@
 package io.github.spring.middleware.graphql.handler;
 
 import graphql.GraphQLError;
-import graphql.GraphQLException;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
@@ -88,7 +87,7 @@ public class GraphQLValidationExceptionHandler implements DataFetcherExceptionHa
     private GraphQLError buildError(ErrorMessage errorMessage, ResultPath resultPath, SourceLocation location) {
         Map<String, Object> extensions = new LinkedHashMap<>();
 
-        extensions.put("code", errorMessage.getCode());
+        extensions.put("code", errorMessage.getErrorCode());
         extensions.put("statusCode", errorMessage.getStatusCode());
         extensions.put("statusMessage", errorMessage.getStatusMessage());
 

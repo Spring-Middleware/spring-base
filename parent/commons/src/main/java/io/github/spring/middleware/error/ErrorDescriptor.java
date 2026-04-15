@@ -9,7 +9,7 @@ public interface ErrorDescriptor extends HasExtensions {
         return "Error occurred";
     }
 
-    ErrorCodes getCode();          // string (no enum) para no acoplar
+    ErrorCodes getErrorCode();          // string (no enum) para no acoplar
 
     default Map<String, Object> getExtensions() {
         return new HashMap<>();
@@ -25,7 +25,7 @@ public interface ErrorDescriptor extends HasExtensions {
             }
 
             @Override
-            public ErrorCodes getCode() {
+            public ErrorCodes getErrorCode() {
                 return errorCodes;
             }
         };

@@ -74,7 +74,7 @@ public class ProxyConnectionErrorHandler {
             HttpStatus httpStatus = HttpStatus.resolve(statusCode);
             fallback.setStatusMessage(httpStatus != null ? httpStatus.getReasonPhrase() : "Remote Error");
 
-            fallback.setCode(FrameworkErrorCodes.REMOTE_SERVICE_ERROR);
+            fallback.setCode(FrameworkErrorCodes.REMOTE_SERVICE_ERROR.getCode());
             fallback.setMessage("Error calling remote service");
             fallback.setExtensions(new HashMap<>());
 

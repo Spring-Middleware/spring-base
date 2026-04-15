@@ -8,6 +8,8 @@ import io.github.spring.middleware.graphql.metadata.GraphQLLinkedType;
 import io.github.spring.middleware.registry.model.SchemaLocation;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class GraphQLLinkTypesMap {
 
+    private final Logger log = LoggerFactory.getLogger(GraphQLLinkTypesMap.class);
     private final Map<String, GraphQLLinkTypeData> linkTypesMap = new LinkedHashMap<>();
     private Map<FieldCoordinate, GraphQLResolvedLink> resolvedLinkMap;
     private Map<String, SchemaLocation> namespaceToSchemaLocationMap;
@@ -113,17 +116,23 @@ public class GraphQLLinkTypesMap {
                     FieldCoordinate coordinate = new FieldCoordinate(typeName, linkedType.getParentTypeName(), linkedType.getWrapperTypeNames(), fieldName);
 
                     SchemaLocation targetSchemaLocation = namespaceToSchemaLocationMap.get(fieldLinkDefinition.getSchema());
+                    if (targetSchemaLocation != null) {
+                        GraphQLResolvedLink newResolvedLink =
+                                new GraphQLResolvedLink(schemaLocation, targetSchemaLocation, fieldLinkDefinition);
 
-                    GraphQLResolvedLink newResolvedLink =
-                            new GraphQLResolvedLink(schemaLocation, targetSchemaLocation, fieldLinkDefinition);
-
-                    GraphQLResolvedLink existingResolvedLink = resolvedLinks.putIfAbsent(coordinate, newResolvedLink);
-                    if (existingResolvedLink != null) {
-                        throw new IllegalStateException(
-                                "Duplicated GraphQL linked field definition for coordinate [%s.%s]. "
-                                        .formatted(typeName, fieldName)
-                                        + "Already registered by service [%s] and attempted again by service [%s]"
-                                        .formatted(existingResolvedLink.getSchemaLocation().getNamespace(), serviceName)
+                        GraphQLResolvedLink existingResolvedLink = resolvedLinks.putIfAbsent(coordinate, newResolvedLink);
+                        if (existingResolvedLink != null) {
+                            throw new IllegalStateException(
+                                    "Duplicated GraphQL linked field definition for coordinate [%s.%s]. "
+                                            .formatted(typeName, fieldName)
+                                            + "Already registered by service [%s] and attempted again by service [%s]"
+                                            .formatted(existingResolvedLink.getSchemaLocation().getNamespace(), serviceName)
+                            );
+                        }
+                    }else{
+                        log.warn(
+                                "No target schema location found for linked field definition with coordinate [%s.%s] in service [%s]. Skipping this linked field."
+                                        .formatted(typeName, fieldName, serviceName)
                         );
                     }
                 });

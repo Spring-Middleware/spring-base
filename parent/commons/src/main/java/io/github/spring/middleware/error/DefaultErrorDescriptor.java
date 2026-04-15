@@ -15,7 +15,7 @@ public class DefaultErrorDescriptor implements ErrorDescriptor {
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return errorCodes;
     }
 

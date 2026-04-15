@@ -21,7 +21,7 @@ public class GraphQLException extends RuntimeException implements ErrorDescripto
     }
 
     @Override
-    public ErrorCodes getCode() {
+    public ErrorCodes getErrorCode() {
         return errorCode != null ? errorCode : GraphQLErrorCodes.GRAPHQL_UNKNOWN_ERROR;
     }
 }

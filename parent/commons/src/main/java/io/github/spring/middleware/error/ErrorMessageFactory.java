@@ -39,7 +39,7 @@ public class ErrorMessageFactory {
         return new ErrorMessage(
                 statusCode,
                 statusMessage,
-                descriptor.getCode(),
+                descriptor.getErrorCode().getCode(),
                 safeMessage(descriptor),
                 extensions
         );
@@ -58,7 +58,7 @@ public class ErrorMessageFactory {
         return new ErrorMessage(
                 statusCode,
                 statusMessage,
-                error.getCode(),
+                error.getErrorCode().getCode(),
                 error.getMessage(),
                 extensions
         );

@@ -58,8 +58,8 @@ public class RemoteServerException extends RuntimeException implements RemoteErr
     }
 
     @Override
-    public ErrorCodes getCode() {
-        return errorMessage != null ? errorMessage.getCode() : null;
+    public ErrorCodes getErrorCode() {
+        return errorMessage != null ? errorMessage.getErrorCode() : null;
     }
 
     @Override

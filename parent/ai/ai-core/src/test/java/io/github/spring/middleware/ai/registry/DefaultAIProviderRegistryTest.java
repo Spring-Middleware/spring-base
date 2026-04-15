@@ -38,14 +38,14 @@ class DefaultAIProviderRegistryTest {
     @Test
     void shouldThrowExceptionWhenModelIsNull() {
         AIException exception = assertThrows(AIException.class, () -> registry.resolve(null));
-        assertEquals(AIErrorCodes.UNSUPPORTED_AI_MODEL, exception.getCode());
+        assertEquals(AIErrorCodes.UNSUPPORTED_AI_MODEL, exception.getErrorCode());
         assertEquals("AI model must not be null or blank", exception.getMessage());
     }
 
     @Test
     void shouldThrowExceptionWhenModelIsBlank() {
         AIException exception = assertThrows(AIException.class, () -> registry.resolve("   "));
-        assertEquals(AIErrorCodes.UNSUPPORTED_AI_MODEL, exception.getCode());
+        assertEquals(AIErrorCodes.UNSUPPORTED_AI_MODEL, exception.getErrorCode());
         assertEquals("AI model must not be null or blank", exception.getMessage());
     }
 
@@ -55,7 +55,7 @@ class DefaultAIProviderRegistryTest {
         Mockito.when(provider2.supports("unknown-model")).thenReturn(false);
 
         AIException exception = assertThrows(AIException.class, () -> registry.resolve("unknown-model"));
-        assertEquals(AIErrorCodes.AI_PROVIDER_NOT_FOUND, exception.getCode());
+        assertEquals(AIErrorCodes.AI_PROVIDER_NOT_FOUND, exception.getErrorCode());
         assertTrue(exception.getMessage().contains("No AI provider found for model: unknown-model"));
     }
 }

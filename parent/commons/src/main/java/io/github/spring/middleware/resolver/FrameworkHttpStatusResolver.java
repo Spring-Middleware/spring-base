@@ -1,6 +1,5 @@
 package io.github.spring.middleware.resolver;
 
-import io.github.spring.middleware.error.ErrorCodes;
 import io.github.spring.middleware.error.ErrorDescriptor;
 import io.github.spring.middleware.error.FrameworkErrorProperties;
 import org.springframework.core.annotation.Order;
@@ -21,7 +20,7 @@ public class FrameworkHttpStatusResolver implements HttpStatusCodeResolver {
 
     @Override
     public Optional<Integer> resolve(ErrorDescriptor error) {
-        Integer status = statusByCode.get(error.getCode().getCode());
+        Integer status = statusByCode.get(error.getErrorCode().getCode());
         return Optional.ofNullable(status);
     }
 }
