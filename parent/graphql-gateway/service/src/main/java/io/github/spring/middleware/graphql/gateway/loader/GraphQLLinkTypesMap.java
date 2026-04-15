@@ -45,7 +45,7 @@ public class GraphQLLinkTypesMap {
             buildResolvedLinkMap();
         }
 
-        return resolvedLinkMap.get(new FieldCoordinate(typeName, getWrapperTypeNamesForType(typeName), fieldName));
+        return resolvedLinkMap.get(new FieldCoordinate(typeName, getParentTypeForTypeName(typeName),  getWrapperTypeNamesForType(typeName), fieldName));
     }
 
     private List<String> getWrapperTypeNamesForType(String typeName) {
@@ -54,6 +54,15 @@ public class GraphQLLinkTypesMap {
                 .distinct()
                 .toList();
     }
+
+    public String getParentTypeForTypeName(String typeName) {
+        return linkTypesMap.values().stream()
+                .map(linkTypeData -> linkTypeData.getParentTypeNameForType(typeName))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
 
 
     public List<FieldCoordinate> getAllLinkedFieldCoordinates() {
@@ -73,7 +82,7 @@ public class GraphQLLinkTypesMap {
         List<GraphQLResolvedLink> resolvedLinks = new ArrayList<>();
         resolvedLinkMap.forEach((coordinate, resolvedLink) -> {
             if (resolvedLink.getSchemaLocation().equals(schemaLocation)) {
-                if (typeName == null || coordinate.typeName().equals(typeName) || coordinate.wrappedTypeNames().contains(typeName)) {
+                if (typeName == null || coordinate.typeName().equals(typeName) || coordinate.wrappedTypeNames().contains(typeName) || coordinate.parentTypeName().equals(typeName)) {
                     resolvedLinks.add(resolvedLink);
                 }
             }
@@ -101,7 +110,7 @@ public class GraphQLLinkTypesMap {
 
                 linkedType.getGraphQLFieldLinkDefinitions().forEach(fieldLinkDefinition -> {
                     String fieldName = fieldLinkDefinition.getFieldName();
-                    FieldCoordinate coordinate = new FieldCoordinate(typeName, linkedType.getWrapperTypeNames(), fieldName);
+                    FieldCoordinate coordinate = new FieldCoordinate(typeName, linkedType.getParentTypeName(), linkedType.getWrapperTypeNames(), fieldName);
 
                     SchemaLocation targetSchemaLocation = namespaceToSchemaLocationMap.get(fieldLinkDefinition.getSchema());
 
@@ -134,6 +143,15 @@ public class GraphQLLinkTypesMap {
                     .filter(linkedType -> linkedType.getTypeName().equals(typeName))
                     .flatMap(linkedType -> linkedType.getWrapperTypeNames().stream())
                     .toList();
+        }
+
+        public String getParentTypeNameForType(String typeName) {
+            return linkedTypes.stream()
+                    .filter(linkedType -> linkedType.getTypeName().equals(typeName))
+                    .map(GraphQLLinkedType::getParentTypeName)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
         }
 
     }
@@ -197,12 +215,13 @@ public class GraphQLLinkTypesMap {
         if (resolvedLinkMap == null) {
             buildResolvedLinkMap();
         }
-        return resolvedLinkMap.containsKey(new FieldCoordinate(typeName, getWrapperTypeNamesForType(typeName), fieldName));
+        return resolvedLinkMap.containsKey(new FieldCoordinate(typeName, getParentTypeForTypeName(typeName), getWrapperTypeNamesForType(typeName), fieldName));
     }
 
 
     public record FieldCoordinate(
             String typeName,
+            String parentTypeName,
             List<String> wrappedTypeNames,
             String fieldName
     ) {

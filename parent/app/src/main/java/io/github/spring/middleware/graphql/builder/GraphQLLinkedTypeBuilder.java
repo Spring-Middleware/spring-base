@@ -33,6 +33,7 @@ public class GraphQLLinkedTypeBuilder {
             throw new IllegalArgumentException(STR."Multiple type names defined for class \{clazz.getName()}");
         }
         graphQLLinkedType.setTypeName(typeNames.get(0));
+        graphQLLinkedType.setParentTypeName(getParentType(clazz));
         graphQLLinkedType.setWrapperTypeNames(getTypesName(clazz, true));
         BeanInfo beanInfo = Introspector.getBeanInfo(clazz);
         Set<Field> fieldsLinked = scanLinkedFields(clazz);
@@ -70,6 +71,20 @@ public class GraphQLLinkedTypeBuilder {
         }
         return fieldsLinked;
     }
+
+
+    public String getParentType(Class<?> clazz) {
+        Class<?> current = clazz.getSuperclass();
+        while (current != null && current != Object.class) {
+            GraphQLLinkClass linkClass = current.getDeclaredAnnotation(GraphQLLinkClass.class);
+            if (linkClass != null && linkClass.types().length > 0) {
+                return current.getSimpleName();
+            }
+            current = current.getSuperclass();
+        }
+        return null;
+    }
+
 
     private List<String> getTypesName(Class<?> clazz, boolean isWrapper) {
         Set<String> names = new LinkedHashSet<>();

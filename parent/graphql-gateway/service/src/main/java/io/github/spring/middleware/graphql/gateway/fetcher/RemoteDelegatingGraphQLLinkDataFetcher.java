@@ -2,7 +2,6 @@ package io.github.spring.middleware.graphql.gateway.fetcher;
 
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
-import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNamedType;
@@ -10,41 +9,36 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkBatched;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatchedRegistry;
-import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
+import io.github.spring.middleware.graphql.gateway.cache.GraphQLCachingToggle;
+import io.github.spring.middleware.graphql.gateway.cache.GraphQLLinkCache;
+import io.github.spring.middleware.graphql.gateway.cache.GraphQLLinkCacheKey;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes;
 import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.graphql.gateway.fetcher.builder.QueryLinkBuilder;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
-import io.github.spring.middleware.graphql.gateway.merger.GraphQLMerged;
-import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationKey;
-import io.github.spring.middleware.graphql.gateway.merger.GraphQLOperationType;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLBatchingToggle;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
-import io.github.spring.middleware.registry.model.SchemaLocation;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLSourceFieldExtractor.extractFieldValue;
-import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
-import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.normalizeValue;
 
 public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Object> {
 
     private GraphQLLinkTypesMap graphQLLinkTypesMap;
     private GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor;
     private GraphQLBatchingToggle batchingToggle;
-    private GraphQLMerged graphQLMerged;
+    private GraphQLCachingToggle cachingToggle;
 
-    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor, GraphQLBatchingToggle batchingToggle, GraphQLMerged graphQLMerged) {
+    public RemoteDelegatingGraphQLLinkDataFetcher(GraphQLLinkTypesMap graphQLLinkTypesMap, GraphQLRemoteLinkExecutor graphQLRemoteLinkExecutor, GraphQLBatchingToggle batchingToggle, GraphQLCachingToggle cachingToggle) {
         this.graphQLLinkTypesMap = graphQLLinkTypesMap;
         this.graphQLRemoteLinkExecutor = graphQLRemoteLinkExecutor;
         this.batchingToggle = batchingToggle;
-        this.graphQLMerged = graphQLMerged;
+        this.cachingToggle = cachingToggle;
     }
 
     @Override
@@ -118,17 +112,34 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
         if (resolvedLink.isBatched() && batchingToggle.isEnabled()) {
             GraphQLLinkResolvedBatchedRegistry batchedRegistry = getOrCreateBatchedRegistry(environment, resolvedLink);
             GraphQLLinkBatched graphQLLinkBatched = batchedRegistry.getOrCreate(resolvedLink, executionInputBuilder, environment);
-            return graphQLLinkBatched.register(resolvedLink, variables);
+            return graphQLLinkBatched.register(resolvedLink, variables, normalizedLinks);
         } else {
             ExecutionInput executionInput = executionInputBuilder.variables(variables).build();
-            // Para enlaces no batched, ejecutamos inmediatamente
-            return graphQLRemoteLinkExecutor.executeLink(environment, resolvedLink, executionInput, normalizedLinks);
+            GraphQLLinkCache graphQLLinkCache = getOrCreateCache(environment);
+            if (cachingToggle.isEnabled()) {
+                GraphQLLinkCacheKey cacheKey = new GraphQLLinkCacheKey(resolvedLink.getTargetSchemaLocation().getNamespace(), query, variables);
+                Object cachedResult = graphQLLinkCache.get(cacheKey);
+                if (cachedResult != null) {
+                    return cachedResult;
+                }
+                // Para enlaces no batched, ejecutamos inmediatamente
+                Object result = graphQLRemoteLinkExecutor.executeLink(environment, resolvedLink, executionInput, normalizedLinks);
+                graphQLLinkCache.put(cacheKey, result);
+                return result;
+            } else {
+                return graphQLRemoteLinkExecutor.executeLink(environment, resolvedLink, executionInput, normalizedLinks);
+            }
         }
     }
 
     private GraphQLLinkResolvedBatchedRegistry getOrCreateBatchedRegistry(DataFetchingEnvironment environment, GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink) {
         GraphQLLinkResolvedBatchedRegistry graphQLLinkResolvedBatchedRegistry = environment.getGraphQlContext().computeIfAbsent("batchedRegistry", key -> new GraphQLLinkResolvedBatchedRegistry());
         return graphQLLinkResolvedBatchedRegistry;
+    }
+
+    private GraphQLLinkCache getOrCreateCache(DataFetchingEnvironment environment) {
+        GraphQLLinkCache graphQLLinkCache = environment.getGraphQlContext().computeIfAbsent("linkCache", key -> new GraphQLLinkCache());
+        return graphQLLinkCache;
     }
 
     private String getReturnedTypeName(DataFetchingEnvironment environment) {

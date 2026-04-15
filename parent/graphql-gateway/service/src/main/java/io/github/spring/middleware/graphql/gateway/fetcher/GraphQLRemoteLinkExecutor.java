@@ -48,7 +48,7 @@ public class GraphQLRemoteLinkExecutor {
 
 
     public CompletableFuture<Map<ItemKey, Object>> executeLink(ExecutionInput executionInput, GraphQLLinkBatched batchedLink) {
-        DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult) executeLink(batchedLink.getDataFetchingEnvironment(), batchedLink.getResolvedLink(), executionInput, List.of());
+        DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult) executeLink(batchedLink.getDataFetchingEnvironment(), batchedLink.getResolvedLink(), executionInput, batchedLink.getGraphQLResolvedLinks());
 
         Object data = dataFetcherResult.getData();
 

@@ -10,6 +10,7 @@ import java.util.List;
 public class GraphQLLinkedType {
 
     private String typeName;
+    private String parentTypeName;
     private List<String> wrapperTypeNames;
     private Collection<GraphQLFieldLinkDefinition> graphQLFieldLinkDefinitions = new HashSet<>();
 }

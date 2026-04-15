@@ -39,7 +39,6 @@ public class GraphQLBatchInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        log.debug("Beginning execution of field: {}", parameters.getField().getName());
         GraphQLContext context = parameters.getExecutionContext().getGraphQLContext();
         GraphQLLinkResolvedBatchedRegistry registry = context.get("batchedRegistry");
         final var parentTypeName = getParentTypeName(parameters);

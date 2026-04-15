@@ -4,8 +4,10 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkResolvedBatchedRegistry;
+import io.github.spring.middleware.graphql.gateway.cache.GraphQLCachingToggle;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLBatchingToggle;
 import io.github.spring.middleware.graphql.gateway.runtime.GraphQLGatewayHolder;
+import io.github.spring.middleware.graphql.gateway.runtime.GraphQLGatewayInitializer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +28,9 @@ public class GraphQLGatewayController {
 
     private final GraphQLGatewayHolder holder;
     private final GraphQLBatchingToggle batchingToggle;
+    private final GraphQLCachingToggle cachingToggle;
+    private final GraphQLGatewayInitializer graphQLGatewayInitializer;
+
 
     @PostMapping("/batching-toggle")
     public void setBatchingEnabled(@RequestParam("enabled") Boolean enabled) {
@@ -37,6 +42,25 @@ public class GraphQLGatewayController {
     @GetMapping("/batching-toggle")
     public Map<String, Object> getBatchingStatus() {
         return Map.of("enabled", batchingToggle.isEnabled());
+    }
+
+
+    @PostMapping("/caching-toggle")
+    public void setCachingToggle(@RequestParam("enabled") Boolean enabled) {
+        if (enabled != null) {
+            cachingToggle.setEnabled(enabled);
+        }
+    }
+
+    @GetMapping("/caching-toggle")
+    public Map<String, Object> getCachingToggle() {
+        return Map.of("enabled", cachingToggle.isEnabled());
+    }
+
+
+    @GetMapping("/refresh")
+    public void refresh() {
+        graphQLGatewayInitializer.refresh();
     }
 
 

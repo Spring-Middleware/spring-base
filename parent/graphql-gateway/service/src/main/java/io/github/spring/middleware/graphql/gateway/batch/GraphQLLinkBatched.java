@@ -19,6 +19,7 @@ public class GraphQLLinkBatched {
     private Map<String, List<Object>> argumentValuesMap = new LinkedHashMap<>();
     private DataFetchingEnvironment dataFetchingEnvironment;
     private Map<String, Object> variablesNonBatching = new LinkedHashMap<>();
+    private List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks = new ArrayList<>();
     private final Map<GraphQLLinkTypesMap.BatchKey, CompletableFuture<Object>> pending = new LinkedHashMap<>();
     private final AtomicBoolean executed = new AtomicBoolean(false);
 
@@ -42,8 +43,9 @@ public class GraphQLLinkBatched {
         return argumentValuesMap;
     }
 
-    public CompletableFuture<Object> register(GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink, Map<String, Object> variables) {
+    public CompletableFuture<Object> register(GraphQLLinkTypesMap.GraphQLResolvedLink resolvedLink, Map<String, Object> variables, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
 
+        this.graphQLResolvedLinks.addAll(graphQLResolvedLinks);
         GraphQLLinkTypesMap.BatchKey key = resolvedLink.getBatchKey(variables);
         return pending.computeIfAbsent(key, k -> {
             // solo cuando es nueva key acumulas
@@ -107,5 +109,9 @@ public class GraphQLLinkBatched {
 
     public Map<String, Object> getVariablesNonBatching() {
         return variablesNonBatching;
+    }
+
+    public List<GraphQLLinkTypesMap.GraphQLResolvedLink> getGraphQLResolvedLinks() {
+        return graphQLResolvedLinks;
     }
 }

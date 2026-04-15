@@ -10,6 +10,7 @@ import io.github.spring.middleware.client.RegistryClient;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLBatchExecutor;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLBatchInstrumentation;
 import io.github.spring.middleware.graphql.gateway.builder.GraphQLSchemaDefinitionBuilder;
+import io.github.spring.middleware.graphql.gateway.cache.GraphQLCachingToggle;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
 import io.github.spring.middleware.graphql.gateway.fetcher.GraphQLRemoteLinkExecutor;
 import io.github.spring.middleware.graphql.gateway.fetcher.RemoteDelegatingDataFetcher;
@@ -49,6 +50,7 @@ public class GraphQLGatewayFactory {
     private final GraphQLBatchExecutor graphQLBatchExecutor;
     private final RegistryClient registryClient;
     private final GraphQLBatchingToggle batchingToggle;
+    private final GraphQLCachingToggle cachingToggle;
 
     public GraphQL build() {
         List<SchemaLocation> schemaLocations = registryClient.getSchemaLocations();
@@ -76,7 +78,7 @@ public class GraphQLGatewayFactory {
                 new RemoteDelegatingDataFetcher(merged, remoteGraphQLExecutionClient, graphQLLinkTypesMap);
 
         final RemoteDelegatingGraphQLLinkDataFetcher remoteDelegatingGraphQLLinkDataFetcher =
-                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, graphQLRemoteLinkExecutor, batchingToggle, merged);
+                new RemoteDelegatingGraphQLLinkDataFetcher(graphQLLinkTypesMap, graphQLRemoteLinkExecutor, batchingToggle, cachingToggle);
 
         RuntimeWiring.Builder builder = RuntimeWiring.newRuntimeWiring();
 
