@@ -18,6 +18,7 @@ import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
+import io.github.spring.middleware.graphql.metadata.GraphQLLinkedType;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 
@@ -48,7 +49,7 @@ public class GraphQLBatchInstrumentation implements Instrumentation {
 
                 @Override
                 public void onDispatched() {
-                    dispatchPendingBatches(registry).whenComplete((v, ex) -> removeBatchedLinkKeyFromInstrumented(context, parentTypeName, parameters.getField().getName()));
+                    dispatchPendingBatchesUntilStable(registry).whenComplete((v, ex) -> removeBatchedLinkKeyFromInstrumented(context, parentTypeName, parameters.getField().getName()));
                 }
 
                 @Override
@@ -81,7 +82,7 @@ public class GraphQLBatchInstrumentation implements Instrumentation {
 
                 @Override
                 public void onDispatched() {
-                    dispatchPendingBatches(registry).whenComplete((v, ex) -> linkedChildrenToInstrument.forEach(fieldName ->
+                    dispatchPendingBatchesUntilStable(registry).whenComplete((v, ex) -> linkedChildrenToInstrument.forEach(fieldName ->
                             removeBatchedLinkKeyFromInstrumented(context, innerTypeName, fieldName)
                     ));
                 }
@@ -95,14 +96,19 @@ public class GraphQLBatchInstrumentation implements Instrumentation {
         return SimpleInstrumentationContext.noOp();
     }
 
-    private CompletableFuture<Void> dispatchPendingBatches(GraphQLLinkResolvedBatchedRegistry registry) {
-        List<CompletableFuture<Void>> batchFutures = registry.getAllBatchedLinks().stream()
-                .map(graphQLBatchExecutor::executeBatch)
-                .toList();
-        if (batchFutures.isEmpty()) {
+    private CompletableFuture<Void> dispatchPendingBatchesUntilStable(GraphQLLinkResolvedBatchedRegistry registry) {
+        List<GraphQLLinkBatched> wave = registry.getPendingBatches(); // saca solo los pendientes actuales
+
+        if (wave.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        return CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
+
+        List<CompletableFuture<Void>> futures = wave.stream()
+                .map(graphQLBatchExecutor::executeBatch)
+                .toList();
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenCompose(v -> dispatchPendingBatchesUntilStable(registry));
     }
 
     private String getParentTypeName(InstrumentationFieldParameters parameters) {
@@ -190,7 +196,36 @@ public class GraphQLBatchInstrumentation implements Instrumentation {
 
     public boolean isLinkKeyAlreadyInstrumented(GraphQLContext context, String parentTypeName, String fieldName) {
         List<BatchedLinkKeyInstrumented> instrumentedKeys = getBatchedLinkKeyInstrumented(context);
-        return instrumentedKeys.contains(new BatchedLinkKeyInstrumented(parentTypeName, fieldName));
+
+        return instrumentedKeys.stream().anyMatch(key ->
+                key.fieldName().equals(fieldName) &&
+                        isSameTypeOrAncestor(parentTypeName, key.parentTypeName())
+        );
+    }
+
+    private boolean isSameTypeOrAncestor(String typeName, String candidateAncestorTypeName) {
+        if (typeName == null || candidateAncestorTypeName == null) {
+            return false;
+        }
+
+        if (typeName.equals(candidateAncestorTypeName)) {
+            return true;
+        }
+
+        String current = typeName;
+        while (current != null) {
+            GraphQLLinkedType linkedType = graphQLLinkTypesMap.findLinkedTypeByTypeName(current);
+            if (linkedType == null) {
+                return false;
+            }
+
+            current = linkedType.getParentTypeName();
+            if (candidateAncestorTypeName.equals(current)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

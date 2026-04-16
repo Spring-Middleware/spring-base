@@ -84,7 +84,7 @@ public class GraphQLLinkBatched {
     }
 
     public void completePending(GraphQLLinkTypesMap.BatchKey batchKey, Object value) {
-        CompletableFuture<Object> future = pending.get(batchKey);
+        CompletableFuture<Object> future = pending.remove(batchKey);
         if (future != null) {
             future.complete(value);
         }
@@ -92,6 +92,7 @@ public class GraphQLLinkBatched {
 
     public void completePendingExceptionally(Throwable ex) {
         pending.values().forEach(future -> future.completeExceptionally(ex));
+        pending.clear();
     }
 
 
@@ -113,5 +114,9 @@ public class GraphQLLinkBatched {
 
     public List<GraphQLLinkTypesMap.GraphQLResolvedLink> getGraphQLResolvedLinks() {
         return graphQLResolvedLinks;
+    }
+
+    public boolean hasPending() {
+        return !pending.isEmpty();
     }
 }

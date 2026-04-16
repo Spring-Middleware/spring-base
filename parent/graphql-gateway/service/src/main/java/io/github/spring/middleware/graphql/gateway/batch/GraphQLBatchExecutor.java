@@ -26,7 +26,7 @@ public class GraphQLBatchExecutor {
 
     public CompletableFuture<Void> executeBatch(GraphQLLinkBatched batchedLink) {
 
-        if (!batchedLink.markExecutedIfNeeded()) {
+        if (!batchedLink.hasPending()) {
             return CompletableFuture.completedFuture(null);
         }
 

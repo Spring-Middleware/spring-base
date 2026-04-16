@@ -21,7 +21,6 @@ import static io.github.spring.middleware.graphql.gateway.util.RuntimeWiringUtil
 
 public record GraphQLTypeRegistryMap(Map<SchemaLocation, TypeDefinitionRegistry> registryMap, Optional<ScalarsProvider> scalarsProviderOptional) {
 
-    private static Map<String, SchemaLocation> typeNameToLocationMap = new HashMap<>();
     private static Map<SchemaLocation, GraphQLSchema> executableSchemaCache = new HashMap<>();
 
     public boolean isEmpty() {

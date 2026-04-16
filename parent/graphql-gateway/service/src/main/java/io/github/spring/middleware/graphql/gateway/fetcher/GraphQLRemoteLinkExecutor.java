@@ -5,6 +5,7 @@ import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetchingEnvironment;
 import io.github.spring.middleware.graphql.gateway.batch.GraphQLLinkBatched;
 import io.github.spring.middleware.graphql.gateway.client.RemoteGraphQLExecutionClient;
+import io.github.spring.middleware.graphql.gateway.exception.GraphQLException;
 import io.github.spring.middleware.graphql.gateway.loader.GraphQLLinkTypesMap;
 import io.github.spring.middleware.graphql.metadata.GraphQLArgumentLinkDefinition;
 import io.github.spring.middleware.graphql.metadata.GraphQLFieldLinkDefinition;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.github.spring.middleware.graphql.gateway.exception.GraphQLErrorCodes.REMOTE_EXECUTION_ERROR;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.mapErrors;
 import static io.github.spring.middleware.graphql.gateway.util.GraphQLUtils.normalizeValue;
 
@@ -48,24 +50,43 @@ public class GraphQLRemoteLinkExecutor {
 
 
     public CompletableFuture<Map<ItemKey, Object>> executeLink(ExecutionInput executionInput, GraphQLLinkBatched batchedLink) {
+        if (executionInput.getVariables().isEmpty()) {
+            return CompletableFuture.completedFuture(Map.of());
+        }
+
         DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult) executeLink(batchedLink.getDataFetchingEnvironment(), batchedLink.getResolvedLink(), executionInput, batchedLink.getGraphQLResolvedLinks());
 
         Object data = dataFetcherResult.getData();
 
+        if (data == null) {
+            if (dataFetcherResult.getErrors() != null && !dataFetcherResult.getErrors().isEmpty()) {
+                return CompletableFuture.failedFuture(
+                        new GraphQLException(
+                                REMOTE_EXECUTION_ERROR,
+                                "Remote batch execution returned errors",
+                                dataFetcherResult.getErrors()
+                        )
+                );
+            }
+            return CompletableFuture.completedFuture(Map.of());
+        }
+
         if (!(data instanceof List<?> items)) {
             throw new IllegalStateException(
                     "Expected batch result list for link %s but got: %s"
-                            .formatted(batchedLink.getResolvedLink(), data.getClass().getName())
+                            .formatted(batchedLink.getResolvedLink(), data == null ? "null" : data.getClass().getName())
             );
         }
 
         Map<ItemKey, Object> result = new LinkedHashMap<>();
         items.forEach(item -> {
             ItemKey itemKey = buildItemKey(batchedLink.getResolvedLink(), item);
-            if (result.put(itemKey, item) != null) {
-                throw new IllegalStateException(
-                        "Duplicate batch key returned from remote execution: %s".formatted(itemKey)
-                );
+            if (itemKey != null) {
+                if (result.put(itemKey, item) != null) {
+                    throw new IllegalStateException(
+                            "Duplicate batch key returned from remote execution: %s".formatted(itemKey)
+                    );
+                }
             }
         });
         return CompletableFuture.completedFuture(result);
@@ -80,6 +101,9 @@ public class GraphQLRemoteLinkExecutor {
                         throw new IllegalStateException(
                                 "Expected Map for batch item but got: %s".formatted(item)
                         );
+                    }
+                    if (!canBuildItemKey(map, fieldLinkDefinition)) {
+                        return;
                     }
                     fieldLinkDefinition.getArgumentLinkDefinitions().stream()
                             .filter(GraphQLArgumentLinkDefinition::isBatched)
@@ -103,11 +127,24 @@ public class GraphQLRemoteLinkExecutor {
                             });
                 });
 
+        if (args.isEmpty()) {
+            return null;
+        }
         return new ItemKey(fieldLinkDefinition.getQuery(), args);
     }
 
 
     public record ItemKey(String query, Map<String, Object> args) {
     }
+
+    private boolean canBuildItemKey(Map<?, ?> item, GraphQLFieldLinkDefinition linkDefinition) {
+        return linkDefinition.getArgumentLinkDefinitions().stream()
+                .filter(GraphQLArgumentLinkDefinition::isBatched)
+                .allMatch(argDef -> {
+                    String matchName = argDef.getTargetFieldName() != null ? argDef.getTargetFieldName() : argDef.getArgumentName();
+                    return item.containsKey(matchName) && item.get(matchName) != null;
+                });
+    }
+
 
 }

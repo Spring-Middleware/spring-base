@@ -24,4 +24,8 @@ public class GraphQLLinkResolvedBatchedRegistry {
         return List.copyOf(resolvedBatchedLinkMap.values());
     }
 
+    public List<GraphQLLinkBatched> getPendingBatches() {
+       return resolvedBatchedLinkMap.values().stream().filter(GraphQLLinkBatched::hasPending).toList();
+    }
+
 }

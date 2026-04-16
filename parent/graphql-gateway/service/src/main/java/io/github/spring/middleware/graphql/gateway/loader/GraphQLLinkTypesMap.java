@@ -93,6 +93,18 @@ public class GraphQLLinkTypesMap {
         return resolvedLinks;
     }
 
+    public GraphQLLinkedType findLinkedTypeByTypeName(String typeName) {
+        if (typeName == null) {
+            return null;
+        }
+
+        return linkTypesMap.values().stream()
+                .flatMap(linkTypeData -> linkTypeData.linkedTypes().stream())
+                .filter(linkedType -> typeName.equals(linkedType.getTypeName()))
+                .findFirst()
+                .orElse(null);
+    }
+
 
     public boolean isEmpty() {
         return linkTypesMap.isEmpty();
@@ -208,7 +220,17 @@ public class GraphQLLinkTypesMap {
         public BatchKey getBatchKey(Map<String, Object> variables) {
             Map<String, Object> args = fieldLinkDefinition.getArgumentLinkDefinitions().stream()
                     .filter(GraphQLArgumentLinkDefinition::isBatched)
-                    .sorted(Comparator.comparing(GraphQLArgumentLinkDefinition::getArgumentName)) // orden estable
+                    .sorted(Comparator.comparing(GraphQLArgumentLinkDefinition::getArgumentName))
+                    .filter(argDef -> {
+                        Object value = variables.get(argDef.getArgumentName());
+                        if (value == null) {
+                            return false;
+                        }
+                        if (value instanceof Collection<?> collection) {
+                            return !collection.isEmpty();
+                        }
+                        return true;
+                    })
                     .collect(Collectors.toMap(
                             GraphQLArgumentLinkDefinition::getArgumentName,
                             argDef -> variables.get(argDef.getArgumentName()),
