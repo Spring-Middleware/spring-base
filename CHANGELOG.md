@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+- Expanded GraphQL federation documentation with a dedicated public page for registry-driven schema composition, GraphQL Links, and distributed execution.
+- New public demo/reference material for declarative GraphQL batching, including video walkthrough and article-level technical explanation.
+- Additional documentation around batching internals, execution flow, instrumentation, and request-scoped dispatch behavior.
+
+### Improved
+
+- GraphQL documentation structure and messaging for federation, cross-service resolution, batching, error handling, and adoption path.
+- Clarity around platform-level N+1 resolution, making the gateway batching model easier to understand and present.
+- Overall project presentation for GraphQL capabilities across website and docs.
+
+### Upgraded
+
+- Platform BOM and project version bumped to 1.5.0.
+
 ## 1.4.0
 
 ### Added
