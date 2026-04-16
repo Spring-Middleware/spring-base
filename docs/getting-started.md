@@ -255,11 +255,11 @@ Below is a concrete minimal example for a `reference-service` aggregator and a s
         <product.version>1.2.0</product.version>
 
         <spring.boot.version>3.4.2</spring.boot.version>
-        <spring-middleware.api.version>1.4.0</spring-middleware.api.version>
-        <spring-middleware.app.version>1.7.0</spring-middleware.app.version>
-        <spring-middleware.mongo-core.version>1.5.0</spring-middleware.mongo-core.version>
-        <spring-middleware.kafka-core.version>1.4.0</spring-middleware.kafka-core.version>
-        <spring-middleware.graphql.version>1.4.0</spring-middleware.graphql.version>
+        <spring-middleware.api.version>1.5.0</spring-middleware.api.version>
+        <spring-middleware.app.version>1.8.0</spring-middleware.app.version>
+        <spring-middleware.mongo-core.version>1.6.0</spring-middleware.mongo-core.version>
+        <spring-middleware.kafka-core.version>1.5.0</spring-middleware.kafka-core.version>
+        <spring-middleware.graphql.version>1.5.0</spring-middleware.graphql.version>
         <springdoc.openapi.version>2.8.4</springdoc.openapi.version>
 
         <java.version>21</java.version>
@@ -639,4 +639,6 @@ java -jar target/catalog-service-boot-<version>.jar
 Or run the application directly from your IDE.
 
 ---
+
+
 

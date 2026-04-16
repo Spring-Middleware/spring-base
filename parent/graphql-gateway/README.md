@@ -18,6 +18,8 @@ The gateway:
 
 - discovers GraphQL schemas registered in the **Registry Service**
 - builds an executable `GraphQL` engine from those schemas
+- resolves cross-service fields using GraphQL Links
+- executes distributed queries with built-in batching support
 - exposes a single `/graphql` HTTP endpoint for clients
 - applies shared scalar types and runtime utilities from the `service` module
 
@@ -41,11 +43,11 @@ The request body follows the standard GraphQL over HTTP JSON shape:
 
 ```json
 {
-  "query": "query User($id: ID!) { user(id: $id) { id name } }",
-  "operationName": "User",
-  "variables": {
-    "id": "123"
-  }
+   "query": "query User($id: ID!) { user(id: $id) { id name } }",
+   "operationName": "User",
+   "variables": {
+      "id": "123"
+   }
 }
 ```
 
@@ -53,8 +55,8 @@ The response uses the standard GraphQL specification shape:
 
 ```json
 {
-  "data": { ... },
-  "errors": [ ... ]
+   "data": { ... },
+   "errors": [ ... ]
 }
 ```
 
@@ -76,32 +78,105 @@ Internally, this behavior is implemented by classes under:
 
 These classes are meant for internal use and may evolve without being considered a public API.
 
+---
+
+## Cross-service field resolution (GraphQL Links)
+
+The gateway supports **cross-service field resolution** through GraphQL Links.
+
+Instead of requiring services to call each other, a field defined in one schema can be resolved
+by a query owned by another service. This is declared using `@GraphQLLink` metadata.
+
+At runtime, the gateway:
+
+- detects linked fields from schema metadata
+- builds downstream GraphQL queries dynamically
+- preserves the original selection set requested by the client
+- executes remote queries against the owning service
+- merges results into the final response
+
+This allows services to remain fully autonomous while still participating in a unified API.
+
+---
+
+## Declarative GraphQL batching
+
+The gateway provides **built-in batching for distributed GraphQL queries**, solving the N+1 problem
+at the platform level.
+
+Instead of implementing batching manually (e.g. DataLoader), batching is declared via metadata:
+
+- `@GraphQLLink(batched = true)`
+- `@GraphQLLinkArgument(batch = true)`
+
+### How it works
+
+During query execution:
+
+1. Linked field resolutions are registered instead of executed immediately
+2. The gateway groups identifiers across multiple parent objects
+3. A single downstream query (e.g. `productsByIds`) is executed
+4. Results are mapped back to the original fields
+
+### Benefits
+
+- No resolver-level batching logic
+- No DataLoader wiring
+- Transparent for services
+- Significant reduction in remote calls
+
+In typical scenarios, execution changes from many remote calls to a single batched call,
+reducing latency from ~1s to ~100–200 ms.
+
+For a detailed explanation, see:
+- docs/graphql-query-batching.md
+
+---
+
+## Execution model
+
+The gateway uses a **request-scoped execution model**:
+
+- linked fields can be executed immediately or batched
+- batching is coordinated through GraphQL context
+- dispatch is triggered at safe execution points via instrumentation
+
+Internally, batching is implemented using:
+
+- request-scoped registries
+- batch key / item key mapping
+- execution-aware dispatch (based on actual query structure)
+
+This ensures batching aligns with real query usage rather than static schema assumptions.
+
+---
+
 ## Configuration
 
 The `boot` module provides the main configuration via `application.yml`:
 
 ```yaml
 server:
-  port: ${SERVER_PORT:8080}
-  servlet:
-    context-path: ${SERVER_CONTEXT_PATH:/}
+   port: ${SERVER_PORT:8080}
+   servlet:
+      context-path: ${SERVER_CONTEXT_PATH:/}
 
 middleware:
-  client:
-    registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8080/registry}
+   client:
+      registryEndpoint: ${REGISTRY_ENDPOINT:http://localhost:8080/registry}
 
-  resourceRegister:
-    clusterName: ${RESOURCE_CLUSTER_NAME:graphql-gateway}
+   resourceRegister:
+      clusterName: ${RESOURCE_CLUSTER_NAME:graphql-gateway}
 
-  publicServer:
-    host: ${PUBLIC_SERVER_HOST:localhost}
-    port: ${PUBLIC_SERVER_PORT:8070}
+   publicServer:
+      host: ${PUBLIC_SERVER_HOST:localhost}
+      port: ${PUBLIC_SERVER_PORT:8070}
 
-  graphql:
-    enabled: ${GRAPHQL_ENABLED:false}
+   graphql:
+      enabled: ${GRAPHQL_ENABLED:false}
 
-  registryConsistencyScheduler:
-    enabled: ${REGISTRY_CONSISTENCY_SCHEDULER_ENABLED:false}
+   registryConsistencyScheduler:
+      enabled: ${REGISTRY_CONSISTENCY_SCHEDULER_ENABLED:false}
 ```
 
 ### Key properties
@@ -111,6 +186,8 @@ middleware:
 - `PUBLIC_SERVER_HOST` / `PUBLIC_SERVER_PORT` – advertised public endpoint of the gateway.
 - `GRAPHQL_ENABLED` – enables internal GraphQL features from Spring Middleware (used by services; usually `false` for the gateway itself).
 - `REGISTRY_CONSISTENCY_SCHEDULER_ENABLED` – registry self-healing for the gateway node.
+
+---
 
 ## Running locally
 
@@ -144,6 +221,8 @@ curl -X POST http://localhost:8080/graphql \
   }'
 ```
 
+---
+
 ## Docker image
 
 The repository includes a helper script and Dockerfiles to build a Docker image for the gateway.
@@ -168,6 +247,8 @@ docker run --rm -p 8080:8080 spring-base_graphql-gateway:latest
 
 Make sure to pass the appropriate environment variables for the Registry endpoint and logging as needed.
 
+---
+
 ## Relationship with Registry
 
 The GraphQL gateway is a **consumer of Registry data**:
@@ -177,10 +258,14 @@ The GraphQL gateway is a **consumer of Registry data**:
 
 For details about schema registration, see `docs/registry.md` and `docs/graphql.md`.
 
+---
+
 ## Security
 
-The current gateway focuses on **infrastructure integration and schema composition**.
+The current gateway focuses on **infrastructure integration, schema composition, and distributed execution**.
 
-Authentication and authorization can be implemented in front of the gateway (e.g. API gateway, OAuth2 proxy) or inside this service using the standard Spring Security patterns used elsewhere in the platform.
+Authentication and authorization can be implemented in front of the gateway (e.g. API gateway, OAuth2 proxy)
+or inside this service using the standard Spring Security patterns used elsewhere in the platform.
 
-Future iterations of the platform may provide a dedicated security configuration for the GraphQL gateway similar to other modules.
+Future iterations of the platform may provide a dedicated security configuration for the GraphQL gateway
+similar to other modules.

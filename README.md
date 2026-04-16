@@ -14,7 +14,7 @@ It is a platform layer designed to standardize microservice infrastructure while
 [![Architecture](https://img.shields.io/badge/Architecture-Microservices%20Platform-blueviolet.svg)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Current Version:** `1.4.0`  
+**Current Version:** `1.5.0`  
 **Status:** Active Development
 
 **Spring Middleware** is a modular framework designed to build **consistent, resilient, and discoverable Spring Boot microservices**.
@@ -376,7 +376,7 @@ Spring Middleware is distributed via Maven Central using a BOM.
     <dependency>
       <groupId>io.github.spring-middleware</groupId>
       <artifactId>bom</artifactId>
-      <version>1.4.0</version>
+      <version>1.5.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -386,7 +386,7 @@ Spring Middleware is distributed via Maven Central using a BOM.
 
 ## Module versions (platform BOM)
 
-The platform BOM `io.github.spring-middleware:bom:1.4.0` manages the versions of core modules used by Spring Middleware. Key module versions included in the BOM are:
+The platform BOM `io.github.spring-middleware:bom:1.5.0` manages the versions of core modules used by Spring Middleware. Key module versions included in the BOM are:
 
 | Module property | Version |
 |-----------------|---------|
@@ -505,3 +505,4 @@ The project contains detailed documentation under the `docs/` directory. Start w
 # License
 
 Spring Middleware is released under the MIT License.
+
