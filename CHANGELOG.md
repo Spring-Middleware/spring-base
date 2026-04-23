@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.6.0
+
+### Added
+
+- GraphQL Gateway metrics for remote execution (`graphql.gateway.remote.execution`) with support for:
+    - call count (COUNT)
+    - total execution time (TOTAL_TIME)
+    - max latency (MAX)
+- Improved observability for distributed GraphQL execution, making batching impact measurable across services.
+- Additional performance validation scenarios (k6) to benchmark batching vs non-batching behavior in real workloads.
+
+### Improved
+
+- Visibility into cross-service execution patterns, enabling analysis of N+1 behavior at runtime.
+- GraphQL Gateway performance transparency, especially for high-volume hierarchical queries (e.g. catalogs → products → reviews).
+
+### Fixed
+
+- Memory configuration issues in GraphQL Gateway Docker runtime, preventing excessive heap usage and improving stability under load.
+
+### Upgraded
+
+- Platform BOM and project version bumped to 1.6.0.
+
 ## 1.5.0
 
 ### Added
@@ -72,7 +96,7 @@
 ### Fixed
 
 - Incorrect union type merging using stringified types instead of actual names
-- Loss of fields in normalized GraphQL responses (`__typename`-only issue)
+- Loss of fields in normalized GraphQL responses (`__typename`-only issue`)
 - Malformed GraphQL queries (duplicate `{` in inline fragments)
 - Remote error fallback to `UNKNOWN_ERROR` losing original context
 - RabbitMQ queue declaration conflicts (durable vs non-durable mismatch handling)
