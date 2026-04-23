@@ -11,4 +11,4 @@ COPY ${JAR} /app/app.jar
 EXPOSE 8080
 
 # Always run the jar as a Spring Boot fat jar (assume BOOT-INF present)
-ENTRYPOINT ["java","-Xms256m","-Xmx512m","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]

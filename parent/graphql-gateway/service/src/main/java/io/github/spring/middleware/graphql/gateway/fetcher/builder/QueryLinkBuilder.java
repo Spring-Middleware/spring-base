@@ -29,7 +29,7 @@ public class QueryLinkBuilder extends CommonBuilder {
 
         List<GraphQLVariableDefinition> baseDefinitions = buildBaseDefinitions(arguments, resolvedLink);
 
-        builder.append("query");
+        builder.append("query ").append(remoteQuery);
 
         VariablesDefinitionBuilder variablesDefinitionBuilder = new VariablesDefinitionBuilder();
         variablesDefinitionBuilder.appendVariablesDefinition(baseDefinitions, variableDefinitions, variables);

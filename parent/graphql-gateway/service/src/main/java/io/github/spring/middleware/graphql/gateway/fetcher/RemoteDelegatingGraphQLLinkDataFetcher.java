@@ -110,6 +110,7 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
 
         ExecutionInput.Builder executionInputBuilder = ExecutionInput.newExecutionInput()
                 .query(query)
+                .operationName(resolvedLink.getFieldLinkDefinition().getQuery())
                 .graphQLContext(builder -> {
                     GraphQLContext originalContext = environment.getGraphQlContext();
                     builder.of(originalContext);

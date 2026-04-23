@@ -4,7 +4,7 @@ REM Usage: build-graphql-gateway-image.bat [--jar <path>] [--dockerfile <path>] 
 
 setlocal EnableDelayedExpansion
 
-set "JAR=parent/graphql-gateway/boot/target/graphql-gateway-boot-1.3.0.jar"
+set "JAR=parent/graphql-gateway/boot/target/graphql-gateway-boot-1.4.0.jar"
 set "DOCKERFILE=parent/graphql-gateway/boot/Dockerfile.runtime"
 set "TAG=spring-base_graphql-gateway:latest"
 set "NO_CACHE=0"
