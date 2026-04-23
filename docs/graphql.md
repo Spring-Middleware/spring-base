@@ -296,3 +296,38 @@ The current GraphQL support is therefore **foundational infrastructure** for a f
 - [Logging](./logging.md) — request/response logging and middleware logging properties
 - [Security](./security.md) — HTTP security configuration
 - [Core](./core.md) — core modules overview
+
+---
+
+# 10. GraphQL Gateway Metrics
+
+The GraphQL Gateway provides native support for collecting performance and latency metrics using Micrometer, allowing you to track execution times and operations, particularly when invoking remote endpoints.
+
+## Configuration and Metrics Modes
+
+Metrics collection is configured using the `middleware.graphql.gateway.metrics` prefix. The system implements several strategies to decide whether to collect metrics via the `GraphQLMetricsMode` class:
+
+- **DISABLED**: (Default) Metrics are completely disabled.
+- **ENABLED**: Metrics are always collected for all requests entering the gateway.
+- **HEADER**: Metrics are collected selectively and dynamically. They are only enabled if the incoming HTTP request includes a specified header with a specific value. This is extremely useful for "debug mode" in production, allowing you to analyze the performance of specific calls without globally penalizing the gateway's performance.
+
+### Configuration Example in `application.yml`
+
+```yaml
+middleware:
+  graphql:
+    gateway:
+      metrics:
+        # Allowed modes: DISABLED, ENABLED, HEADER
+        mode: HEADER           
+        # HTTP header to inspect (default 'X-Metrics')
+        header-name: X-Metrics 
+        # Expected value in the HTTP header to enable metrics (default 'true')
+        header-value: "true"   
+```
+
+## Internal Metrics Architecture
+
+- **`GraphQLMetricsModeResolver`**: During the request, it evaluates the current `mode`. If configured to `HEADER`, it validates whether the correct `HttpHeaders` arrive. If so, it injects an activation flag directly into the `GraphQLContext`.
+- **`GraphQLGatewayMetrics`**: Centralizes the lifecycle of Micrometer `Timer`s, initializing and recording times conditionally based on whether metrics are active in the context.
+- **`RemoteGraphQLExecutionClient`**: Every time a query is delegated to a remote schema via the `WebClient`, the client evaluates execution times using the previous utilities. It captures a `Timer.Sample` at the start, and then records a `"success"` or `"error"` status along with tags for the originating `namespace` and the `operationName`.

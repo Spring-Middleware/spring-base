@@ -151,6 +151,32 @@ This ensures batching aligns with real query usage rather than static schema ass
 
 ---
 
+## Metrics
+
+The gateway includes built-in support for collecting performance and latency metrics via Micrometer, particularly for tracking execution times against remote subgraph endpoints.
+
+Metrics collection is enabled via `application.yml` and is highly adaptable, governed by `GraphQLMetricsMode`:
+
+- **`DISABLED`**: (Default) Metrics are turned off.
+- **`ENABLED`**: Metrics are always collected for all requests.
+- **`HEADER`**: Metrics are selectively enabled only if the incoming HTTP request contains a specific header with a specific value. This is ideal for "debug mode" in production.
+
+Example configuration:
+
+```yaml
+middleware:
+  graphql:
+    gateway:
+      metrics:
+        mode: HEADER           
+        header-name: X-Metrics 
+        header-value: "true"   
+```
+
+When enabled, a `Timer` records remote execution latency and outcome (`success` or `error`), tagging operations with their target `namespace` and `operationName`.
+
+---
+
 ## Configuration
 
 The `boot` module provides the main configuration via `application.yml`:
