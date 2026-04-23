@@ -14,7 +14,7 @@
 
     <groupId>io.github.spring-middleware</groupId>
     <artifactId>bom</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
     <name>spring-middleware-bom</name>
     <description>Bill of Materials for Spring Middleware modules</description>
     <url>https://github.com/Spring-Middleware/spring-base</url>
@@ -48,26 +48,26 @@
     </scm>
 
     <properties>
-        <revision>1.5.0</revision>
+        <revision>1.6.0</revision>
         <java.version>21</java.version>
         <spring.boot.version>3.4.2</spring.boot.version>
 
-        <core.commons.version>1.6.0</core.commons.version>
-        <core.view.version>1.5.0</core.view.version>
-        <core.cache.version>1.5.0</core.cache.version>
-        <core.api.version>1.5.0</core.api.version>
-        <core.app.version>1.8.0</core.app.version>
-        <core.mongo.version>1.6.0</core.mongo.version>
-        <core.rabbitmq.version>1.5.0</core.rabbitmq.version>
-        <core.kafka.version>1.5.0</core.kafka.version>
-        <core.jpa.version>1.6.0</core.jpa.version>
-        <core.redis.version>1.5.0</core.redis.version>
-        <core.model.version>1.5.0</core.model.version>
-        <core.registry.version>1.6.0</core.registry.version>
-        <core.graphql.version>1.5.0</core.graphql.version>
-        <core.graphql.gateway.version>1.4.0</core.graphql.gateway.version>
-        <core.ai.version>1.1.0</core.ai.version>
-        <core.ai.ollama.version>1.1.0</core.ai.ollama.version>
+        <core.commons.version>1.7.0</core.commons.version>
+        <core.view.version>1.6.0</core.view.version>
+        <core.cache.version>1.6.0</core.cache.version>
+        <core.api.version>1.6.0</core.api.version>
+        <core.app.version>1.9.0</core.app.version>
+        <core.mongo.version>1.7.0</core.mongo.version>
+        <core.rabbitmq.version>1.6.0</core.rabbitmq.version>
+        <core.kafka.version>1.6.0</core.kafka.version>
+        <core.jpa.version>1.7.0</core.jpa.version>
+        <core.redis.version>1.6.0</core.redis.version>
+        <core.model.version>1.6.0</core.model.version>
+        <core.registry.version>1.7.0</core.registry.version>
+        <core.graphql.version>1.6.0</core.graphql.version>
+        <core.graphql.gateway.version>1.5.0</core.graphql.gateway.version>
+        <core.ai.version>1.2.0</core.ai.version>
+        <core.ai.ollama.version>1.2.0</core.ai.ollama.version>
     </properties>
 
     <dependencyManagement>
