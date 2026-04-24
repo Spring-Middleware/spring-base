@@ -34,10 +34,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -174,14 +176,14 @@ public class GraphQLUtils {
     }
 
 
-    public static Object normalizeValue(Object fieldData, DataFetchingEnvironment environment, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
+    public static Object normalizeValue(Object fieldData, String fieldName, DataFetchingEnvironment environment, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
         Object normalizedData;
 
         if (fieldData instanceof Map<?, ?> map) {
             normalizedData = normalizeValue(
                     map,
+                    fieldName,
                     environment.getFieldType(),
-                    environment.getGraphQLSchema(),
                     graphQLResolvedLinks
             );
 
@@ -191,8 +193,8 @@ public class GraphQLUtils {
                         if (item instanceof Map<?, ?> itemMap) {
                             return normalizeValue(
                                     itemMap,
+                                    fieldName,
                                     GraphQLTypeUtil.unwrapAll(environment.getFieldType()),
-                                    environment.getGraphQLSchema(),
                                     graphQLResolvedLinks
                             );
                         }
@@ -206,21 +208,52 @@ public class GraphQLUtils {
         return normalizedData;
     }
 
-    private static Object normalizeValue(Object value, GraphQLType type, GraphQLSchema schema, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
+    private static Object normalizeValue(Object value, String fieldName, GraphQLType type, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
         if (value == null) {
             return null;
         }
         if (type instanceof GraphQLNonNull) {
-            return normalizeValue(value, ((GraphQLNonNull) type).getWrappedType(), schema, graphQLResolvedLinks);
+            return normalizeValue(value, fieldName, ((GraphQLNonNull) type).getWrappedType(), graphQLResolvedLinks);
         }
         if (type instanceof GraphQLList) {
             if (!(value instanceof Iterable<?> iterable)) {
                 throw new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."Expected a list for type \{type}, but got: \{value}");
             }
             return StreamSupport.stream(iterable.spliterator(), false)
-                    .map(item -> normalizeValue(item, ((GraphQLList) type).getWrappedType(), schema, graphQLResolvedLinks))
+                    .map(item -> normalizeValue(item, fieldName, ((GraphQLList) type).getWrappedType(), graphQLResolvedLinks))
                     .collect(Collectors.toList());
         }
+
+        if (type instanceof GraphQLScalarType scalar
+                && "GraphQLLinkArguments".equals(scalar.getName())
+                && value instanceof Map<?, ?> map) {
+
+            GraphQLLinkTypesMap.GraphQLResolvedLink link =
+                    resolveLinkArgumentsType(map, fieldName, graphQLResolvedLinks);
+
+            if (link == null) {
+                return value;
+            }
+
+            Map<String, Object> normalized = new LinkedHashMap<>();
+
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                String argumentName  = String.valueOf(entry.getKey());
+                Object argumentValue  = entry.getValue();
+
+                // 👇 AQUÍ es donde haces magia
+                GraphQLType argumentType =
+                        link.getTargetFieldArgumentTypes().get(argumentName);
+
+                normalized.put(
+                        argumentName,
+                        normalizeValue(argumentValue, argumentName, argumentType, graphQLResolvedLinks)
+                );
+            }
+
+            return normalized;
+        }
+
         if (type instanceof GraphQLScalarType scalar) {
             return normalizeScalar(value, scalar);
         }
@@ -233,12 +266,12 @@ public class GraphQLUtils {
                 throw new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."Expected an object for type \{type}, but got: \{value}");
             }
             for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
-                String fieldName = fieldDefinition.getName();
-                if (map.containsKey(fieldName)) {
-                    Object fieldValue = map.get(fieldName);
-                    GraphQLType resolvedType = resolveType(fieldName, fieldDefinition.getType(), graphQLResolvedLinks);
-                    Object normalizedValue = normalizeValue(fieldValue, resolvedType, schema, graphQLResolvedLinks);
-                    map.put(fieldName, normalizedValue);
+                String childFieldName = fieldDefinition.getName();
+                if (map.containsKey(childFieldName)) {
+                    Object fieldValue = map.get(childFieldName);
+                    GraphQLType resolvedType = resolveType(childFieldName, fieldDefinition.getType(), graphQLResolvedLinks);
+                    Object normalizedValue = normalizeValue(fieldValue, childFieldName, resolvedType, graphQLResolvedLinks);
+                    map.put(childFieldName, normalizedValue);
                 }
             }
             return map;
@@ -255,11 +288,31 @@ public class GraphQLUtils {
                     .filter(t -> t.getName().equals(typeName))
                     .findFirst()
                     .orElseThrow(() -> new GraphQLException(GraphQLErrorCodes.VALUE_NORMALIZATION_ERROR, STR."No matching type found for __typename: \{typeName} in union type \{type}"));
-            return normalizeValue(value, matchedType, schema, graphQLResolvedLinks);
+            return normalizeValue(value, fieldName, matchedType, graphQLResolvedLinks);
         }
 
         return value;
     }
+
+
+    private static GraphQLLinkTypesMap.GraphQLResolvedLink resolveLinkArgumentsType(
+            Map<?, ?> value,
+            String fieldName,
+            List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks
+    ) {
+        Set<String> valueKeys = value.keySet().stream()
+                .map(String::valueOf)
+                .collect(Collectors.toSet());
+
+        return graphQLResolvedLinks.stream()
+                .filter(link -> link.getFieldLinkDefinition() != null)
+                .filter(link -> fieldName.equals(link.getFieldLinkDefinition().getFieldName()))
+                .filter(link -> link.getTargetFieldArgumentTypes() != null)
+                .filter(link -> link.getTargetFieldArgumentTypes().keySet().containsAll(valueKeys))
+                .findFirst()
+                .orElse(null);
+    }
+
 
     private static GraphQLType resolveType(String fieldName, GraphQLType originType, List<GraphQLLinkTypesMap.GraphQLResolvedLink> graphQLResolvedLinks) {
         return graphQLResolvedLinks.stream()

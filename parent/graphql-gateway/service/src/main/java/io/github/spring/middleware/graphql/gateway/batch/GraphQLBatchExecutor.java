@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +45,24 @@ public class GraphQLBatchExecutor {
                         return null;
                     }
 
+                    Map<GraphQLRemoteLinkExecutor.ItemKey, Integer> remoteOrder = new HashMap<>();
+
+                    int index = 0;
+                    for (GraphQLRemoteLinkExecutor.ItemKey resultKey : result.keySet()) {
+                        remoteOrder.put(resultKey, index++);
+                    }
+
                     for (GraphQLLinkTypesMap.BatchKey batchKey : batchedLink.getBatchKeys()) {
                         List<GraphQLRemoteLinkExecutor.ItemKey> itemKeys =
                                 batchKey.splitIntoItemKeys(batchedLink.getResolvedLink());
 
-                        List<Object> items = itemKeys.stream()
+                        List<GraphQLRemoteLinkExecutor.ItemKey> orderedItemKeys = itemKeys.stream()
+                                .sorted(Comparator.comparingInt(key ->
+                                        remoteOrder.getOrDefault(key, Integer.MAX_VALUE)
+                                ))
+                                .toList();
+
+                        List<Object> items = orderedItemKeys.stream()
                                 .map(itemKey -> {
                                     Object value = result.get(itemKey);
                                     if (value == null) {

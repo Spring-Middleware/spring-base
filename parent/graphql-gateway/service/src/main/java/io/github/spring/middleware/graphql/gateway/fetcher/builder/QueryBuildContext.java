@@ -6,6 +6,7 @@ import graphql.language.EnumValue;
 import graphql.language.Field;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
+import graphql.language.NullValue;
 import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.schema.DataFetchingEnvironment;
@@ -32,8 +33,10 @@ public class QueryBuildContext {
         Map<String, Object> map = new LinkedHashMap<>();
 
         for (Argument arg : field.getArguments()) {
-            map.put(arg.getName(), extractValue(arg.getValue()));
-            variableDefinitions.put(arg.getName(), new GraphQLVariableDefinition(arg.getName(), inferGraphQLType(arg.getValue())));
+            if (!(arg.getValue() instanceof NullValue)) {
+                map.put(arg.getName(), extractValue(arg.getValue()));
+                variableDefinitions.put(arg.getName(), new GraphQLVariableDefinition(arg.getName(), inferGraphQLType(arg.getValue())));
+            }
         }
         return map;
     }

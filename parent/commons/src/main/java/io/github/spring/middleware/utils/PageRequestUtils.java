@@ -4,6 +4,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class PageRequestUtils {
@@ -45,4 +46,40 @@ public class PageRequestUtils {
 
         return PageRequest.of(page, size, Sort.by(orders));
     }
+
+    public static Sort parseSort(String sort) {
+
+        if (sort == null || sort.isBlank()) {
+            return Sort.unsorted();
+        }
+
+        String[] parts = sort.split(",");
+
+        if (parts.length == 0) {
+            return Sort.unsorted();
+        }
+
+        // Último elemento puede ser dirección
+        String last = parts[parts.length - 1].trim();
+
+        Sort.Direction direction;
+        List<String> fields;
+
+        if (last.equalsIgnoreCase("asc") || last.equalsIgnoreCase("desc")) {
+            direction = Sort.Direction.fromString(last);
+            fields = Arrays.stream(parts, 0, parts.length - 1)
+                    .map(String::trim)
+                    .toList();
+        } else {
+            // No direction → default ASC
+            direction = Sort.Direction.ASC;
+            fields = Arrays.stream(parts)
+                    .map(String::trim)
+                    .toList();
+        }
+
+        return Sort.by(direction, fields.toArray(new String[0]));
+    }
+
+
 }

@@ -80,14 +80,7 @@ public class RemoteDelegatingGraphQLLinkDataFetcher implements DataFetcher<Objec
             for (GraphQLArgumentLinkDefinition argDef : args) {
                 String argName = argDef.getArgumentName();
                 Object value = map.get(argName);
-                if (value == null) {
-                    throw new IllegalStateException(
-                            STR."Missing argument value for: \{argName}"
-                    );
-                }
-                if (value != null) {
-                    variables.put(argName, value);
-                }
+                variables.put(argName, value);
             }
         }
 

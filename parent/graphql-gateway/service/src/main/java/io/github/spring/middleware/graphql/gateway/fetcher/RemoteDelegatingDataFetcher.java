@@ -90,7 +90,7 @@ public class RemoteDelegatingDataFetcher implements DataFetcher<Object> {
         Map<?, ?> dataMap = response.get("data") instanceof Map<?, ?> m ? m : null;
         Object fieldData = dataMap != null ? dataMap.get(environment.getField().getName()) : null;
 
-        Object normalizedData = normalizeValue(fieldData, environment, graphQLResolvedLinks);
+        Object normalizedData = normalizeValue(fieldData, fieldName, environment, graphQLResolvedLinks);
 
         return DataFetcherResult.newResult()
                 .data(normalizedData)

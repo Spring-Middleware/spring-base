@@ -40,7 +40,7 @@ public class GraphQLRemoteLinkExecutor {
         Map<?, ?> dataMap = response.get("data") instanceof Map<?, ?> m ? m : null;
         Object fieldData = dataMap != null ? dataMap.get(resolvedLink.getFieldLinkDefinition().getQuery()) : null;
 
-        Object normalizedData = normalizeValue(fieldData, environment, graphQLResolvedLinks);
+        Object normalizedData = normalizeValue(fieldData, resolvedLink.getFieldName(), environment, graphQLResolvedLinks);
 
         return DataFetcherResult.newResult()
                 .data(normalizedData)
