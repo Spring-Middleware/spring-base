@@ -1,6 +1,5 @@
 package io.github.spring.middleware.ai.exception;
 
-
 import io.github.spring.middleware.error.ErrorCodes;
 
 public enum AIErrorCodes implements ErrorCodes {
@@ -11,6 +10,7 @@ public enum AIErrorCodes implements ErrorCodes {
     INVALID_AI_REQUEST("INVALID_AI_REQUEST"),
     INVALID_AI_MODEL("INVALID_AI_MODEL"),
     AI_RESPONSE_ERROR("AI_RESPONSE_ERROR");
+
 
     private final String code;
 

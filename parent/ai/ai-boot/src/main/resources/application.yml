@@ -1,0 +1,53 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH:/}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    io.github.spring.middleware: ${LOG_LEVEL_PACKAGE:INFO}
+    io.github.spring.middleware.scheduler: ERROR
+    io.github.spring:.middleware.jms: ERROR
+    org.springframework.security: ERROR
+    org.springframework.security.web: ERROR
+    root: ${LOG_LEVEL_ROOT:ERROR}
+
+middleware:
+  log:
+    apiKey: ${LOG_API_KEY}
+    request:
+      enabled: ${LOG_REQUEST_ENABLED:true}
+    response:
+      enabled: ${LOG_RESPONSE_ENABLED:true}
+    responseTime:
+      enabled: ${LOG_RESPONSE_TIME_ENABLED:false}
+    exclude:
+      urlPatterns:
+        - /api-docs/**
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /_alive
+        - /actuator/**
+        - /graphql
+  security:
+    type: ${SECURITY_TYPE:NONE} # Options: NONE, BASIC_AUTH, JWT, OUAHT2, API_KEY
+
+  ai:
+    document-chunker:
+      chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:800}
+      overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:150}
+
+    provider:
+      ollama:
+        models:
+         - llama3.1:8b
+        baseUrl: ${OLLAMA_BASE_URL:http://localhost:11434}
+
+  clients:
+    enabled: false

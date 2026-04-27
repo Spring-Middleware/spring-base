@@ -8,18 +8,13 @@ import io.github.spring.middleware.ai.response.ChatResponse;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DefaultChatClient implements ChatClient {
-
-    private final AIProviderRegistry registry;
+public class DefaultChatClient extends AbstractRoutingAIClient<
+        ChatRequest,
+        ChatResponse,
+        ProviderChatClient
+        > implements ChatClient {
 
     public DefaultChatClient(AIProviderRegistry registry) {
-        this.registry = registry;
-    }
-
-    @Override
-    public ChatResponse generate(ChatRequest request) {
-        AIProvider provider = registry.resolve(request.getModel());
-        ProviderChatClient client = provider.getChatClient();
-        return client.generate(request);
+        super(registry, AIProvider::getChatClient);
     }
 }

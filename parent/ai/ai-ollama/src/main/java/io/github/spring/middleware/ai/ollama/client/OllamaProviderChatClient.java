@@ -10,6 +10,7 @@ import io.github.spring.middleware.ai.ollama.message.OllamaMessage;
 import io.github.spring.middleware.ai.ollama.request.OllamaChatRequest;
 import io.github.spring.middleware.ai.ollama.response.OllamaChatResponse;
 import io.github.spring.middleware.ai.provider.ProviderChatClient;
+import io.github.spring.middleware.ai.provider.ProviderHealthIndicator;
 import io.github.spring.middleware.ai.request.ChatRequest;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import io.github.spring.middleware.ai.response.DefaultChatResponse;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
-public class OllamaProviderChatClient implements ProviderChatClient {
+public class OllamaProviderChatClient implements ProviderChatClient, ProviderHealthIndicator {
 
     private final WebClient webClient;
 
@@ -127,5 +128,20 @@ public class OllamaProviderChatClient implements ProviderChatClient {
                     STR."Unsupported role: \{role}"
             );
         };
+    }
+
+    @Override
+    public boolean isAvailable() {
+        try {
+            webClient.get()
+                    .uri("/api/tags")
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

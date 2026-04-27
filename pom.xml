@@ -228,6 +228,12 @@
 
             <dependency>
                 <groupId>io.github.spring-middleware</groupId>
+                <artifactId>ai-infrastructure</artifactId>
+                <version>${core.ai.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.spring-middleware</groupId>
                 <artifactId>ai-ollama</artifactId>
                 <version>${core.ai.ollama.version}</version>
             </dependency>
