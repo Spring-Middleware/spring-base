@@ -1,6 +1,6 @@
-package io.github.spring.middleware.ai.olllama.request;
+package io.github.spring.middleware.ai.ollama.request;
 
-import io.github.spring.middleware.ai.olllama.message.OllamaMessage;
+import io.github.spring.middleware.ai.ollama.message.OllamaMessage;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
 package io.github.spring.middleware.ai.exception;
 
+
 import io.github.spring.middleware.error.ErrorCodes;
 
 public enum AIErrorCodes implements ErrorCodes {

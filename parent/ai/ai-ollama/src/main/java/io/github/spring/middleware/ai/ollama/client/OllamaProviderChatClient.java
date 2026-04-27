@@ -1,14 +1,14 @@
-package io.github.spring.middleware.ai.olllama.client;
+package io.github.spring.middleware.ai.ollama.client;
 
 import io.github.spring.middleware.ai.exception.AIErrorCodes;
 import io.github.spring.middleware.ai.exception.AIException;
 import io.github.spring.middleware.ai.message.AIMessage;
 import io.github.spring.middleware.ai.message.AIRole;
 import io.github.spring.middleware.ai.message.DefaultAIMessage;
-import io.github.spring.middleware.ai.olllama.config.OllamaAIProperties;
-import io.github.spring.middleware.ai.olllama.message.OllamaMessage;
-import io.github.spring.middleware.ai.olllama.request.OllamaChatRequest;
-import io.github.spring.middleware.ai.olllama.response.OllamaChatResponse;
+import io.github.spring.middleware.ai.ollama.config.OllamaAIProperties;
+import io.github.spring.middleware.ai.ollama.message.OllamaMessage;
+import io.github.spring.middleware.ai.ollama.request.OllamaChatRequest;
+import io.github.spring.middleware.ai.ollama.response.OllamaChatResponse;
 import io.github.spring.middleware.ai.provider.ProviderChatClient;
 import io.github.spring.middleware.ai.request.ChatRequest;
 import io.github.spring.middleware.ai.response.ChatResponse;

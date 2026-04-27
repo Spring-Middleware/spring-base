@@ -6,4 +6,6 @@ public interface AIProvider {
 
     ProviderChatClient getChatClient();
 
+    boolean isAvailable();
+
 }

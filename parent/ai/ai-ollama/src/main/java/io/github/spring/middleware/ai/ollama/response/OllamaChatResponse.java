@@ -1,7 +1,7 @@
-package io.github.spring.middleware.ai.olllama.response;
+package io.github.spring.middleware.ai.ollama.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.spring.middleware.ai.olllama.message.OllamaMessage;
+import io.github.spring.middleware.ai.ollama.message.OllamaMessage;
 
 public record OllamaChatResponse(
 

@@ -1,4 +1,4 @@
-package io.github.spring.middleware.ai.olllama.message;
+package io.github.spring.middleware.ai.ollama.message;
 
 public record OllamaMessage(
         String role,

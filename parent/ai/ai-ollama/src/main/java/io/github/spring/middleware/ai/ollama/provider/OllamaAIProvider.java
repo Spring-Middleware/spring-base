@@ -1,6 +1,6 @@
-package io.github.spring.middleware.ai.olllama.provider;
+package io.github.spring.middleware.ai.ollama.provider;
 
-import io.github.spring.middleware.ai.olllama.config.OllamaAIProperties;
+import io.github.spring.middleware.ai.ollama.config.OllamaAIProperties;
 import io.github.spring.middleware.ai.provider.AbstractAIProvider;
 import io.github.spring.middleware.ai.provider.ProviderChatClient;
 import org.springframework.stereotype.Component;
