@@ -58,6 +58,13 @@ public class DefaultConversation implements Conversation {
     }
 
     @Override
+    public Conversation copy() {
+        DefaultConversation copy = new DefaultConversation();
+        copy.messages.addAll(this.messages);
+        return copy;
+    }
+
+    @Override
     public String toString() {
         return "DefaultConversation{" +
                 "messages=" + messages +

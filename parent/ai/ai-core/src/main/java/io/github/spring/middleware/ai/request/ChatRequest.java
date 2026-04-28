@@ -8,4 +8,6 @@ public interface ChatRequest extends AIRequest {
 
     List<AIMessage> getMessages();
 
+    void addMessage(AIMessage message);
+
 }

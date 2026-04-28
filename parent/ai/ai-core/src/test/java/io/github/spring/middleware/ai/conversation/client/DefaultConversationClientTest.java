@@ -27,7 +27,7 @@ class DefaultConversationClientTest {
     @Test
     void testChatThrowsExceptionWhenConversationIsNull() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            conversationClient.chat(null, "model", "hello");
+            conversationClient.chat(null, "model", "hello","context");
         });
         assertEquals("conversation must not be null", exception.getMessage());
     }
@@ -36,7 +36,7 @@ class DefaultConversationClientTest {
     void testChatThrowsExceptionWhenModelIsNull() {
         Conversation conversation = Mockito.mock(Conversation.class);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            conversationClient.chat(conversation, null, "hello");
+            conversationClient.chat(conversation, null, "hello", "context");
         });
         assertEquals("model must not be null or blank", exception.getMessage());
     }
@@ -45,7 +45,7 @@ class DefaultConversationClientTest {
     void testChatThrowsExceptionWhenModelIsBlank() {
         Conversation conversation = Mockito.mock(Conversation.class);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            conversationClient.chat(conversation, "  ", "hello");
+            conversationClient.chat(conversation, "  ", "hello", "context");
         });
         assertEquals("model must not be null or blank", exception.getMessage());
     }
@@ -54,7 +54,7 @@ class DefaultConversationClientTest {
     void testChatThrowsExceptionWhenUserMessageIsNull() {
         Conversation conversation = Mockito.mock(Conversation.class);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            conversationClient.chat(conversation, "model", null);
+            conversationClient.chat(conversation, "model", null, "context");
         });
         assertEquals("userMessage must not be null", exception.getMessage());
     }
@@ -67,7 +67,7 @@ class DefaultConversationClientTest {
         when(chatClient.generate(chatRequest)).thenReturn(null);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            conversationClient.chat(conversation, "model", "hello");
+            conversationClient.chat(conversation, "model", "hello", "context");
         });
         assertEquals("chat response must not be null", exception.getMessage());
     }
@@ -83,7 +83,7 @@ class DefaultConversationClientTest {
         when(chatResponse.getMessage()).thenReturn(null);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            conversationClient.chat(conversation, "model", "hello");
+            conversationClient.chat(conversation, "model", "hello", "context");
         });
         assertEquals("chat response must not be null", exception.getMessage());
     }
@@ -99,7 +99,7 @@ class DefaultConversationClientTest {
         when(chatClient.generate(chatRequest)).thenReturn(chatResponse);
         when(chatResponse.getMessage()).thenReturn(aiMessage);
 
-        ChatResponse response = conversationClient.chat(conversation, "model", "hello user");
+        ChatResponse response = conversationClient.chat(conversation, "model", "hello user", "context");
 
         assertEquals(chatResponse, response);
 

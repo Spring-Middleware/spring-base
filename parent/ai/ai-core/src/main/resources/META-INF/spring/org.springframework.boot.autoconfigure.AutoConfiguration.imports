@@ -1,0 +1,4 @@
+io.github.spring.middleware.ai.rag.chunk.config.DocumentChunkerAutoConfiguration
+io.github.spring.middleware.ai.rag.index.config.DocumentIndexingAutoConfiguration
+io.github.spring.middleware.ai.rag.vector.config.VectorStoreRegistryAutoConfiguration
+

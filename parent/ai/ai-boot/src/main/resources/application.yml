@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8084}
   servlet:
     context-path: ${SERVER_CONTEXT_PATH:/}
 
@@ -8,6 +8,12 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27018/ai_embeddings}
+      uuid-representation: standard
 
 logging:
   level:
@@ -39,14 +45,34 @@ middleware:
     type: ${SECURITY_TYPE:NONE} # Options: NONE, BASIC_AUTH, JWT, OUAHT2, API_KEY
 
   ai:
+    document:
+      source:
+        file-system:
+          paths:
+            - README.md
+            - docs
+
+      indexing:
+        enabled: true
+        embeddingModel: nomic-embed-text
+        vector-type: MONGO
+        index-on-startup: true
+
     document-chunker:
-      chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:800}
-      overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:150}
+      chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:1200}
+      overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:200}
+
+    vector-store:
+      in-memory:
+        enabled: false
+      mongo:
+        enabled: true
 
     provider:
       ollama:
         models:
-         - llama3.1:8b
+          - llama3.1:8b
+          - nomic-embed-text
         baseUrl: ${OLLAMA_BASE_URL:http://localhost:11434}
 
   clients:

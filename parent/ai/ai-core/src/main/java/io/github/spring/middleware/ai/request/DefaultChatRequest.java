@@ -31,9 +31,6 @@ public class DefaultChatRequest implements ChatRequest {
 
     @Override
     public String toString() {
-        return "DefaultChatRequest{" +
-                "model='" + model + '\'' +
-                ", messages=" + messages +
-                '}';
+        return STR."DefaultChatRequest{model='\{model}', messages=\{messages}}";
     }
 }

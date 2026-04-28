@@ -1,0 +1,4 @@
+io.github.spring.middleware.ai.infrastructure.config.file.FileSystemDocumentSourceProviderAutoConfiguration
+io.github.spring.middleware.ai.infrastructure.config.mongo.MongoDocumentSourceProviderAutoConfiguration
+io.github.spring.middleware.ai.infrastructure.rag.vector.config.VectorStoreAutoConfiguration
+

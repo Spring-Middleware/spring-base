@@ -6,23 +6,27 @@ import io.github.spring.middleware.ai.conversation.client.ConversationClient;
 import io.github.spring.middleware.ai.domain.DocumentationConversationResponse;
 import io.github.spring.middleware.ai.exception.AIErrorCodes;
 import io.github.spring.middleware.ai.exception.AIException;
+import io.github.spring.middleware.ai.rag.context.RagContext;
+import io.github.spring.middleware.ai.rag.context.RagContextBuilder;
+import io.github.spring.middleware.ai.rag.context.RagContextRequest;
+import io.github.spring.middleware.ai.rag.index.config.DocumentIndexingProperties;
+import io.github.spring.middleware.ai.rag.vector.VectorType;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import io.github.spring.middleware.ai.service.ConversationStore;
 import io.github.spring.middleware.ai.service.DocumentationChatService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class DefaultDocumentationChatService implements DocumentationChatService {
 
+    private final RagContextBuilder ragContextBuilder;
     private final ConversationClient conversationClient;
     private final ConversationStore conversationStore;
-
-    public DefaultDocumentationChatService(ConversationClient conversationClient, ConversationStore conversationStore) {
-        this.conversationClient = conversationClient;
-        this.conversationStore = conversationStore;
-    }
+    private final DocumentIndexingProperties documentIndexingProperties;
 
 
     private String buildSystemMessage() {
@@ -36,6 +40,11 @@ public class DefaultDocumentationChatService implements DocumentationChatService
                 """;
     }
 
+    private String buildContext(String model, String question) {
+        RagContext ragContext = ragContextBuilder.build(new RagContextRequest(documentIndexingProperties.getEmbeddingModel(), VectorType.MONGO, question, documentIndexingProperties.getTopK()));
+        return ragContext.content();
+    }
+
     @Override
     public DocumentationConversationResponse startConversation(String model, String question) {
         validateInput(model, question);
@@ -44,7 +53,8 @@ public class DefaultDocumentationChatService implements DocumentationChatService
         Conversation conversation = new DefaultConversation();
         conversation.addSystemMessage(systemMessage);
 
-        ChatResponse chatResponse = conversationClient.chat(conversation, model, question);
+        String context = buildContext(model, question);
+        ChatResponse chatResponse = conversationClient.chat(conversation, model, question, context);
 
         UUID conversationId = conversationStore.create(conversation);
 
@@ -55,7 +65,8 @@ public class DefaultDocumentationChatService implements DocumentationChatService
     public ChatResponse ask(UUID conversationId, String model, String question) {
         validateInput(model, question);
         Conversation conversation = conversationStore.get(conversationId);
-        return conversationClient.chat(conversation, model, question);
+        String context = buildContext(model, question);
+        return conversationClient.chat(conversation, model, question, context);
     }
 
     private void validateInput(String model, String question) {

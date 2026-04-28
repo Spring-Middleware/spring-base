@@ -1,6 +1,6 @@
 package io.github.spring.middleware.ai.ollama.config;
 
-import io.github.spring.middleware.ai.config.AbstractHttpAIProviderProperties;
+import io.github.spring.middleware.ai.provider.config.AbstractHttpAIProviderProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 

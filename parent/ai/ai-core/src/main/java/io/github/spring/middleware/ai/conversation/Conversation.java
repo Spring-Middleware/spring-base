@@ -47,4 +47,7 @@ public interface Conversation {
      */
     ChatRequest toRequest(String model);
 
+
+    Conversation copy();
+
 }

@@ -45,3 +45,19 @@ services:
       timeout: 3s
       retries: 6
     restart: unless-stopped
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: always
+    ports:
+      - "27018:27017" # Expuesto para acceso local si corres la app fuera de docker
+    environment:
+      MONGO_INITDB_DATABASE: ai_embeddings
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - middleware-net
+
+volumes:
+  mongo-data:

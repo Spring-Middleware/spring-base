@@ -53,28 +53,31 @@ public class OllamaProviderEmbeddingsClient implements ProviderEmbeddingClient {
         // Request hacia Ollama
         Map<String, Object> body = Map.of(
                 "model", request.getModel(),
-                "prompt", request.getInput()
+                "input", request.getInput()
         );
 
         OllamaEmbeddingResponse response = webClient.post()
-                .uri("/api/embeddings")
+                .uri("/api/embed")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(OllamaEmbeddingResponse.class)
                 .block();
 
-        if (response == null || response.embedding() == null) {
+        if (response == null || response.embeddings() == null) {
             throw new AIException(
                     AIErrorCodes.AI_RESPONSE_ERROR,
                     "Ollama embedding response is null"
             );
         }
 
-        return new DefaultEmbeddingResponse(response.embedding());
+        return new DefaultEmbeddingResponse(response.embeddings().get(0).stream().map(Double::floatValue).toList());
     }
 
     // --- DTO interno ---
-    public record OllamaEmbeddingResponse(List<Float> embedding) {
+    public record OllamaEmbeddingResponse(
+            String model,
+            List<List<Double>> embeddings
+    ) {
     }
 }

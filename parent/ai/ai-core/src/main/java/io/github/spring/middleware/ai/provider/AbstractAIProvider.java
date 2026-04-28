@@ -1,6 +1,6 @@
 package io.github.spring.middleware.ai.provider;
 
-import io.github.spring.middleware.ai.config.AbstractHttpAIProviderProperties;
+import io.github.spring.middleware.ai.provider.config.AbstractHttpAIProviderProperties;
 
 import java.time.Duration;
 

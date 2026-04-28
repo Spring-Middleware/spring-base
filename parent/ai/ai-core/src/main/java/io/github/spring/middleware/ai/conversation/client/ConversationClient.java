@@ -5,6 +5,6 @@ import io.github.spring.middleware.ai.response.ChatResponse;
 
 public interface ConversationClient {
 
-    ChatResponse chat(Conversation conversation, String model, String userMessage);
+    ChatResponse chat(Conversation conversation, String model, String userMessage, String context);
 
 }
