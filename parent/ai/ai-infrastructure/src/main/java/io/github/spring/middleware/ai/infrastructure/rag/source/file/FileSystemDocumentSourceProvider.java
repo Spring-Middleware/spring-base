@@ -1,7 +1,10 @@
 package io.github.spring.middleware.ai.infrastructure.rag.source.file;
 
+import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentSourceProperties;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import io.github.spring.middleware.ai.rag.source.DocumentSourceProvider;
+import io.github.spring.middleware.ai.rag.source.DocumentSourceType;
+import io.github.spring.middleware.ai.rag.utils.PathUtils;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -19,13 +22,19 @@ import java.util.stream.Stream;
 public class FileSystemDocumentSourceProvider implements DocumentSourceProvider<FileSystemDocumentSourceProviderOptions> {
 
 
+
     @Override
-    public Flux<DocumentSource> load(@MonotonicNonNull FileSystemDocumentSourceProviderOptions options) {
+    public Flux<DocumentSource> load(String sourceName, @MonotonicNonNull FileSystemDocumentSourceProviderOptions options) {
         return Flux.fromIterable(options.paths())
-                .flatMap(this::walkPath);
+                .flatMap(providedPath -> walkPath(sourceName, providedPath));
     }
 
-    private Flux<DocumentSource> walkPath(String providedPath) {
+    @Override
+    public DocumentSourceType type() {
+        return DocumentSourceType.FILE_SYSTEM;
+    }
+
+    private Flux<DocumentSource> walkPath(String sourceName, String providedPath) {
         Path startPath = Path.of(providedPath);
         if (!Files.exists(startPath)) {
             return Flux.empty();
@@ -35,20 +44,24 @@ public class FileSystemDocumentSourceProvider implements DocumentSourceProvider<
                 () -> Files.walk(startPath),
                 stream -> Flux.fromStream(
                         stream.filter(Files::isRegularFile)
-                                .map(this::toDocumentSource)
+                                .map(path -> toDocumentSource(path, sourceName))
                 ),
                 Stream::close
         );
     }
 
-    private DocumentSource toDocumentSource(Path path) {
+    private DocumentSource toDocumentSource(Path path, String sourceName) {
+        String extension = PathUtils.getExtension(path);
         try {
             return new DocumentSource(
                     path.toString(),
                     path.getFileName().toString(),
                     Files.newInputStream(path),
+                    extension,
+                    PathUtils.getContentType(path, extension),
                     Map.of(
-                            "source", "file-system",
+                            "sourceType", "file-system",
+                            "sourceName", sourceName,
                             "path", path.toString()
                     ),
                     Files.getLastModifiedTime(path).toInstant()
@@ -57,5 +70,6 @@ public class FileSystemDocumentSourceProvider implements DocumentSourceProvider<
             throw new UncheckedIOException(e);
         }
     }
+
 
 }

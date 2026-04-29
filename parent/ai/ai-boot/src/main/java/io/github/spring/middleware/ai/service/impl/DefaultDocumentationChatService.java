@@ -6,10 +6,14 @@ import io.github.spring.middleware.ai.conversation.client.ConversationClient;
 import io.github.spring.middleware.ai.domain.DocumentationConversationResponse;
 import io.github.spring.middleware.ai.exception.AIErrorCodes;
 import io.github.spring.middleware.ai.exception.AIException;
+import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentSourceDefinition;
+import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentSourceProperties;
 import io.github.spring.middleware.ai.rag.context.RagContext;
 import io.github.spring.middleware.ai.rag.context.RagContextBuilder;
 import io.github.spring.middleware.ai.rag.context.RagContextRequest;
 import io.github.spring.middleware.ai.rag.index.config.DocumentIndexingProperties;
+import io.github.spring.middleware.ai.rag.source.DocumentSourceRegistry;
+import io.github.spring.middleware.ai.rag.vector.VectorNamespace;
 import io.github.spring.middleware.ai.rag.vector.VectorType;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import io.github.spring.middleware.ai.service.ConversationStore;
@@ -27,33 +31,35 @@ public class DefaultDocumentationChatService implements DocumentationChatService
     private final ConversationClient conversationClient;
     private final ConversationStore conversationStore;
     private final DocumentIndexingProperties documentIndexingProperties;
+    private final DocumentSourceProperties documentSourceProperties;
 
 
-    private String buildSystemMessage() {
-        return """
-                You are the Spring Middleware documentation assistant.
-                
-                Answer only using the Spring Middleware documentation context.
-                If the answer is not documented yet, say that it is not documented yet.
-                
-                Be concise, technical, and do not invent APIs.
-                """;
+    private String buildSystemMessage(String sourceName) {
+        DocumentSourceDefinition sourceDefinition = documentSourceProperties.getSources().get(sourceName);
+        if (sourceDefinition == null) {
+            throw new AIException(AIErrorCodes.INVALID_DOCUMENT_SOURCE, STR."No document source definition found for sourceName: \{sourceName}");
+        }
+        return sourceDefinition.getSystemContext();
     }
 
-    private String buildContext(String model, String question) {
-        RagContext ragContext = ragContextBuilder.build(new RagContextRequest(documentIndexingProperties.getEmbeddingModel(), VectorType.MONGO, question, documentIndexingProperties.getTopK()));
+    private String buildContext(String sourceName, String question) {
+        DocumentIndexingProperties.DocumentIndexingSourceProperties sourceProperties = documentIndexingProperties.getSources().get(sourceName);
+        if (sourceProperties == null) {
+            throw new AIException(AIErrorCodes.INVALID_DOCUMENT_SOURCE, STR."No indexing properties found for sourceName: \{sourceName}");
+        }
+        RagContext ragContext = ragContextBuilder.build(new RagContextRequest(sourceProperties.getEmbeddingModel(), VectorType.MONGO, new VectorNamespace(sourceProperties.getVectorNamespace(sourceName)), question, sourceProperties.getTopK()));
         return ragContext.content();
     }
 
     @Override
-    public DocumentationConversationResponse startConversation(String model, String question) {
+    public DocumentationConversationResponse startConversation(String sourceName, String model, String question) {
         validateInput(model, question);
-        String systemMessage = buildSystemMessage();
+        String systemMessage = buildSystemMessage(sourceName);
 
         Conversation conversation = new DefaultConversation();
         conversation.addSystemMessage(systemMessage);
 
-        String context = buildContext(model, question);
+        String context = buildContext(sourceName, question);
         ChatResponse chatResponse = conversationClient.chat(conversation, model, question, context);
 
         UUID conversationId = conversationStore.create(conversation);
@@ -62,10 +68,10 @@ public class DefaultDocumentationChatService implements DocumentationChatService
     }
 
     @Override
-    public ChatResponse ask(UUID conversationId, String model, String question) {
+    public ChatResponse ask(UUID conversationId, String sourceName, String model, String question) {
         validateInput(model, question);
         Conversation conversation = conversationStore.get(conversationId);
-        String context = buildContext(model, question);
+        String context = buildContext(sourceName, question);
         return conversationClient.chat(conversation, model, question, context);
     }
 

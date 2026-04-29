@@ -7,18 +7,23 @@ import java.util.Set;
 
 public interface VectorStore {
 
-    void add(DocumentChunk chunk);
+    void add(VectorNamespace namespace, DocumentChunk chunk);
 
-    List<DocumentChunk> search(List<Float> embedding, int topK);
+    List<DocumentChunk> search(VectorNamespace namespace, List<Float> embedding, int topK);
 
-    VectorType getType();
-
-    boolean exists(String documentId, String embeddingModel, String checksum);
+    boolean exists(
+            VectorNamespace namespace,
+            String documentId,
+            String embeddingModel,
+            String checksum
+    );
 
     void deleteByDocumentIdAndEmbeddingModelExceptChecksums(
+            VectorNamespace namespace,
             String documentId,
             String embeddingModel,
             Set<String> checksums
     );
 
+    VectorType getType();
 }

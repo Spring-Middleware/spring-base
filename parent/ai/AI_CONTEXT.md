@@ -200,23 +200,23 @@ public abstract class AbstractRoutingAIClient<
         C extends AIClient<R, S>
         > implements AIClient<R, S> {
 
-    private final AIProviderRegistry registry;
-    private final Function<AIProvider, C> clientResolver;
+  private final AIProviderRegistry registry;
+  private final Function<AIProvider, C> clientResolver;
 
-    protected AbstractRoutingAIClient(
-            AIProviderRegistry registry,
-            Function<AIProvider, C> clientResolver
-    ) {
-        this.registry = registry;
-        this.clientResolver = clientResolver;
-    }
+  protected AbstractRoutingAIClient(
+          AIProviderRegistry registry,
+          Function<AIProvider, C> clientResolver
+  ) {
+    this.registry = registry;
+    this.clientResolver = clientResolver;
+  }
 
-    @Override
-    public S generate(R request) {
-        AIProvider provider = registry.resolve(request.getModel());
-        C client = clientResolver.apply(provider);
-        return client.generate(request);
-    }
+  @Override
+  public S generate(R request) {
+    AIProvider provider = registry.resolve(request.getModel());
+    C client = clientResolver.apply(provider);
+    return client.generate(request);
+  }
 }
 ```
 
@@ -240,11 +240,11 @@ Current provider model:
 ```java
 public interface AIProvider {
 
-    boolean supports(String model);
+  boolean supports(String model);
 
-    ProviderChatClient getChatClient();
+  ProviderChatClient getChatClient();
 
-    ProviderEmbeddingClient getEmbeddingClient();
+  ProviderEmbeddingClient getEmbeddingClient();
 
 }
 ```
@@ -258,17 +258,17 @@ Example:
 ```java
 @Override
 public boolean supports(String model) {
-    if (!properties.isEnabled()) {
-        return false;
-    }
+  if (!properties.isEnabled()) {
+    return false;
+  }
 
-    if (model == null || model.isBlank()) {
-        return false;
-    }
+  if (model == null || model.isBlank()) {
+    return false;
+  }
 
-    return properties.getModels()
-            .stream()
-            .anyMatch(m -> m.equalsIgnoreCase(model));
+  return properties.getModels()
+          .stream()
+          .anyMatch(m -> m.equalsIgnoreCase(model));
 }
 ```
 
@@ -304,7 +304,7 @@ Core concept:
 ```java
 public interface ConversationClient {
 
-    ChatResponse chat(Conversation conversation, String model, String userMessage);
+  ChatResponse chat(Conversation conversation, String model, String userMessage);
 
 }
 ```
@@ -323,9 +323,9 @@ Preferred API:
 ```java
 public interface DocumentationChatService {
 
-    DocumentationConversationResponse startConversation(String model, String question);
+  DocumentationConversationResponse startConversation(String model, String question);
 
-    ChatResponse ask(UUID conversationId, String model, String question);
+  ChatResponse ask(UUID conversationId, String model, String question);
 
 }
 ```
@@ -367,11 +367,11 @@ Initial storage strategy:
 ```java
 public interface ConversationStore {
 
-    UUID create(Conversation conversation);
+  UUID create(Conversation conversation);
 
-    Conversation get(UUID conversationId);
+  Conversation get(UUID conversationId);
 
-    void remove(UUID conversationId);
+  void remove(UUID conversationId);
 
 }
 ```
@@ -415,9 +415,9 @@ Initial service:
 ```java
 public interface DocumentationChatService {
 
-    DocumentationConversationResponse startConversation(String model, String question);
+  DocumentationConversationResponse startConversation(String model, String question);
 
-    ChatResponse ask(UUID conversationId, String model, String question);
+  ChatResponse ask(UUID conversationId, String model, String question);
 
 }
 ```
@@ -531,7 +531,7 @@ Core contracts:
 ```java
 public interface DocumentSourceProvider<P extends DocumentSourceProviderProperties> {
 
-    Flux<DocumentSource> load(P properties);
+  Flux<DocumentSource> load(P properties);
 
 }
 ```
@@ -544,10 +544,10 @@ public interface DocumentSourceProviderProperties {
 ```java
 public interface DocumentChunker {
 
-    Flux<DocumentChunkInput> chunk(
-            DocumentSource source,
-            DocumentChunkerProperties properties
-    );
+  Flux<DocumentChunkInput> chunk(
+          DocumentSource source,
+          DocumentChunkerProperties properties
+  );
 
 }
 ```
@@ -555,9 +555,9 @@ public interface DocumentChunker {
 ```java
 public interface DocumentIndexer {
 
-    Mono<Void> index(DocumentSource source, String embeddingModel);
+  Mono<Void> index(DocumentSource source, String embeddingModel);
 
-    Mono<Void> index(Flux<DocumentSource> sources, String embeddingModel);
+  Mono<Void> index(Flux<DocumentSource> sources, String embeddingModel);
 
 }
 ```
@@ -603,11 +603,11 @@ Vector store:
 ```java
 public interface VectorStore {
 
-    void add(DocumentChunk chunk);
+  void add(DocumentChunk chunk);
 
-    List<DocumentChunk> search(List<Float> embedding, int topK);
+  List<DocumentChunk> search(List<Float> embedding, int topK);
 
-    void clear();
+  void clear();
 
 }
 ```
@@ -645,22 +645,22 @@ Conceptual indexing flow:
 ```java
 @Override
 public Mono<Void> index(DocumentSource source, String embeddingModel) {
-    return documentChunker.chunk(source, properties)
-            .concatMap(chunk ->
-                    Mono.fromCallable(() -> embeddingClient.generate(
-                                    new DefaultEmbeddingRequest(embeddingModel, chunk.content())
-                            ))
-                            .map(response -> new DocumentChunk(
-                                    UUID.randomUUID(),
-                                    source.documentId(),
-                                    source.title(),
-                                    chunk.content(),
-                                    response.getEmbedding(),
-                                    chunk.metadata()
-                            ))
-                            .doOnNext(vectorStore::add)
-            )
-            .then();
+  return documentChunker.chunk(source, properties)
+          .concatMap(chunk ->
+                  Mono.fromCallable(() -> embeddingClient.generate(
+                                  new DefaultEmbeddingRequest(embeddingModel, chunk.content())
+                          ))
+                          .map(response -> new DocumentChunk(
+                                  UUID.randomUUID(),
+                                  source.documentId(),
+                                  source.title(),
+                                  chunk.content(),
+                                  response.getEmbedding(),
+                                  chunk.metadata()
+                          ))
+                          .doOnNext(vectorStore::add)
+          )
+          .then();
 }
 ```
 
@@ -714,7 +714,7 @@ Properties:
 @ConfigurationProperties("middleware.ai.document.source.file-system")
 public class FileSystemDocumentSourceProviderProperties implements DocumentSourceProviderProperties {
 
-    private List<String> directories = List.of("docs");
+  private List<String> directories = List.of("docs");
 
 }
 ```
@@ -774,15 +774,15 @@ Mongo source configuration:
 @ConfigurationProperties("middleware.ai.document.source.mongo")
 public class MongoDocumentSourceProviderProperties implements DocumentSourceProviderProperties {
 
-    private List<DocumentCollection> collections;
+  private List<DocumentCollection> collections;
 
-    @Data
-    public static class DocumentCollection {
-        private String collection;
-        private String idField;
-        private String titleField;
-        private String contentField;
-    }
+  @Data
+  public static class DocumentCollection {
+    private String collection;
+    private String idField;
+    private String titleField;
+    private String contentField;
+  }
 }
 ```
 
@@ -897,7 +897,7 @@ A custom extractor may also be useful:
 ```java
 public interface HttpDocumentSourceExtractor {
 
-    Flux<DocumentSource> extract(HttpDocumentSourceResponse response);
+  Flux<DocumentSource> extract(HttpDocumentSourceResponse response);
 
 }
 ```

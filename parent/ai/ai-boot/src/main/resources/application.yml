@@ -46,21 +46,50 @@ middleware:
 
   ai:
     document:
-      source:
-        file-system:
-          paths:
-            - README.md
-            - docs
+      sources:
+        documentation-middleware:
+          system-context: |
+            You are the Spring Middleware documentation assistant.
+            
+            Answer only using the Spring Middleware documentation context.
+            If the answer is not documented yet, say that it is not documented yet.
+            
+            Be concise, technical, and do not invent APIs.
+          type: FILE_SYSTEM
+          file-system:
+            paths:
+              - README.md
+              - docs
 
       indexing:
         enabled: true
-        embeddingModel: nomic-embed-text
-        vector-type: MONGO
         index-on-startup: true
+        sources:
+          documentation-middleware:
+            vector-type: MONGO
+            vector-namespace: documentation-middleware
+            embedding-model: nomic-embed-text
+            top-k: 5
+            document-indexer-type: CHUNKER
 
     document-chunker:
-      chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:1200}
-      overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:200}
+      default:
+        chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:1200}
+        overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:200}
+      markdown:
+        max-chars: 2000
+        min-chars: 200
+        split-by-headings: true
+        max-heading-level: 6
+        include-heading-in-chunk: true
+        preserve-heading-path: true
+        split-by-paragraphs: true
+        split-by-sentences: false
+        detect-code-blocks: true
+        keep-code-blocks-intact: true
+        trim: true
+        remove-empty-lines: false
+        include-line-numbers: false
 
     vector-store:
       in-memory:

@@ -5,8 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
 @Data
-@ConfigurationProperties(prefix = "middleware.ai.document-chunker")
-public class DocumentChunkerProperties {
+@ConfigurationProperties(prefix = "middleware.ai.document-chunker.default")
+public class DefaultDocumentChunkerProperties {
 
     private Integer chunkSize = 800;
     private Integer overlapSize = 150;

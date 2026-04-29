@@ -1,11 +1,12 @@
 package io.github.spring.middleware.ai.rag.index;
 
+import io.github.spring.middleware.ai.rag.chunk.ChunkerOptions;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import reactor.core.publisher.Mono;
 
-public interface DocumentIndexer<O extends DocumentIndexerOptions> {
+public interface DocumentIndexer<I extends DocumentIndexerOptions> {
 
-    Mono<Void> index(DocumentSource source, O options);
+    <O extends ChunkerOptions> Mono<Void>  index(DocumentSource source, I options);
 
     boolean supports(DocumentIndexerType indexerType);
 

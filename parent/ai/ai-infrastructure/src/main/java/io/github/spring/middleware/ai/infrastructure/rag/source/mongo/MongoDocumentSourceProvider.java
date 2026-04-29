@@ -5,6 +5,8 @@ import io.github.spring.middleware.ai.exception.AIException;
 import io.github.spring.middleware.ai.infrastructure.config.mongo.MongoDocumentSourceProviderProperties.DocumentCollection;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import io.github.spring.middleware.ai.rag.source.DocumentSourceProvider;
+import io.github.spring.middleware.ai.rag.source.DocumentSourceType;
+import io.github.spring.middleware.ai.rag.utils.ContentUtils;
 import org.bson.Document;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,22 +33,28 @@ public class MongoDocumentSourceProvider implements DocumentSourceProvider<Mongo
     }
 
     @Override
-    public Flux<DocumentSource> load(@MonotonicNonNull MongoDocumentSourceProviderOptions options) {
+    public Flux<DocumentSource> load(String sourceName, @MonotonicNonNull MongoDocumentSourceProviderOptions options) {
         if (options.collections() == null || options.collections().isEmpty()) {
             return Flux.empty();
         }
         return Flux.fromIterable(options.collections())
-                .flatMap(this::loadCollection);
+                .flatMap(collectionConfig -> loadCollection(sourceName, collectionConfig));
     }
 
-    private Flux<DocumentSource> loadCollection(DocumentCollection collectionConfig) {
+    @Override
+    public DocumentSourceType type() {
+        return DocumentSourceType.MONGO;
+    }
+
+    private Flux<DocumentSource> loadCollection(String sourceName, DocumentCollection collectionConfig) {
 
         return Flux.fromIterable(
                 mongoTemplate.findAll(Document.class, collectionConfig.getCollection())
-        ).map(doc -> toDocumentSource(doc, collectionConfig));
+        ).map(doc -> toDocumentSource(sourceName, doc, collectionConfig));
     }
 
     private DocumentSource toDocumentSource(
+            String sourceName,
             Document doc,
             DocumentCollection config
     ) {
@@ -56,13 +64,16 @@ public class MongoDocumentSourceProvider implements DocumentSourceProvider<Mongo
         String content = getRequiredField(doc, config.getContentField());
         Instant lastModifiedAt = getLastUpdateAt(doc, config);
 
-
+        String contentType = ContentUtils.inferContentType(content);
         return new DocumentSource(
                 id,
                 title,
                 new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),
+                ContentUtils.mapExtension(contentType),
+                contentType,
                 Map.of(
-                        "source", "mongo",
+                        "sourceType", "mongo",
+                        "sourceName", sourceName,
                         "collection", config.getCollection(),
                         "mongo.id", id,
                         "content.field", config.getContentField()

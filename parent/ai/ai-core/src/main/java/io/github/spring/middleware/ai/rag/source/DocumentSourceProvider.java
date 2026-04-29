@@ -5,6 +5,8 @@ import reactor.core.publisher.Flux;
 
 public interface DocumentSourceProvider<O extends DocumentSourceProviderOptions> {
 
-    Flux<DocumentSource> load(O options);
+    Flux<DocumentSource> load(String sourceName, O options);
+
+    DocumentSourceType type();
 
 }

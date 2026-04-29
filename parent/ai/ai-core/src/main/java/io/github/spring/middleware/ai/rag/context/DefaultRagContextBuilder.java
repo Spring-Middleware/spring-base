@@ -24,7 +24,7 @@ public class DefaultRagContextBuilder implements RagContextBuilder {
 
         VectorStore vectorStore = vectorStoreRegistry.findByType(request.vectorType());
 
-        List<DocumentChunk> chunks = vectorStore.search(embedding, request.topK());
+        List<DocumentChunk> chunks = vectorStore.search(request.vectorNamespace(), embedding, request.topK());
 
         String content = chunks.stream()
                 .map(this::formatChunk)

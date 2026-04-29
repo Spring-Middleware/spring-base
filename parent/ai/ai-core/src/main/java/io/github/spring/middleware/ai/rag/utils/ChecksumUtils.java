@@ -1,4 +1,4 @@
-package io.github.spring.middleware.ai.rag.chunk;
+package io.github.spring.middleware.ai.rag.utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -8,7 +8,10 @@ import java.util.Map;
 
 public final class ChecksumUtils {
 
-    public static String checksum(String content, Map<String, String> metadata) {
+    private ChecksumUtils() {
+    }
+
+    public static String checksum(String content, Map<String, Object> metadata) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -20,7 +23,7 @@ public final class ChecksumUtils {
                     .sorted(Map.Entry.comparingByKey())
                     .forEach(entry -> {
                         digest.update(entry.getKey().getBytes(StandardCharsets.UTF_8));
-                        digest.update(entry.getValue().getBytes(StandardCharsets.UTF_8));
+                        digest.update(entry.getValue().toString().getBytes(StandardCharsets.UTF_8));
                     });
 
             byte[] hash = digest.digest();

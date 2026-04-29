@@ -1,5 +1,8 @@
-package io.github.spring.middleware.ai.rag.chunk;
+package io.github.spring.middleware.ai.rag.chunk.deflt;
 
+import io.github.spring.middleware.ai.rag.chunk.ChunkerSuitability;
+import io.github.spring.middleware.ai.rag.chunk.DocumentChunkInput;
+import io.github.spring.middleware.ai.rag.chunk.DocumentChunker;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -11,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class DefaultDocumentChunker implements DocumentChunker {
+public class DefaultDocumentChunker implements DocumentChunker<ChunkOptions> {
 
     @Override
     public Flux<DocumentChunkInput> chunk(DocumentSource source, ChunkOptions chunkOptions) {
@@ -48,8 +51,19 @@ public class DefaultDocumentChunker implements DocumentChunker {
         });
     }
 
-    private Map<String, String> buildMetaData(DocumentSource source, ChunkOptions chunkOptions) {
+    @Override
+    public int suitability(DocumentSource source) {
+        return ChunkerSuitability.FALLBACK;
+    }
+
+    @Override
+    public Class<ChunkOptions> optionsType() {
+        return ChunkOptions.class;
+    }
+
+    private Map<String, Object> buildMetaData(DocumentSource source, ChunkOptions chunkOptions) {
         Map metadata = new HashMap(source.metadata());
+        metadata.put("chunker", "default");
         metadata.put("chunkSize", String.valueOf(chunkOptions.chunkSize()));
         metadata.put("chunkOverlap", String.valueOf(chunkOptions.chunkOverlap()));
         return metadata;

@@ -11,12 +11,24 @@ import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DefaultConversationClientTest {
 
     private ChatClient chatClient;
     private DefaultConversationClient conversationClient;
+
+    private final String ARGUMENTED_TEMPLATE = """
+            Documentation context:
+            
+            %s
+            
+            User question:
+            
+            %s
+            """;
 
     @BeforeEach
     void setUp() {
@@ -27,7 +39,7 @@ class DefaultConversationClientTest {
     @Test
     void testChatThrowsExceptionWhenConversationIsNull() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            conversationClient.chat(null, "model", "hello","context");
+            conversationClient.chat(null, "model", "hello", "context");
         });
         assertEquals("conversation must not be null", exception.getMessage());
     }
@@ -60,44 +72,50 @@ class DefaultConversationClientTest {
     }
 
     @Test
-    void testChatThrowsExceptionWhenResponseIsNull() {
+    void testChatAddsUserMessageToConversationWhenChatResponseIsNull() {
         Conversation conversation = Mockito.mock(Conversation.class);
+        Conversation requestConversation = Mockito.mock(Conversation.class);
         ChatRequest chatRequest = Mockito.mock(ChatRequest.class);
         when(conversation.toRequest("model")).thenReturn(chatRequest);
         when(chatClient.generate(chatRequest)).thenReturn(null);
+        when(conversation.copy()).thenReturn(requestConversation);
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            conversationClient.chat(conversation, "model", "hello", "context");
-        });
-        assertEquals("chat response must not be null", exception.getMessage());
+
+        conversationClient.chat(conversation, "model", "hello", "context");
+        verify(conversation).addUserMessage("hello");
+        verify(requestConversation).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context","hello"));
     }
 
     @Test
-    void testChatThrowsExceptionWhenResponseMessageIsNull() {
+    void testChatAddsUserMessageToConversation() {
         Conversation conversation = Mockito.mock(Conversation.class);
+        Conversation requestConverstion = Mockito.mock(Conversation.class);
         ChatRequest chatRequest = Mockito.mock(ChatRequest.class);
         ChatResponse chatResponse = Mockito.mock(ChatResponse.class);
 
         when(conversation.toRequest("model")).thenReturn(chatRequest);
         when(chatClient.generate(chatRequest)).thenReturn(chatResponse);
         when(chatResponse.getMessage()).thenReturn(null);
+        when(conversation.copy()).thenReturn(requestConverstion);
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            conversationClient.chat(conversation, "model", "hello", "context");
-        });
-        assertEquals("chat response must not be null", exception.getMessage());
+
+        conversationClient.chat(conversation, "model", "hello", "context");
+        verify(conversation, times(1)).addUserMessage("hello");
+        verify(requestConverstion, times(1)).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context", "hello"));
     }
 
     @Test
     void testChatSuccessfully() {
         Conversation conversation = Mockito.mock(Conversation.class);
+        Conversation requestConversation = Mockito.mock(Conversation.class);
         ChatRequest chatRequest = Mockito.mock(ChatRequest.class);
         ChatResponse chatResponse = Mockito.mock(ChatResponse.class);
         AIMessage aiMessage = Mockito.mock(AIMessage.class);
 
-        when(conversation.toRequest("model")).thenReturn(chatRequest);
+        when(requestConversation.toRequest("model")).thenReturn(chatRequest);
         when(chatClient.generate(chatRequest)).thenReturn(chatResponse);
         when(chatResponse.getMessage()).thenReturn(aiMessage);
+        when(conversation.copy()).thenReturn(requestConversation);
 
         ChatResponse response = conversationClient.chat(conversation, "model", "hello user", "context");
 
@@ -105,6 +123,7 @@ class DefaultConversationClientTest {
 
         verify(conversation).addUserMessage("hello user");
         verify(conversation).addMessage(aiMessage);
+        verify(requestConversation).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context", "hello user"));
         verify(chatClient).generate(chatRequest);
     }
 }

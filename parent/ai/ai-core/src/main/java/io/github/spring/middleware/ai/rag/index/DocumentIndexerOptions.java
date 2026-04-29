@@ -1,5 +1,6 @@
 package io.github.spring.middleware.ai.rag.index;
 
+import io.github.spring.middleware.ai.rag.vector.VectorNamespace;
 import io.github.spring.middleware.ai.rag.vector.VectorType;
 
 public interface DocumentIndexerOptions {
@@ -9,5 +10,7 @@ public interface DocumentIndexerOptions {
     DocumentIndexerType getIndexerType();
 
     VectorType getVectorType();
+
+    VectorNamespace getVectorNamespace();
 
 }

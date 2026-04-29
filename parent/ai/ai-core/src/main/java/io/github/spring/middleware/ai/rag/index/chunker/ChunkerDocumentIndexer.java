@@ -1,8 +1,10 @@
 package io.github.spring.middleware.ai.rag.index.chunker;
 
 import io.github.spring.middleware.ai.client.EmbeddingClient;
-import io.github.spring.middleware.ai.rag.chunk.ChecksumUtils;
-import io.github.spring.middleware.ai.rag.chunk.ChunkOptions;
+import io.github.spring.middleware.ai.rag.chunk.ChunkerOptions;
+import io.github.spring.middleware.ai.rag.chunk.registry.DocumentChunkerRegistry;
+import io.github.spring.middleware.ai.rag.utils.ChecksumUtils;
+import io.github.spring.middleware.ai.rag.chunk.deflt.ChunkOptions;
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunk;
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunker;
 import io.github.spring.middleware.ai.rag.index.DocumentIndexer;
@@ -28,33 +30,35 @@ public class ChunkerDocumentIndexer implements DocumentIndexer<ChunkerDocumentIn
 
     private final EmbeddingClient embeddingClient;
     private final VectorStoreRegistry vectorStoreRegistry;
-    private final DocumentChunker documentChunker;
+    private final DocumentChunkerRegistry documentChunkerRegistry;
 
     public ChunkerDocumentIndexer(
             EmbeddingClient embeddingClient,
             VectorStoreRegistry vectorStoreRegistry,
-            DocumentChunker documentChunker
+            DocumentChunkerRegistry documentChunkerRegistry
     ) {
         this.embeddingClient = embeddingClient;
         this.vectorStoreRegistry = vectorStoreRegistry;
-        this.documentChunker = documentChunker;
+        this.documentChunkerRegistry = documentChunkerRegistry;
     }
 
     @Override
-    public Mono<Void> index(DocumentSource source, ChunkerDocumentIndexerOptions documentIndexerOptions) {
-        ChunkOptions options = documentIndexerOptions.getChunkOptions();
+    public <O extends ChunkerOptions> Mono<Void> index(DocumentSource source, ChunkerDocumentIndexerOptions documentIndexerOptions) {
+        O options = (O) documentIndexerOptions.getChunkOptions();
         VectorStore vectorStore = vectorStoreRegistry.findByType(documentIndexerOptions.getVectorType());
 
         Set<String> currentChecksums = ConcurrentHashMap.newKeySet();
+        DocumentChunker<O> documentChunker = documentChunkerRegistry.findBestDocumentChunker(source);
 
         return documentChunker.chunk(source, options)
                 .concatMap(chunk -> {
                     Map metadataChecksum = new HashMap(chunk.metadata());
                     metadataChecksum.put("embeddingModel", documentIndexerOptions.getEmbeddingModel());
-                    String checksum = ChecksumUtils.checksum(chunk.content(), metadataChecksum);
+                    String checksum = ChecksumUtils.checksum(chunk.getEmbeddingContent(), metadataChecksum);
                     currentChecksums.add(checksum);
 
                     if (vectorStore.exists(
+                            documentIndexerOptions.getVectorNamespace(),
                             source.documentId(),
                             documentIndexerOptions.getEmbeddingModel(),
                             checksum
@@ -65,7 +69,7 @@ public class ChunkerDocumentIndexer implements DocumentIndexer<ChunkerDocumentIn
                     return Mono.fromCallable(() -> embeddingClient.generate(
                                     new DefaultEmbeddingRequest(
                                             documentIndexerOptions.getEmbeddingModel(),
-                                            chunk.content()
+                                            chunk.getEmbeddingContent()
                                     )
                             ))
                             .map(response -> new DocumentChunk(
@@ -79,11 +83,12 @@ public class ChunkerDocumentIndexer implements DocumentIndexer<ChunkerDocumentIn
                                     checksum,
                                     Instant.now()
                             ))
-                            .doOnNext(vectorStore::add)
+                            .doOnNext(vectorChunk -> vectorStore.add(documentIndexerOptions.getVectorNamespace(), vectorChunk))
                             .then();
                 })
                 .then(Mono.fromRunnable(() ->
                         vectorStore.deleteByDocumentIdAndEmbeddingModelExceptChecksums(
+                                documentIndexerOptions.getVectorNamespace(),
                                 source.documentId(),
                                 documentIndexerOptions.getEmbeddingModel(),
                                 currentChecksums

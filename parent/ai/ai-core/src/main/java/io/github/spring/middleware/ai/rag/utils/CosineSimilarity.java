@@ -1,8 +1,11 @@
-package io.github.spring.middleware.ai.rag.vector;
+package io.github.spring.middleware.ai.rag.utils;
 
 import java.util.List;
 
 public final class CosineSimilarity {
+
+    private CosineSimilarity() {
+    }
 
     public static double calculate(List<Float> a, List<Float> b) {
         if (a == null || b == null || a.size() != b.size()) {

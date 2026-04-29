@@ -3,12 +3,15 @@ package io.github.spring.middleware.ai.rag.chunk;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import reactor.core.publisher.Flux;
 
-public interface DocumentChunker {
-
+public interface DocumentChunker<O extends ChunkerOptions> {
 
     Flux<DocumentChunkInput> chunk(
             DocumentSource source,
-            ChunkOptions chunkOptions
+            O chunkOptions
     );
+
+    int suitability(DocumentSource source);
+
+    Class<O> optionsType();
 
 }

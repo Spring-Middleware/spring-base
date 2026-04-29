@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public interface DocumentationChatService {
 
-    DocumentationConversationResponse startConversation(String model, String question);
+    DocumentationConversationResponse startConversation(String sourceName, String model, String question);
 
-    ChatResponse ask(UUID conversationId, String model, String question);
+    ChatResponse ask(UUID conversationId, String sourceName, String model, String question);
 
 }

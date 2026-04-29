@@ -1,6 +1,8 @@
-package io.github.spring.middleware.ai.rag.chunk;
+package io.github.spring.middleware.ai.rag.chunk.deflt;
 
-public record ChunkOptions(int chunkSize, int chunkOverlap) {
+import io.github.spring.middleware.ai.rag.chunk.ChunkerOptions;
+
+public record ChunkOptions(int chunkSize, int chunkOverlap) implements ChunkerOptions {
 
     public ChunkOptions {
         if (chunkSize <= 0) {

@@ -8,7 +8,9 @@ public record DocumentSource(
         String documentId,
         String title,
         InputStream inputStream,
-        Map<String, String> metadata,
+        String extension,     // "md", "json", "txt"
+        String contentType,  // "text/markdown", "application/json"
+        Map<String, Object> metadata,
         Instant lastModifiedAt
 ) {
 }

@@ -1,9 +1,9 @@
 package io.github.spring.middleware.ai.controller;
 
 import io.github.spring.middleware.ai.domain.DocumentationConversationResponse;
+import io.github.spring.middleware.ai.request.DocumentationChatRequest;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import io.github.spring.middleware.ai.service.DocumentationChatService;
-import io.github.spring.middleware.ai.request.DocumentationChatRequest;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,13 +24,13 @@ public class DocumentationChatController {
 
     @PostMapping("/start")
     public DocumentationConversationResponse startConversation(@RequestBody DocumentationChatRequest request) {
-        return documentationChatService.startConversation(request.model(), request.question());
+        return documentationChatService.startConversation(request.sourceName(), request.model(), request.question());
     }
 
     @PostMapping("/{conversationId}/ask")
     public ChatResponse ask(
             @PathVariable("conversationId") UUID conversationId,
             @RequestBody DocumentationChatRequest request) {
-        return documentationChatService.ask(conversationId, request.model(), request.question());
+        return documentationChatService.ask(conversationId, request.sourceName(), request.model(), request.question());
     }
 }

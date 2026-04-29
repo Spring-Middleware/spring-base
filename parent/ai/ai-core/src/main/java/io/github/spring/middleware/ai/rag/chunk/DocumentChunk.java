@@ -15,7 +15,7 @@ public record DocumentChunk(
         String content,
         List<Float> embedding,
         String embeddingModel,
-        Map<String, String> metadata,
+        Map<String, Object> metadata,
         String checksum,
         Instant indexedAt
 ) {
