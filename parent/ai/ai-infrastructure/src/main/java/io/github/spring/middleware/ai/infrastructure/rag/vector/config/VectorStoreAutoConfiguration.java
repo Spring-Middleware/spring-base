@@ -2,12 +2,16 @@ package io.github.spring.middleware.ai.infrastructure.rag.vector.config;
 
 import io.github.spring.middleware.ai.infrastructure.rag.vector.InMemoryVectorStore;
 import io.github.spring.middleware.ai.infrastructure.rag.vector.MongoVectorStore;
+import io.github.spring.middleware.ai.infrastructure.rag.vector.QdrantVectorStore;
 import io.github.spring.middleware.ai.rag.vector.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @AutoConfiguration
 public class VectorStoreAutoConfiguration {
@@ -33,4 +37,15 @@ public class VectorStoreAutoConfiguration {
     public VectorStore mongoVectorStore(MongoTemplate mongoTemplate) {
         return new MongoVectorStore(mongoTemplate);
     }
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "middleware.ai.vector-store.qdrant",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public VectorStore qdrantVectorStore(@Qualifier("qdrantWebClient") WebClient webClient) {
+        return new QdrantVectorStore(webClient);
+    }
+
 }

@@ -21,8 +21,6 @@ import java.util.stream.Stream;
 @Qualifier("fileSystemDocumentSourceProvider")
 public class FileSystemDocumentSourceProvider implements DocumentSourceProvider<FileSystemDocumentSourceProviderOptions> {
 
-
-
     @Override
     public Flux<DocumentSource> load(String sourceName, @MonotonicNonNull FileSystemDocumentSourceProviderOptions options) {
         return Flux.fromIterable(options.paths())

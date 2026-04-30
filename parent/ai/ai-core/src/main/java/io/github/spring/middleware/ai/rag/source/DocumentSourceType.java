@@ -4,7 +4,6 @@ public enum DocumentSourceType {
 
     FILE_SYSTEM,
     MONGO,
-    REST,
-    GRAPHQL;
+    CUSTOM;
 
 }

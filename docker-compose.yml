@@ -59,5 +59,20 @@ services:
     networks:
       - middleware-net
 
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    restart: always
+    ports:
+      - "6333:6333" # HTTP API
+      - "6334:6334" # gRPC API
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - middleware-net
+
+
+
 volumes:
   mongo-data:
+  qdrant-data:

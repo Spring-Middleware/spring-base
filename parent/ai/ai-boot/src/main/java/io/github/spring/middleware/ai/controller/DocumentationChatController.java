@@ -33,4 +33,9 @@ public class DocumentationChatController {
             @RequestBody DocumentationChatRequest request) {
         return documentationChatService.ask(conversationId, request.sourceName(), request.model(), request.question());
     }
+
+    @PostMapping("/ask")
+    public ChatResponse ask(@RequestBody DocumentationChatRequest request) {
+        return documentationChatService.ask(request.sourceName(), request.model(), request.question());
+    }
 }

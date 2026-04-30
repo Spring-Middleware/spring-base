@@ -1,0 +1,116 @@
+rules:
+  - name: catalog
+    extractor-path: "$.data.catalogs.content[*]"
+
+    extractor-rules:
+      - json-data-types: [FIELD, META_DATA]
+        name: catalogId
+        extractor-path: "$.id"
+
+      - json-data-types: [FIELD, META_DATA]
+        name: catalogName
+        extractor-path: "$.name"
+
+      - json-data-types: [FIELD, META_DATA]
+        name: catalogStatus
+        extractor-path: "$.status"
+
+      - json-data-types: [FIELD]
+        name: catalogDescription
+        extractor-path: "$.description"
+
+    generation-text-rules:
+      - template: "Catalog {catalogName} (id: {catalogId}) is {catalogStatus}."
+        variables:
+          catalogName: catalogName!
+          catalogId: catalogId!
+          catalogStatus: catalogStatus
+      - template: "{description}"
+        variables:
+          description: catalogDescription
+
+    children:
+      - name: product
+        extractor-path: "$.products[*]"
+
+        extractor-rules:
+          - json-data-types: [FIELD, META_DATA]
+            name: productId
+            extractor-path: "$.id"
+
+          - json-data-types: [FIELD, META_DATA]
+            name: productName
+            extractor-path: "$.name"
+
+          - json-data-types: [FIELD, META_DATA]
+            name: productType
+            extractor-path: "$.__typename"
+
+          - json-data-types: [FIELD]
+            name: priceAmount
+            extractor-path: "$.price.amount"
+
+          - json-data-types: [FIELD]
+            name: priceCurrency
+            extractor-path: "$.price.currency"
+
+          - json-data-types: [FIELD]
+            name: productDescription
+            extractor-path: "$.description"
+
+          - json-data-types: [FIELD]
+            name: reviewComments
+            extractor-path: "$.reviews[*].comment"
+
+          - json-data-types: [FIELD]
+            name: dlUrl
+            extractor-path: "$.downloadUrl"
+
+          - json-data-types: [FIELD]
+            name: fsize
+            extractor-path: "$.fileSize"
+
+          - json-data-types: [FIELD]
+            name: dimL
+            extractor-path: "$.dimensions.length"
+
+          - json-data-types: [FIELD]
+            name: dimW
+            extractor-path: "$.dimensions.width"
+
+          - json-data-types: [FIELD]
+            name: dimH
+            extractor-path: "$.dimensions.height"
+
+        generation-text-rules:
+          - template: "Product {productName} belongs to catalog {catalogName}."
+            variables:
+              productName: productName!
+              catalogName: catalogName
+
+          - template: "It is a {productType} with price {priceAmount} {priceCurrency}."
+            variables:
+              productType: productType:"product"
+              priceAmount: priceAmount!
+              priceCurrency: priceCurrency!
+
+          - template: "Description: {productDescription}"
+            variables:
+              productDescription: productDescription
+
+          - template: "Reviews: {reviewComments}"
+            variables:
+              reviewComments: reviewComments
+
+          - template: "Dimensions: {dimL}x{dimW}x{dimH}."
+            variables:
+              dimL: dimL
+              dimW: dimW
+              dimH: dimH
+
+          - template: "Download digital asset at {dlUrl} ({fsize} bytes)."
+            variables:
+              dlUrl: dlUrl
+              fsize: fsize
+
+        children: []

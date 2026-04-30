@@ -11,4 +11,6 @@ public interface DocumentationChatService {
 
     ChatResponse ask(UUID conversationId, String sourceName, String model, String question);
 
+    ChatResponse ask(String sourceName, String model, String question);
+
 }

@@ -1,5 +1,6 @@
 package io.github.spring.middleware.ai.service.impl;
 
+import io.github.spring.middleware.ai.client.ChatClient;
 import io.github.spring.middleware.ai.conversation.Conversation;
 import io.github.spring.middleware.ai.conversation.DefaultConversation;
 import io.github.spring.middleware.ai.conversation.client.ConversationClient;
@@ -8,13 +9,15 @@ import io.github.spring.middleware.ai.exception.AIErrorCodes;
 import io.github.spring.middleware.ai.exception.AIException;
 import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentSourceDefinition;
 import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentSourceProperties;
+import io.github.spring.middleware.ai.message.DefaultAIMessage;
 import io.github.spring.middleware.ai.rag.context.RagContext;
 import io.github.spring.middleware.ai.rag.context.RagContextBuilder;
 import io.github.spring.middleware.ai.rag.context.RagContextRequest;
 import io.github.spring.middleware.ai.rag.index.config.DocumentIndexingProperties;
-import io.github.spring.middleware.ai.rag.source.DocumentSourceRegistry;
 import io.github.spring.middleware.ai.rag.vector.VectorNamespace;
 import io.github.spring.middleware.ai.rag.vector.VectorType;
+import io.github.spring.middleware.ai.request.ChatRequest;
+import io.github.spring.middleware.ai.request.DefaultChatRequest;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import io.github.spring.middleware.ai.service.ConversationStore;
 import io.github.spring.middleware.ai.service.DocumentationChatService;
@@ -29,6 +32,7 @@ public class DefaultDocumentationChatService implements DocumentationChatService
 
     private final RagContextBuilder ragContextBuilder;
     private final ConversationClient conversationClient;
+    private final ChatClient chatClient;
     private final ConversationStore conversationStore;
     private final DocumentIndexingProperties documentIndexingProperties;
     private final DocumentSourceProperties documentSourceProperties;
@@ -47,7 +51,7 @@ public class DefaultDocumentationChatService implements DocumentationChatService
         if (sourceProperties == null) {
             throw new AIException(AIErrorCodes.INVALID_DOCUMENT_SOURCE, STR."No indexing properties found for sourceName: \{sourceName}");
         }
-        RagContext ragContext = ragContextBuilder.build(new RagContextRequest(sourceProperties.getEmbeddingModel(), VectorType.MONGO, new VectorNamespace(sourceProperties.getVectorNamespace(sourceName)), question, sourceProperties.getTopK()));
+        RagContext ragContext = ragContextBuilder.build(new RagContextRequest(sourceProperties.getEmbeddingModel(), sourceProperties.getVectorType(), new VectorNamespace(sourceProperties.getVectorNamespace(sourceName)), question, sourceProperties.getTopK()));
         return ragContext.content();
     }
 
@@ -73,6 +77,18 @@ public class DefaultDocumentationChatService implements DocumentationChatService
         Conversation conversation = conversationStore.get(conversationId);
         String context = buildContext(sourceName, question);
         return conversationClient.chat(conversation, model, question, context);
+    }
+
+    @Override
+    public ChatResponse ask(String sourceName, String model, String question) {
+        validateInput(model, question);
+        String systemMessage = buildSystemMessage(sourceName);
+        String context = buildContext(sourceName, question);
+        ChatRequest chatRequest = new DefaultChatRequest(model);
+        chatRequest.addMessage(DefaultAIMessage.system(systemMessage));
+        chatRequest.addMessage(DefaultAIMessage.system(context));
+        chatRequest.addMessage(DefaultAIMessage.user(question));
+        return chatClient.generate(chatRequest);
     }
 
     private void validateInput(String model, String question) {

@@ -5,6 +5,8 @@ import io.github.spring.middleware.ai.infrastructure.rag.source.config.DocumentS
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import io.github.spring.middleware.ai.rag.source.DocumentSourceProvider;
 import io.github.spring.middleware.ai.rag.source.DocumentSourceRegistry;
+import io.github.spring.middleware.ai.rag.source.DocumentSourceType;
+import io.github.spring.middleware.ai.rag.source.SourceProviderName;
 import io.github.spring.middleware.ai.rag.source.config.DocumentSourceProviderOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ public class ConfiguredDocumentSourceRegistry implements DocumentSourceRegistry 
     private final DocumentSourceProperties properties;
     private final List<DocumentSourceProvider<?>> providers;
 
+
     public Flux<DocumentSource> resolve(String sourceName) {
         DocumentSourceDefinition definition = Optional
                 .ofNullable(properties.getSources().get(sourceName))
@@ -27,15 +30,42 @@ public class ConfiguredDocumentSourceRegistry implements DocumentSourceRegistry 
                         STR."Unknown document source: \{sourceName}"
                 ));
 
-        DocumentSourceProvider provider = providers.stream()
+        DocumentSourceProvider provider = resolveProvider(definition);
+        DocumentSourceProviderOptions options = definition.optionsForType();
+
+        return provider.load(sourceName, options);
+    }
+
+    private DocumentSourceProvider<?> resolveProvider(DocumentSourceDefinition definition) {
+        if (definition.getType() == DocumentSourceType.CUSTOM) {
+            String providerName = definition.getProviderName();
+
+            if (providerName == null || providerName.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Custom document source requires provider-name"
+                );
+            }
+
+            return providers.stream()
+                    .filter(p -> p.type() == DocumentSourceType.CUSTOM)
+                    .filter(p -> {
+                        SourceProviderName annotation =
+                                p.getClass().getAnnotation(SourceProviderName.class);
+
+                        return annotation != null && annotation.value().equals(providerName);
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                            STR."No custom DocumentSourceProvider found with name: \{providerName}"
+                    ));
+        }
+
+        return providers.stream()
                 .filter(p -> p.type() == definition.getType())
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         STR."No provider found for source type: \{definition.getType()}"
                 ));
-
-        DocumentSourceProviderOptions documentSourceProviderOptions = definition.optionsForType();
-
-        return provider.load(sourceName, documentSourceProviderOptions);
     }
+
 }

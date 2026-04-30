@@ -1,0 +1,116 @@
+{
+  "data": {
+    "catalogs": {
+      "content": [
+        {
+          "id": "11111111-1111-1111-1111-111111111111",
+          "name": "Summer Collection",
+          "status": "ACTIVE",
+          "description": "Best summer items",
+          "products": [
+            {
+              "__typename": "PhysicalProduct",
+              "id": "11111111-1111-1111-1111-111111111112",
+              "name": "Sunglasses",
+              "description": "UV400 sun protection glasses.",
+              "dimensions": {
+                "length": 15.0,
+                "width": 5.0,
+                "height": 4.0
+              },
+              "price": {
+                "amount": 25.50,
+                "currency": "USD"
+              },
+              "reviews": [
+                {
+                  "id": "11111111-1111-1111-1111-222222222221",
+                  "comment": "Great glasses!",
+                  "rating": 5
+                },
+                {
+                  "id": "11111111-1111-1111-1111-222222222222",
+                  "comment": "A bit scratched",
+                  "rating": 3
+                }
+              ]
+            },
+            {
+              "__typename": "DigitalProduct",
+              "id": "11111111-1111-1111-1111-111111111113",
+              "name": "Beach Sounds MP3",
+              "downloadUrl": "https://downloads.example.com/beach-sounds.mp3",
+              "fileFormat": "mp3",
+              "fileSize": 15420,
+              "price": {
+                "amount": 5.00,
+                "currency": "USD"
+              },
+              "reviews": [
+                {
+                  "id": "11111111-1111-1111-1111-222222222223",
+                  "comment": "Very relaxing",
+                  "rating": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "name": "Office Collection",
+          "status": "ACTIVE",
+          "description": "Premium office gear",
+          "products": [
+            {
+              "__typename": "PhysicalProduct",
+              "id": "4cba9446-6b4f-4e10-91e0-35e97770dc55",
+              "name": "USB-C Docking Station",
+              "description": "Docking station with multi-port connectivity for laptops and desktops.",
+              "dimensions": {
+                "length": 62.6,
+                "width": 10.4,
+                "height": 6.3
+              },
+              "price": {
+                "amount": 898.28,
+                "currency": "EUR"
+              },
+              "reviews": [
+                {
+                  "id": "10fcb330-a266-443d-b0fb-d3fe552fa8d9",
+                  "comment": "Works really well overall.",
+                  "rating": 4
+                },
+                {
+                  "id": "a3328293-c389-4c08-933d-ea03d4f79fce",
+                  "comment": "Excellent product!",
+                  "rating": 5
+                }
+              ]
+            },
+            {
+              "__typename": "DigitalProduct",
+              "id": "aa363032-8515-413c-a24a-bd93cf552e8d",
+              "name": "Testing Strategies Masterclass",
+              "downloadUrl": "https://downloads.example.com/testing-strategies-masterclass-8455.mp4",
+              "fileFormat": "mp4",
+              "fileSize": 22370,
+              "price": {
+                "amount": 132.44,
+                "currency": "EUR"
+              },
+              "reviews": [
+                {
+                  "id": "00b90993-00f6-43a8-a8cb-5243b4a58fb8",
+                  "comment": "Really happy with this purchase.",
+                  "rating": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

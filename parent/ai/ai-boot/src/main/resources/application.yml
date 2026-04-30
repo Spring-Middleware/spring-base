@@ -58,16 +58,38 @@ middleware:
           type: FILE_SYSTEM
           file-system:
             paths:
-              - README.md
-              - docs
+              - rag
+
+        catalogs:
+            system-context: |
+                You are a product catalog assistant.
+                
+                Answer only using the product catalog context.
+                If the answer is not in the catalogs, say that it is not in the catalogs.
+                
+                Be concise, technical, and do not invent information.
+            type: CUSTOM
+            provider-name: catalogs-provider
+            custom:
+              properties:
+                url:
+                apiKey: ${CATALOGS_API_KEY}
+
+
 
       indexing:
         enabled: true
         index-on-startup: true
         sources:
           documentation-middleware:
-            vector-type: MONGO
+            vector-type: QDRANT
             vector-namespace: documentation-middleware
+            embedding-model: nomic-embed-text
+            top-k: 5
+            document-indexer-type: CHUNKER
+          catalogs:
+            vector-type: QDRANT
+            vector-namespace: catalogs
             embedding-model: nomic-embed-text
             top-k: 5
             document-indexer-type: CHUNKER
@@ -90,12 +112,19 @@ middleware:
         trim: true
         remove-empty-lines: false
         include-line-numbers: false
+      json:
+        catalogs:
+          - catalog-rules-path
 
     vector-store:
       in-memory:
         enabled: false
       mongo:
         enabled: true
+      qdrant:
+        enabled: true
+        url: ${QDRANT_URL:http://localhost:6333}
+
 
     provider:
       ollama:
