@@ -59,7 +59,6 @@ middleware:
           file-system:
             paths:
               - rag
-
         catalogs:
             system-context: |
                 You are a product catalog assistant.
@@ -75,8 +74,6 @@ middleware:
                 url:
                 apiKey: ${CATALOGS_API_KEY}
 
-
-
       indexing:
         enabled: true
         index-on-startup: true
@@ -87,6 +84,7 @@ middleware:
             embedding-model: nomic-embed-text
             top-k: 5
             document-indexer-type: CHUNKER
+
           catalogs:
             vector-type: QDRANT
             vector-namespace: catalogs
@@ -113,8 +111,10 @@ middleware:
         remove-empty-lines: false
         include-line-numbers: false
       json:
-        catalogs:
-          - catalog-rules-path
+        definitions:
+          catalogs:
+            rules-paths:
+              - classpath:rules/catalogs.yml
 
     vector-store:
       in-memory:
