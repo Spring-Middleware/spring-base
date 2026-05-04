@@ -32,7 +32,7 @@ The key principle:
   - Interfaces: `AIClient`, `ChatClient`, `EmbeddingClient`, `VectorStore`, etc.
 
 - **`ai-ollama`**
-  - Local/self-hosted LLM provider via :contentReference[oaicite:0]{index=0}
+  - Local/self-hosted LLM provider via `ai-ollama`
   - Chat + embeddings
 
 - **`ai-infrastructure`**
@@ -349,7 +349,7 @@ Mono<Boolean> exists(...)
 Mono<Void> delete(...)
 ```
 
-### Example: :contentReference[oaicite:1]{index=1} filter
+### Example: Metadata filter
 
 ```json
 {
@@ -461,3 +461,4 @@ data → model → context → semantic text → embeddings → controlled retri
 - **“It kind of works” RAG**
 - and
 - **production-grade retrieval systems**
+

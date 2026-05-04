@@ -15,7 +15,9 @@ The goal is to allow developers to configure AI-backed capabilities without need
 
 The developer-facing model should remain declarative and Spring Boot friendly.
 
-### AI Module Structure
+---
+
+## AI Module Structure
 
 Current AI modules:
 
@@ -27,9 +29,9 @@ ai
  └─ ai-boot
 ```
 
-Responsibilities:
+---
 
-### ai-core
+## ai-core
 
 Defines provider-independent contracts and domain abstractions.
 
@@ -48,6 +50,7 @@ Main concepts:
 - `AIRole`
 - `Conversation`
 - `ConversationClient`
+- `ConversationStore`
 - `AIProvider`
 - `AIProviderRegistry`
 - `ProviderChatClient`
@@ -61,8 +64,11 @@ Main concepts:
 - `DocumentIndexer`
 - `DocumentChunk`
 - `VectorStore`
+- `VectorNamespace`
 
-### ai-ollama
+---
+
+## ai-ollama
 
 Provides Ollama-specific provider adapters.
 
@@ -71,8 +77,8 @@ Responsibilities:
 - chat completion through Ollama `/api/chat`
 - embedding generation through Ollama embeddings API
 - Ollama provider registration
-- Ollama model support based on configured models
-- Ollama HTTP configuration
+- model resolution
+- HTTP configuration
 
 Main components:
 
@@ -87,7 +93,7 @@ Configuration prefix:
 middleware.ai.provider.ollama
 ```
 
-Example configuration:
+Example:
 
 ```yaml
 middleware:
@@ -95,54 +101,57 @@ middleware:
     provider:
       ollama:
         models:
-          - llama3.1:8b
+          - qwen2.5:7b-instruct
           - nomic-embed-text
         base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
 ```
 
-The provider name does not need to be repeated inside the provider block because the configuration namespace already identifies the provider as Ollama.
+---
 
-### ai-infrastructure
+## ai-infrastructure
 
-Provides concrete infrastructure implementations for AI storage, retrieval, and document sources.
+Provides infrastructure implementations for storage, retrieval, and document ingestion.
 
-Current and planned responsibilities:
+Responsibilities:
 
-- in-memory vector store
-- file-system document source provider
-- MongoDB document source provider
-- future HTTP / REST / GraphQL document source provider
-- future Redis, MongoDB, PostgreSQL pgvector, Qdrant, or external vector store implementations
-
-The first stateful AI infrastructure component is the in-memory vector store.
-
-Unlike `DefaultChatClient`, `DefaultEmbeddingClient`, or `AIProviderRegistry`, a vector store is real infrastructure because it stores indexed chunks and performs retrieval over persistent or in-memory state.
-
-### ai-boot
-
-Provides Spring Boot integration and higher-level AI services.
-
-Current direction:
-
-- documentation-aware chat service
-- conversation lifecycle management
-- in-memory conversation store
-- RAG orchestration
-- auto-configuration for document indexing and retrieval
-- simple adapter/controller layer for starting conversations and asking follow-up questions
+- Vector store implementations
+    - in-memory
+    - Qdrant (current focus)
+    - future: Redis, MongoDB, pgvector
+- Document source providers
+    - file-system
+    - MongoDB
+    - custom (REST / GraphQL APIs)
+- Chunking strategies
+    - Markdown
+    - JSON
+    - custom chunkers
 
 ---
 
-## AI Client Model
+## ai-boot
 
-The AI client model follows the same routing pattern across capabilities.
+Provides Spring Boot integration and higher-level services.
 
-Base contract:
+Responsibilities:
+
+- RAG orchestration
+- documentation-aware chat services
+- conversation lifecycle management
+- in-memory conversation store
+- indexing auto-configuration
+- REST controllers for chat APIs
+
+---
+
+# AI Client Model (Reactive)
+
+The AI client model is now fully reactive.
 
 ```java
 public interface AIClient<R extends AIRequest, S extends AIResponse> {
 
-  S generate(R aiRequest);
+  Mono<S> generate(R aiRequest);
 
 }
 ```
@@ -161,11 +170,7 @@ public interface EmbeddingClient extends AIClient<EmbeddingRequest, EmbeddingRes
 }
 ```
 
-The default clients do not call infrastructure directly.
-
-They resolve an `AIProvider` through `AIProviderRegistry`, then delegate to the provider-specific client.
-
-Conceptual flow:
+Routing flow:
 
 ```text
 DefaultChatClient
@@ -174,24 +179,12 @@ AIProviderRegistry.resolve(model)
   ↓
 AIProvider.getChatClient()
   ↓
-ProviderChatClient.generate(request)
+ProviderChatClient.generate(request) -> Mono<ChatResponse>
 ```
 
-Embedding flow:
+---
 
-```text
-DefaultEmbeddingClient
-  ↓
-AIProviderRegistry.resolve(model)
-  ↓
-AIProvider.getEmbeddingClient()
-  ↓
-ProviderEmbeddingClient.generate(request)
-```
-
-Because this routing pattern is repeated across AI capabilities, the design may use a generic abstract routing client.
-
-Conceptual model:
+## Abstract Routing Client
 
 ```java
 public abstract class AbstractRoutingAIClient<
@@ -203,16 +196,8 @@ public abstract class AbstractRoutingAIClient<
   private final AIProviderRegistry registry;
   private final Function<AIProvider, C> clientResolver;
 
-  protected AbstractRoutingAIClient(
-          AIProviderRegistry registry,
-          Function<AIProvider, C> clientResolver
-  ) {
-    this.registry = registry;
-    this.clientResolver = clientResolver;
-  }
-
   @Override
-  public S generate(R request) {
+  public Mono<S> generate(R request) {
     AIProvider provider = registry.resolve(request.getModel());
     C client = clientResolver.apply(provider);
     return client.generate(request);
@@ -222,9 +207,7 @@ public abstract class AbstractRoutingAIClient<
 
 ---
 
-## AI Provider Model
-
-AI providers expose provider-specific capabilities through a common abstraction.
+# AI Provider Model
 
 ```java
 public interface AIProvider {
@@ -240,19 +223,20 @@ public interface AIProvider {
 
 ---
 
-## AI Conversation Model
-
-Spring Middleware includes a conversation model for multi-turn interactions.
+# Conversation Model (Reactive)
 
 ```java
 public interface ConversationClient {
 
-  ChatResponse chat(Conversation conversation, String model, String userMessage);
+  Mono<ChatResponse> chat(
+      Conversation conversation,
+      String model,
+      String userMessage,
+      String context
+  );
 
 }
 ```
-
-ConversationStore:
 
 ```java
 public interface ConversationStore {
@@ -268,126 +252,123 @@ public interface ConversationStore {
 
 ---
 
-## Embeddings and RAG
+# RAG Architecture
 
-RAG flow:
+## Core Flow
 
 ```text
 User question
   ↓
-EmbeddingClient generates question embedding
+Query Planner (optional metadata filters + optimized query)
   ↓
-VectorStore searches similar document chunks
+EmbeddingClient generates embedding
   ↓
-topK chunks are converted into prompt context
+VectorStore search (semantic + filters)
   ↓
-ConversationClient sends context + question to the LLM
+topK chunks
   ↓
-LLM answers using retrieved context
+Context builder (prompt)
+  ↓
+ChatClient (LLM)
+  ↓
+Answer
 ```
 
 ---
 
-## Document Indexing Model
+## Query Planner Layer
 
-Core contracts:
+The RAG pipeline includes a **query planner** responsible for:
 
-```java
-public interface DocumentChunker {
+- extracting metadata filters
+- deciding semantic vs exact search
+- normalizing metadata values
+- generating optimized queries
 
-  Flux<DocumentChunkInput> chunk(
-          DocumentSource source,
-          DocumentChunkerProperties properties
-  );
+### Key Rules
 
+- **Exact identifiers (IDs, SKU, codes)** → MUST use metadata filters
+- **Natural language queries** → semantic search
+- **Similarity queries** → semantic only (no productName filter)
+- **Metadata values normalized to English**
+
+Example:
+
+```json
+{
+  "optimizedQuery": "productos similares a iPhone 15",
+  "filters": [],
+  "useSemanticSearch": true
 }
 ```
 
-```java
-public interface DocumentIndexer {
+Example (exact SKU):
 
-  Mono<Void> index(DocumentSource source, String embeddingModel);
-
+```json
+{
+  "optimizedQuery": "catalog containing product with sku DPT-000006",
+  "filters": [
+    {
+      "field": "productSku",
+      "values": ["DPT-000006"],
+      "matchType": "MATCH_ANY"
+    }
+  ],
+  "useSemanticSearch": false
 }
 ```
 
 ---
 
-## Streaming Indexing
-
-Preferred model:
-
-```text
-InputStream -> Flux<DocumentChunkInput> -> embedding per chunk -> VectorStore.add(chunk)
-```
-
----
-
-## Recent Improvements (2026-04)
-
-### RAG Context Builder
-(unchanged)
-
-### Conversation Context Isolation
-(unchanged)
-
-### Document Indexing Improvements
-(unchanged)
-
----
-
-## Recent Improvements (2026-05)
-
-### Fully Reactive Vector Store Integration
-
-Vector store operations have been migrated to a fully reactive model.
-
-Updated contract:
+# Vector Store (Reactive)
 
 ```java
 public interface VectorStore {
 
   Mono<Void> add(VectorNamespace namespace, DocumentChunk chunk);
 
-  Flux<DocumentChunk> search(VectorNamespace namespace, List<Float> embedding, int topK);
+  Flux<DocumentChunk> search(
+      VectorNamespace namespace,
+      List<Float> embedding,
+      int topK
+  );
 
-  Mono<Boolean> exists(VectorNamespace namespace, String documentId, String embeddingModel, String checksum);
+  Mono<Boolean> exists(
+      VectorNamespace namespace,
+      String documentId,
+      String embeddingModel,
+      String checksum
+  );
 
   Mono<Void> deleteByDocumentIdAndEmbeddingModelExceptChecksums(
-          VectorNamespace namespace,
-          String documentId,
-          String embeddingModel,
-          Set<String> checksums
+      VectorNamespace namespace,
+      String documentId,
+      String embeddingModel,
+      Set<String> checksums
   );
 
 }
 ```
 
-Key principles:
+---
 
-- no blocking calls (`.block()`) inside reactive pipelines
-- all I/O operations return `Mono` or `Flux`
-- operations must be composed using Reactor operators
-
-### Reactive Indexing Pipeline
-
-The indexing flow is now fully reactive:
+# Reactive Indexing Pipeline
 
 ```text
 DocumentSource
   ↓
 DocumentChunker (Flux)
   ↓
-VectorStore.exists (Mono<Boolean>)
+VectorStore.exists
   ↓
-EmbeddingClient (blocking → wrapped in boundedElastic)
+EmbeddingClient (blocking wrapped)
   ↓
-VectorStore.add (Mono<Void>)
+VectorStore.add
   ↓
-cleanup (delete outdated chunks)
+cleanup
 ```
 
-Key pattern:
+Pattern:
 
 ```java
 .concatMap(chunk ->
@@ -396,15 +377,15 @@ Key pattern:
             if (exists) return Mono.empty();
 
             return Mono.fromCallable(() -> embeddingClient.generate(...))
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .flatMap(vectorStore::add);
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(response -> vectorStore.add(...));
         })
 )
 ```
 
-### Blocking Isolation Strategy
+---
 
-External blocking operations (LLM / embedding providers) must be isolated:
+# Blocking Isolation
 
 ```java
 Mono.fromCallable(() -> embeddingClient.generate(...))
@@ -413,36 +394,31 @@ Mono.fromCallable(() -> embeddingClient.generate(...))
 
 Rules:
 
-- only wrap blocking calls
-- never wrap the whole pipeline
-- keep vector store operations non-blocking
+- isolate ONLY blocking calls
+- never block (`.block()`) inside reactive flow
+- keep pipeline non-blocking
 
-### Lazy Execution and Mono.defer
+---
 
-Reactive pipelines are lazy.
+# Lazy Execution
 
-Common pitfall:
+Incorrect:
 
 ```java
-.then(vectorStore.delete(...)) // WRONG
+.then(vectorStore.delete(...))
 ```
 
-Correct approach:
+Correct:
 
 ```java
 .then(Mono.defer(() -> vectorStore.delete(...)))
 ```
 
-Reason:
+---
 
-- ensures execution happens after upstream completes
-- prevents usage of stale mutable state
+# Qdrant Integration
 
-### Idempotent Collection Management (Qdrant)
-
-Vector stores must handle collection creation safely.
-
-Pattern:
+## Idempotent Collection Creation
 
 ```java
 webClient.put(...)
@@ -451,7 +427,7 @@ webClient.put(...)
   .onErrorResume(WebClientResponseException.Conflict.class, e -> Mono.empty());
 ```
 
-Additionally:
+## Cached Initialization
 
 ```java
 ConcurrentMap<String, Mono<Void>> cache = new ConcurrentHashMap<>();
@@ -461,77 +437,119 @@ cache.computeIfAbsent(collection, key ->
 );
 ```
 
-Benefits:
+---
 
-- avoids race conditions
-- ensures single creation per namespace
-- prevents redundant network calls
+# Chunking Model
 
-### JSON Chunker Improvements
+## JSON Chunker
 
-JSON chunker now supports both:
+Supports:
 
-- array-based extraction
-- object-based extraction
-
-Problem:
-
-```java
-List<Object> nodes = document.read(path); // not always a list
-```
-
-Solution:
+- arrays (`content[*]`)
+- objects (`$`)
 
 ```java
 Object selected = document.read(path);
 
 Iterable<Object> iterable =
-    selected instanceof Iterable ? (Iterable<Object>) selected : List.of(selected);
-```
-
-This enables:
-
-- paginated responses (`content[*]`)
-- single-entity responses (`$`)
-
-### Metadata Inheritance
-
-Child rules can inherit metadata from parent rules.
-
-Previous behavior:
-
-- only FIELD values inherited
-
-Current behavior:
-
-- META_DATA can also be inherited
-- enables cross-level filtering (e.g. product filtered by catalogName)
-
-### Reactive Execution Pitfalls
-
-Common mistakes:
-
-- calling `.block()` inside reactive flow → runtime error
-- calling `Mono` without subscribing → nothing executes
-- using `doOnNext` for side effects that should be reactive → incorrect
-
-Correct pattern:
-
-```java
-.flatMap(vectorStore::add)
-```
-
-instead of:
-
-```java
-.doOnNext(vectorStore::add)
+    selected instanceof Iterable
+        ? (Iterable<Object>) selected
+        : List.of(selected);
 ```
 
 ---
 
+# Metadata Strategy
+
+## Key Principle
+
+RAG quality depends more on **metadata design** than embeddings.
+
+### Required metadata (recommended)
+
+- `productId`
+- `productName`
+- `productSku`
+- `productType` (PHYSICAL / DIGITAL)
+- `catalogId`
+- `catalogName`
+- `catalogStatus`
+
+### Important Rules
+
+- IDs / SKU / codes → ALWAYS metadata filters
+- embeddings are not reliable for exact lookup
+- chunk content must include relational context
+
+Example:
+
+```text
+Product Developer Productivity Toolkit (sku: DPT-000006)
+belongs to catalog Developer Gear Collection #023.
+```
+
+---
+
+# Known Limitations of RAG
+
+- Cannot compute global aggregations (e.g. "most expensive product")
+- Limited by `topK` retrieval
+- May hallucinate if context is weak
+- Semantic search does not work for identifiers
+
+---
+
+# Design Philosophy
+
+Spring Middleware AI aims to:
+
+- abstract complexity into infrastructure
+- provide declarative configuration
+- separate concerns:
+    - planner (query understanding)
+    - retriever (vector store)
+    - generator (LLM)
+- make RAG predictable and controllable
+
+---
+
 # Context Maintenance Rules
-(unchanged)
+
+When the user asks to **add something to the context** ("añadir al contexto"), the following rules apply:
+
+- The assistant must return the **entire context document**, not only the added section.
+- Existing sections **must not be modified, reordered, or removed** unless explicitly requested.
+- New information should be **appended in the most relevant section** or added as a new subsection.
+- The goal is to **extend the context while preserving stability of the document structure**.
+- The resulting document must remain **fully copy-paste safe**.
+
+Additional clarification:
+
+- The assistant **must not rewrite existing explanations**, even if they could be improved.
+- The assistant **must not refactor section names or headings** unless explicitly requested.
+- The assistant **must not collapse or summarize sections** of the document.
+- The assistant **must treat this document as a stable knowledge base**, extending it incrementally instead of regenerating it.
+
+---
 
 # Documentation Output Rules
-(unchanged)
-~~~~markdown
+
+When generating Markdown documentation for this project:
+
+- Always return the document inside a fenced block using `~~~~markdown` instead of ` ```markdown `.
+- This avoids breaking nested code blocks that contain triple backticks, for example XML, YAML, JSON, or Java examples.
+- The content inside the block must be valid Markdown and safe to copy directly into `.md` files.
+- This rule applies whenever documentation is requested for:
+    - README files
+    - architecture documentation
+    - AI_CONTEXT updates
+    - examples or guides
+    - any `.md` content
+
+Additional clarification:
+
+- The assistant **must never replace parts of the document with placeholders** such as:
+    - `[...]`
+    - `[... contenido ...]`
+    - `[... SIN MODIFICAR ...]`
+- The assistant must always return the **full explicit content**, even if sections are unchanged.
