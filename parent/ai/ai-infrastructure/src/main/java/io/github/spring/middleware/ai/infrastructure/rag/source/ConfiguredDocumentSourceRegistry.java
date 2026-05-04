@@ -9,12 +9,14 @@ import io.github.spring.middleware.ai.rag.source.DocumentSourceType;
 import io.github.spring.middleware.ai.rag.source.SourceProviderName;
 import io.github.spring.middleware.ai.rag.source.config.DocumentSourceProviderOptions;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ConfiguredDocumentSourceRegistry implements DocumentSourceRegistry {
@@ -30,10 +32,14 @@ public class ConfiguredDocumentSourceRegistry implements DocumentSourceRegistry 
                         STR."Unknown document source: \{sourceName}"
                 ));
 
-        DocumentSourceProvider provider = resolveProvider(definition);
-        DocumentSourceProviderOptions options = definition.optionsForType();
-
-        return provider.load(sourceName, options);
+        if (definition.isEnabled()) {
+            DocumentSourceProvider provider = resolveProvider(definition);
+            DocumentSourceProviderOptions options = definition.optionsForType();
+            return provider.load(sourceName, options);
+        }else{
+            log.warn("Document source with name: {} is disabled and will not be loaded", sourceName);
+            return Flux.empty();
+        }
     }
 
     private DocumentSourceProvider<?> resolveProvider(DocumentSourceDefinition definition) {

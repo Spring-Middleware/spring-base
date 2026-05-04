@@ -21,19 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.spring-middleware</groupId>
-            <artifactId>app</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.spring-middleware</groupId>
-            <artifactId>ai-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.spring-middleware</groupId>
-            <artifactId>ai-infrastructure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.spring-middleware</groupId>
-            <artifactId>ai-ollama</artifactId>
+            <artifactId>ai-chat</artifactId>
         </dependency>
     </dependencies>
 

@@ -5,6 +5,7 @@ import io.github.spring.middleware.ai.provider.ProviderAIClient;
 import io.github.spring.middleware.ai.registry.AIProviderRegistry;
 import io.github.spring.middleware.ai.request.AIRequest;
 import io.github.spring.middleware.ai.response.AIResponse;
+import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
@@ -26,7 +27,7 @@ public abstract class AbstractRoutingAIClient<
     }
 
     @Override
-    public S generate(R request) {
+    public Mono<S> generate(R request) {
         AIProvider provider = registry.resolve(request.getModel());
         P client = clientResolver.apply(provider);
         return client.generate(request);

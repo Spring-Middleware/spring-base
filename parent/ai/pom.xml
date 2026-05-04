@@ -22,6 +22,7 @@
         <module>ai-core</module>
         <module>ai-infrastructure</module>
         <module>ai-ollama</module>
+        <module>ai-chat</module>
         <module>ai-boot</module>
     </modules>
 

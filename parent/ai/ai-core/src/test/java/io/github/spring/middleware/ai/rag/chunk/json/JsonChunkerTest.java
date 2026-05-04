@@ -1,6 +1,7 @@
 package io.github.spring.middleware.ai.rag.chunk.json;
 
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunkInput;
+import io.github.spring.middleware.ai.rag.chunk.config.DocumentChunkerConfiguration;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -19,7 +20,7 @@ class JsonChunkerTest {
     void shouldGenerateChunksFromCatalogs() throws Exception {
         // Given
         JsonChunkRulesLoader rulesLoader = new JsonChunkRulesLoader(new DefaultResourceLoader());
-        JsonChunker chunker = new JsonChunker(rulesLoader);
+        JsonChunker chunker = new JsonChunker(rulesLoader, new DocumentChunkerConfiguration());
 
         InputStream jsonInputStream = new DefaultResourceLoader().getResource("classpath:data/catalogs.json").getInputStream();
         DocumentSource documentSource = new DocumentSource(
@@ -32,7 +33,7 @@ class JsonChunkerTest {
                 Instant.now()
         );
 
-        JsonChunkerOptions options = new JsonChunkerOptions("classpath:rules/catalogs.yml");
+        JsonChunkerOptions options = new JsonChunkerOptions(List.of("classpath:rules/catalogs.yml"));
 
         // When
         Flux<DocumentChunkInput> chunksFlux = chunker.chunk(documentSource, options);
@@ -111,7 +112,7 @@ class JsonChunkerTest {
     void shouldApplyFallbackWhenRequiredVariableIsMissing() throws Exception {
         // Given
         JsonChunkRulesLoader rulesLoader = new JsonChunkRulesLoader(new DefaultResourceLoader());
-        JsonChunker chunker = new JsonChunker(rulesLoader);
+        JsonChunker chunker = new JsonChunker(rulesLoader, new DocumentChunkerConfiguration());
 
         String jsonPayload = """
         {
@@ -146,7 +147,7 @@ class JsonChunkerTest {
                 Instant.now()
         );
 
-        JsonChunkerOptions options = new JsonChunkerOptions("classpath:rules/catalogs.yml");
+        JsonChunkerOptions options = new JsonChunkerOptions(List.of("classpath:rules/catalogs.yml"));
 
         // When
         Flux<DocumentChunkInput> chunksFlux = chunker.chunk(documentSource, options);
@@ -162,7 +163,7 @@ class JsonChunkerTest {
     void shouldNotRenderTemplateWhenAllOptionalVariablesAreMissing() throws Exception {
         // Given
         JsonChunkRulesLoader rulesLoader = new JsonChunkRulesLoader(new DefaultResourceLoader());
-        JsonChunker chunker = new JsonChunker(rulesLoader);
+        JsonChunker chunker = new JsonChunker(rulesLoader, new DocumentChunkerConfiguration());
 
         String jsonPayload = """
         {
@@ -197,7 +198,7 @@ class JsonChunkerTest {
                 Instant.now()
         );
 
-        JsonChunkerOptions options = new JsonChunkerOptions("classpath:rules/catalogs.yml");
+        JsonChunkerOptions options = new JsonChunkerOptions(List.of("classpath:rules/catalogs.yml"));
 
         // When
         Flux<DocumentChunkInput> chunksFlux = chunker.chunk(documentSource, options);
@@ -218,7 +219,7 @@ class JsonChunkerTest {
     void shouldNotRenderTemplateWhenRequiredVariableIsMissing() throws Exception {
         // Given
         JsonChunkRulesLoader rulesLoader = new JsonChunkRulesLoader(new DefaultResourceLoader());
-        JsonChunker chunker = new JsonChunker(rulesLoader);
+        JsonChunker chunker = new JsonChunker(rulesLoader, new DocumentChunkerConfiguration());
 
         String jsonPayload = """
         {
@@ -253,7 +254,7 @@ class JsonChunkerTest {
                 Instant.now()
         );
 
-        JsonChunkerOptions options = new JsonChunkerOptions("classpath:rules/catalogs.yml");
+        JsonChunkerOptions options = new JsonChunkerOptions(List.of("classpath:rules/catalogs.yml"));
 
         // When
         Flux<DocumentChunkInput> chunksFlux = chunker.chunk(documentSource, options);

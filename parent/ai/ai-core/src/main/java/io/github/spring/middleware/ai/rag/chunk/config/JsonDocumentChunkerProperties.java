@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-@ConfigurationProperties(prefix = "middleware.ai.document-chunker.json")
 public class JsonDocumentChunkerProperties {
 
     private Map<String, JsonDocumentChunkerDefinitionProperties> definitions = new HashMap<>();

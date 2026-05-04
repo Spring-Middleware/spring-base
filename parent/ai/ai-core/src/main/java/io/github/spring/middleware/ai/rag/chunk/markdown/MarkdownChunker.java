@@ -12,8 +12,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -193,22 +196,32 @@ public class MarkdownChunker implements DocumentChunker<MarkdownChunkerOptions> 
                 ? source.title()
                 : String.join(" > ", headingPath);
 
+        Map<String, Object> metadata = new HashMap<>();
+
+        // metadata propia del chunker
+        metadata.put("chunker", "markdown");
+        metadata.put("sourceId", source.documentId());
+        metadata.put("sourceName", source.title());
+        metadata.put("headingPath", List.copyOf(headingPath));
+        metadata.put("sectionName", sectionName);
+        metadata.put("sectionPath", sectionPath);
+        metadata.put("sectionIndex", sectionIndex);
+        metadata.put("partIndex", partIndex);
+        metadata.put("contentType", source.contentType());
+        metadata.put("extension", source.extension());
+
+        // 🔥 aquí metes la metadata del source
+        if (source.metadata() != null) {
+            metadata.putAll(source.metadata());
+        }
+
         return new DocumentChunkInput(
                 content,
-                Map.of(
-                        "chunker", "markdown",
-                        "sourceId", source.documentId(),
-                        "sourceName", source.title(),
-                        "headingPath", List.copyOf(headingPath),
-                        "sectionName", sectionName,
-                        "sectionPath", sectionPath,
-                        "sectionIndex", sectionIndex,
-                        "partIndex", partIndex,
-                        "contentType", source.contentType(),
-                        "extension", source.extension()
-                )
+                Map.copyOf(metadata) // lo haces inmutable al final
         );
     }
+
+
 
     private void updateCodeBlockState(String line, ParsingStatus parsingStatus) {
         if (line.trim().startsWith("```")) {
@@ -243,6 +256,28 @@ public class MarkdownChunker implements DocumentChunker<MarkdownChunkerOptions> 
     @Override
     public Class<MarkdownChunkerOptions> optionsType() {
         return MarkdownChunkerOptions.class;
+    }
+
+    @Override
+    public List<String> getMetadataFields(String sourceNane) {
+
+        Set<String> fields = new LinkedHashSet<>();
+
+        // campos base del markdown chunker
+        fields.addAll(List.of(
+                "chunker",
+                "sourceId",
+                "sourceName",
+                "headingPath",
+                "sectionName",
+                "sectionPath",
+                "sectionIndex",
+                "partIndex",
+                "contentType",
+                "extension"
+        ));
+
+        return List.copyOf(fields);
     }
 
     private static class ParsingStatus {

@@ -20,7 +20,9 @@ public class DocumentIndexingProperties {
     public static class DocumentIndexingSourceProperties {
 
         private VectorType vectorType = VectorType.MONGO;
+        private String chunker;
         private String vectorNamespace;
+        private String plannerContext;
         private String embeddingModel;
         private int topK = 5;
         // optional

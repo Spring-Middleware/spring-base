@@ -2,7 +2,9 @@ package io.github.spring.middleware.ai.rag.chunk.json;
 
 import io.github.spring.middleware.ai.rag.chunk.ChunkerOptions;
 
+import java.util.List;
+
 public record JsonChunkerOptions(
-        String rulesPath
+        List<String> rulesPath
 ) implements ChunkerOptions {
 }

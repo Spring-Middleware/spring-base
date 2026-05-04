@@ -32,6 +32,8 @@ rules:
     children:
       - name: product
         extractor-path: "$.products[*]"
+        inherit-metadata:
+         - catalogName
 
         extractor-rules:
           - json-data-types: [FIELD, META_DATA]
@@ -83,10 +85,11 @@ rules:
             extractor-path: "$.dimensions.height"
 
         generation-text-rules:
-          - template: "Product {productName} belongs to catalog {catalogName}."
+          - template: "Product {productName} (id:{productId}) belongs to catalog {catalogName}."
             variables:
               productName: productName!
               catalogName: catalogName
+              productId: productId
 
           - template: "It is a {productType} with price {priceAmount} {priceCurrency}."
             variables:

@@ -5,6 +5,8 @@ import io.github.spring.middleware.ai.rag.source.DocumentSource;
 
 public interface DocumentChunkerRegistry {
 
+    DocumentChunker<?> findByName(String chunkerName);
+
     DocumentChunker findBestDocumentChunker(DocumentSource documentSource);
 
 }

@@ -5,6 +5,7 @@ import io.github.spring.middleware.ai.conversation.Conversation;
 import io.github.spring.middleware.ai.request.ChatRequest;
 import io.github.spring.middleware.ai.response.ChatResponse;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 public class DefaultConversationClient implements ConversationClient {
@@ -16,7 +17,7 @@ public class DefaultConversationClient implements ConversationClient {
     }
 
     @Override
-    public ChatResponse chat(Conversation conversation, String model, String userMessage, String context) {
+    public Mono<ChatResponse> chat(Conversation conversation, String model, String userMessage, String context) {
         if (conversation == null) {
             throw new IllegalArgumentException("conversation must not be null");
         }
@@ -42,13 +43,13 @@ public class DefaultConversationClient implements ConversationClient {
 
         ChatRequest chatRequest = requestConversation.toRequest(model);
 
-        ChatResponse response = chatClient.generate(chatRequest);
-
-        conversation.addUserMessage(userMessage);
-        if (response != null && response.getMessage() != null) {
-            conversation.addMessage(response.getMessage());
-        }
-
-        return response;
+        return chatClient.generate(chatRequest).map(response -> {
+            // Atualiza a conversa original com a mensagem do usuário e a resposta do modelo
+            conversation.addUserMessage(userMessage);
+            if (response != null && response.getMessage() != null) {
+                conversation.addMessage(response.getMessage());
+            }
+            return response;
+        });
     }
 }

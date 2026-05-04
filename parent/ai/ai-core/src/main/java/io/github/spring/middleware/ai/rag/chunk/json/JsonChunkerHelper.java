@@ -2,10 +2,12 @@ package io.github.spring.middleware.ai.rag.chunk.json;
 
 import com.jayway.jsonpath.DocumentContext;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class JsonChunkerHelper {
 
@@ -157,6 +159,32 @@ public final class JsonChunkerHelper {
 
         return value.toString();
     }
+
+    public static List<String> buildExactValues(Map<String, Object> metadata) {
+        return metadata.values().stream()
+                .flatMap(JsonChunkerHelper::flattenMetadataValue)
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private static Stream<String> flattenMetadataValue(Object value) {
+        if (value instanceof Collection<?> collection) {
+            return collection.stream()
+                    .filter(Objects::nonNull)
+                    .flatMap(JsonChunkerHelper::flattenMetadataValue);
+        }
+
+        if (value instanceof Map<?, ?> map) {
+            return map.values().stream()
+                    .filter(Objects::nonNull)
+                    .flatMap(JsonChunkerHelper::flattenMetadataValue);
+        }
+
+        return Stream.of(String.valueOf(value));
+    }
+
 
 
     private static class VariableMapping {

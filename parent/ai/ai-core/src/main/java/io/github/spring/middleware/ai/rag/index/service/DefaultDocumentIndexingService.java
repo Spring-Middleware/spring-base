@@ -56,6 +56,6 @@ public class DefaultDocumentIndexingService implements DocumentIndexingService {
                         STR."No DocumentIndexer found for type: \{options.getIndexerType()}"
                 ));
 
-        return indexer.index(documentSource, options);
+        return indexer.index(sourceName, documentSource, options);
     }
 }

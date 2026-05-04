@@ -1,4 +1,6 @@
-package io.github.spring.middleware.ai.exception;
+package io.github.spring.middleware.ai.chat.exception;
+
+import io.github.spring.middleware.ai.exception.AIException;
 
 public class ConversationNotFondException extends AIException {
 

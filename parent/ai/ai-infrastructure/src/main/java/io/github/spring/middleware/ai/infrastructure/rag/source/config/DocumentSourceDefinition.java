@@ -10,9 +10,12 @@ import io.github.spring.middleware.ai.rag.source.DocumentSourceType;
 import io.github.spring.middleware.ai.rag.source.config.DocumentSourceProviderOptions;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class DocumentSourceDefinition {
 
+    private boolean enabled;
     private DocumentSourceType type;
     private String providerName;
     private String systemContext;

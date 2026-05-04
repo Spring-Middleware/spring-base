@@ -1,7 +1,9 @@
 package io.github.spring.middleware.ai.rag.context;
 
+import reactor.core.publisher.Mono;
+
 public interface RagContextBuilder {
 
-    RagContext build(RagContextRequest request);
+    Mono<RagContext> build(RagContextRequest request);
 
 }

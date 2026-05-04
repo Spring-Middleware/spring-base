@@ -1,4 +1,4 @@
-package io.github.spring.middleware.ai.request;
+package io.github.spring.middleware.ai.chat.request;
 
 public record DocumentationChatRequest(
         String sourceName,

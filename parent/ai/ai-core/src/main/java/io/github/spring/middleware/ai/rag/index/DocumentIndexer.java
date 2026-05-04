@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface DocumentIndexer<I extends DocumentIndexerOptions> {
 
-    <O extends ChunkerOptions> Mono<Void>  index(DocumentSource source, I options);
+    <O extends ChunkerOptions> Mono<Void> index(String sourceName, DocumentSource source, I options);
 
     boolean supports(DocumentIndexerType indexerType);
 

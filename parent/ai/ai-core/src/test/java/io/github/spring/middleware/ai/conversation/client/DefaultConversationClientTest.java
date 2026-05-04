@@ -8,6 +8,7 @@ import io.github.spring.middleware.ai.response.ChatResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -76,32 +77,39 @@ class DefaultConversationClientTest {
         Conversation conversation = Mockito.mock(Conversation.class);
         Conversation requestConversation = Mockito.mock(Conversation.class);
         ChatRequest chatRequest = Mockito.mock(ChatRequest.class);
-        when(conversation.toRequest("model")).thenReturn(chatRequest);
-        when(chatClient.generate(chatRequest)).thenReturn(null);
+        ChatResponse chatResponse = Mockito.mock(ChatResponse.class);
+
         when(conversation.copy()).thenReturn(requestConversation);
+        when(requestConversation.toRequest("model")).thenReturn(chatRequest);
+        when(chatClient.generate(chatRequest)).thenReturn(Mono.just(chatResponse));
+        when(chatResponse.getMessage()).thenReturn(null);
 
+        conversationClient.chat(conversation, "model", "hello", "context").block();
 
-        conversationClient.chat(conversation, "model", "hello", "context");
         verify(conversation).addUserMessage("hello");
-        verify(requestConversation).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context","hello"));
+        verify(requestConversation).addUserMessage(
+                ARGUMENTED_TEMPLATE.formatted("context", "hello")
+        );
     }
 
     @Test
     void testChatAddsUserMessageToConversation() {
         Conversation conversation = Mockito.mock(Conversation.class);
-        Conversation requestConverstion = Mockito.mock(Conversation.class);
+        Conversation requestConversation = Mockito.mock(Conversation.class);
         ChatRequest chatRequest = Mockito.mock(ChatRequest.class);
         ChatResponse chatResponse = Mockito.mock(ChatResponse.class);
 
-        when(conversation.toRequest("model")).thenReturn(chatRequest);
-        when(chatClient.generate(chatRequest)).thenReturn(chatResponse);
+        when(conversation.copy()).thenReturn(requestConversation);
+        when(requestConversation.toRequest("model")).thenReturn(chatRequest);
+        when(chatClient.generate(chatRequest)).thenReturn(Mono.just(chatResponse));
         when(chatResponse.getMessage()).thenReturn(null);
-        when(conversation.copy()).thenReturn(requestConverstion);
 
+        conversationClient.chat(conversation, "model", "hello", "context").block();
 
-        conversationClient.chat(conversation, "model", "hello", "context");
         verify(conversation, times(1)).addUserMessage("hello");
-        verify(requestConverstion, times(1)).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context", "hello"));
+        verify(requestConversation, times(1)).addUserMessage(
+                ARGUMENTED_TEMPLATE.formatted("context", "hello")
+        );
     }
 
     @Test
@@ -112,18 +120,22 @@ class DefaultConversationClientTest {
         ChatResponse chatResponse = Mockito.mock(ChatResponse.class);
         AIMessage aiMessage = Mockito.mock(AIMessage.class);
 
-        when(requestConversation.toRequest("model")).thenReturn(chatRequest);
-        when(chatClient.generate(chatRequest)).thenReturn(chatResponse);
-        when(chatResponse.getMessage()).thenReturn(aiMessage);
         when(conversation.copy()).thenReturn(requestConversation);
+        when(requestConversation.toRequest("model")).thenReturn(chatRequest);
+        when(chatClient.generate(chatRequest)).thenReturn(Mono.just(chatResponse));
+        when(chatResponse.getMessage()).thenReturn(aiMessage);
 
-        ChatResponse response = conversationClient.chat(conversation, "model", "hello user", "context");
+        ChatResponse response = conversationClient
+                .chat(conversation, "model", "hello user", "context")
+                .block();
 
         assertEquals(chatResponse, response);
 
         verify(conversation).addUserMessage("hello user");
         verify(conversation).addMessage(aiMessage);
-        verify(requestConversation).addUserMessage(ARGUMENTED_TEMPLATE.formatted("context", "hello user"));
+        verify(requestConversation).addUserMessage(
+                ARGUMENTED_TEMPLATE.formatted("context", "hello user")
+        );
         verify(chatClient).generate(chatRequest);
     }
 }

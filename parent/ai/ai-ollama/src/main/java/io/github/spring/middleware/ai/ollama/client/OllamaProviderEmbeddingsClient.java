@@ -10,6 +10,7 @@ import io.github.spring.middleware.ai.response.EmbeddingResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class OllamaProviderEmbeddingsClient implements ProviderEmbeddingClient {
     }
 
     @Override
-    public EmbeddingResponse generate(EmbeddingRequest request) {
+    public Mono<EmbeddingResponse> generate(EmbeddingRequest request) {
 
         if (request == null) {
             throw new AIException(
@@ -56,22 +57,21 @@ public class OllamaProviderEmbeddingsClient implements ProviderEmbeddingClient {
                 "input", request.getInput()
         );
 
-        OllamaEmbeddingResponse response = webClient.post()
+        return webClient.post()
                 .uri("/api/embed")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(OllamaEmbeddingResponse.class)
-                .block();
-
-        if (response == null || response.embeddings() == null) {
-            throw new AIException(
-                    AIErrorCodes.AI_RESPONSE_ERROR,
-                    "Ollama embedding response is null"
-            );
-        }
-
-        return new DefaultEmbeddingResponse(response.embeddings().get(0).stream().map(Double::floatValue).toList());
+                .map(resp -> {
+                    if (resp.embeddings() == null || resp.embeddings().isEmpty()) {
+                        throw new AIException(
+                                AIErrorCodes.AI_RESPONSE_ERROR,
+                                "Ollama embedding response does not contain embeddings"
+                        );
+                    }
+                    return new DefaultEmbeddingResponse(resp.embeddings().get(0).stream().map(Double::floatValue).toList());
+                });
     }
 
     // --- DTO interno ---

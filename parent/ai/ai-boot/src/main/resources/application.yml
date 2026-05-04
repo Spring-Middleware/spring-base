@@ -17,7 +17,7 @@ spring:
 
 logging:
   level:
-    io.github.spring.middleware: ${LOG_LEVEL_PACKAGE:INFO}
+    io.github.spring.middleware: ${LOG_LEVEL_PACKAGE:DEBUG}
     io.github.spring.middleware.scheduler: ERROR
     io.github.spring:.middleware.jms: ERROR
     org.springframework.security: ERROR
@@ -48,6 +48,7 @@ middleware:
     document:
       sources:
         documentation-middleware:
+          enabled: true
           system-context: |
             You are the Spring Middleware documentation assistant.
             
@@ -59,20 +60,31 @@ middleware:
           file-system:
             paths:
               - rag
+
         catalogs:
+            enabled: true
             system-context: |
-                You are a product catalog assistant.
-                
-                Answer only using the product catalog context.
-                If the answer is not in the catalogs, say that it is not in the catalogs.
-                
-                Be concise, technical, and do not invent information.
+              You are a product catalog assistant.
+
+              Answer ONLY using the provided product catalog context.
+              If the answer is not explicitly present in the retrieved context, say exactly:
+              "No está en los catálogos."
+
+              Hard constraints:
+              - Never use external knowledge.
+              - Never invent product names.
+              - Never add examples.
+              - Never add partial-list disclaimers.
+              - Never say "some products" unless the context explicitly says the list is partial.
+              - Product names must be copied exactly from the context.
+              - If no product names are present in the context, say: "No está en los catálogos."
+
+              Style:
+              - Be concise.
+              - Prefer bullet points only when listing products from the context.
             type: CUSTOM
+            chunker: catalogs-chunker
             provider-name: catalogs-provider
-            custom:
-              properties:
-                url:
-                apiKey: ${CATALOGS_API_KEY}
 
       indexing:
         enabled: true
@@ -80,6 +92,7 @@ middleware:
         sources:
           documentation-middleware:
             vector-type: QDRANT
+            chunker: middleware-markdown
             vector-namespace: documentation-middleware
             embedding-model: nomic-embed-text
             top-k: 5
@@ -87,34 +100,43 @@ middleware:
 
           catalogs:
             vector-type: QDRANT
+            chunker: catalogs-chunker
             vector-namespace: catalogs
             embedding-model: nomic-embed-text
             top-k: 5
             document-indexer-type: CHUNKER
 
-    document-chunker:
-      default:
-        chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:1200}
-        overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:200}
-      markdown:
-        max-chars: 2000
-        min-chars: 200
-        split-by-headings: true
-        max-heading-level: 6
-        include-heading-in-chunk: true
-        preserve-heading-path: true
-        split-by-paragraphs: true
-        split-by-sentences: false
-        detect-code-blocks: true
-        keep-code-blocks-intact: true
-        trim: true
-        remove-empty-lines: false
-        include-line-numbers: false
-      json:
-        definitions:
-          catalogs:
-            rules-paths:
-              - classpath:rules/catalogs.yml
+    document-chunkers:
+      middleware-default:
+        type: DEFAULT
+        default-config:
+          chunk-size: ${AI_DOCUMENT_CHUNKER_CHUNK_SIZE:1200}
+          overlap-size: ${AI_DOCUMENT_CHUNKER_OVERLAP_SIZE:200}
+
+      middleware-markdown:
+        type: MARKDOWN
+        markdown:
+          max-chars: 2000
+          min-chars: 200
+          split-by-headings: true
+          max-heading-level: 6
+          include-heading-in-chunk: true
+          preserve-heading-path: true
+          split-by-paragraphs: true
+          split-by-sentences: false
+          detect-code-blocks: true
+          keep-code-blocks-intact: true
+          trim: true
+          remove-empty-lines: false
+          include-line-numbers: false
+
+      catalogs-chunker:
+        type: JSON
+        json:
+          definitions:
+            catalogs:
+              rules-paths:
+                - classpath:rules/catalogs.yml
 
     vector-store:
       in-memory:

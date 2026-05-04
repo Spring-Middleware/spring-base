@@ -8,6 +8,7 @@ import io.github.spring.middleware.ai.response.ChatResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -36,9 +37,9 @@ class DefaultChatClientTest {
         when(provider.getChatClient()).thenReturn(providerChatClient);
 
         ChatResponse expectedResponse = Mockito.mock(ChatResponse.class);
-        when(providerChatClient.generate(request)).thenReturn(expectedResponse);
+        when(providerChatClient.generate(request)).thenReturn(Mono.just(expectedResponse));
 
-        ChatResponse actualResponse = chatClient.generate(request);
+        ChatResponse actualResponse = chatClient.generate(request).block();
 
         assertEquals(expectedResponse, actualResponse);
     }

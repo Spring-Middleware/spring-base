@@ -97,25 +97,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         }).orElse(StringUtils.EMPTY);
     }
 
-    private String getMessageLog(HttpServletRequest request) throws Exception {
+    private String getMessageLog(HttpServletRequest request) {
 
         StringBuilder logMessage = new StringBuilder();
+
         logMessage.append(request.getMethod()).append(" ");
         logMessage.append(request.getRequestURI());
+
         if (request.getQueryString() != null) {
             logMessage.append("?").append(request.getQueryString());
         }
-        request = new CustomHttpServletRequestWrapper(request);
-        logMessage.append(STR." \{Optional.ofNullable(request.getInputStream())
-                .map(is -> {
-                    try {
-                        return IOUtils.toString(is, Charset.defaultCharset());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .orElse(
-                        StringUtils.EMPTY)}");
+
+        if (request instanceof CustomHttpServletRequestWrapper wrappedRequest) {
+            logMessage.append(" ").append(wrappedRequest.getBodyAsString());
+        } else {
+            logMessage.append(" ");
+        }
+
         return logMessage.toString();
     }
 

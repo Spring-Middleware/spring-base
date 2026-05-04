@@ -1,4 +1,4 @@
-package io.github.spring.middleware.ai.domain;
+package io.github.spring.middleware.ai.chat.domain;
 
 import io.github.spring.middleware.ai.response.ChatResponse;
 

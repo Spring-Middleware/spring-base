@@ -1,4 +1,4 @@
-package io.github.spring.middleware.ai.service;
+package io.github.spring.middleware.ai.chat.service;
 
 import io.github.spring.middleware.ai.conversation.Conversation;
 

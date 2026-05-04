@@ -26,15 +26,15 @@ class JsonChunkRulesLoaderTest {
         assertThat(catalogRule.extractorPath()).isEqualTo("$.data.catalogs.content[*]");
         assertThat(catalogRule.extractorRules()).hasSize(4);
 
-        assertThat(catalogRule.generationTextRules()).hasSize(1);
+        assertThat(catalogRule.generationTextRules()).hasSize(2);
         assertThat(catalogRule.generationTextRules().getFirst().template()).isEqualTo("Catalog {catalogName} (id: {catalogId}) is {catalogStatus}.");
 
         assertThat(catalogRule.children()).hasSize(1);
         JsonChunkRule productRule = catalogRule.children().getFirst();
         assertThat(productRule.name()).isEqualTo("product");
         assertThat(productRule.extractorPath()).isEqualTo("$.products[*]");
-        assertThat(productRule.extractorRules()).hasSize(9);
-        assertThat(productRule.generationTextRules()).hasSize(5);
+        assertThat(productRule.extractorRules()).hasSize(12);
+        assertThat(productRule.generationTextRules()).hasSize(6);
         assertThat(productRule.children()).isEmpty();
     }
 

@@ -31,7 +31,8 @@ public class DocumentSourceIndexClassifier {
             case CHUNKER -> (I) new ChunkerDocumentIndexerOptions<>(
                     Optional.ofNullable(classifierParameters.getEmbeddingModel())
                             .orElse(sourceProperties.getEmbeddingModel()),
-                    createChunkerOptions(documentSource, classifierParameters),
+                    classifierParameters.getChunkerName(),
+                    createChunkerOptions(sourceName, documentSource, classifierParameters),
                     new VectorNamespace(
                             Optional.ofNullable(classifierParameters.getVectorNamespace())
                                     .orElse(sourceProperties.getVectorNamespace(sourceName))
@@ -46,10 +47,13 @@ public class DocumentSourceIndexClassifier {
     }
 
     private ChunkerOptions createChunkerOptions(
+            String sourceName,
             DocumentSource documentSource,
             DocumentClassifierParameters classifierParameters
     ) {
         return documentChunkerOptionsResolver.resolve(
+                classifierParameters.getChunkerName(),
+                sourceName,
                 documentSource,
                 classifierParameters.getChunkerOptions()
         );

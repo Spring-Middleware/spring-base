@@ -6,8 +6,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
-@EnableConfigurationProperties(DefaultDocumentChunkerProperties.class)
+@EnableConfigurationProperties({
+        DocumentChunkerConfiguration.class
+})
 public class DocumentChunkerAutoConfiguration {
+
     @Bean
     @ConditionalOnMissingBean(DocumentChunker.class)
     public DocumentChunker documentChunker() {

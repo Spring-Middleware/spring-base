@@ -1,24 +1,26 @@
 package io.github.spring.middleware.ai.rag.vector;
 
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunk;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Set;
 
 public interface VectorStore {
 
-    void add(VectorNamespace namespace, DocumentChunk chunk);
+    Mono<Void> add(VectorNamespace namespace, DocumentChunk chunk);
 
-    List<DocumentChunk> search(VectorNamespace namespace, List<Float> embedding, int topK);
+    Flux<DocumentChunk> search(SearchRequest request);
 
-    boolean exists(
+    Mono<Boolean> exists(
             VectorNamespace namespace,
             String documentId,
             String embeddingModel,
             String checksum
     );
 
-    void deleteByDocumentIdAndEmbeddingModelExceptChecksums(
+    Mono<Void> deleteByDocumentIdAndEmbeddingModelExceptChecksums(
             VectorNamespace namespace,
             String documentId,
             String embeddingModel,
@@ -26,4 +28,9 @@ public interface VectorStore {
     );
 
     VectorType getType();
+
+    enum MatchType {
+        MATCH_ALL,
+        MATCH_ANY;
+    }
 }

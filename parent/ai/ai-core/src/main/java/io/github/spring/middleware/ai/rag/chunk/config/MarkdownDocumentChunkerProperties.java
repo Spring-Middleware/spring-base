@@ -4,7 +4,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "middleware.ai.document-chunker.markdown")
 public class MarkdownDocumentChunkerProperties {
 
     private int maxChars = 2000;

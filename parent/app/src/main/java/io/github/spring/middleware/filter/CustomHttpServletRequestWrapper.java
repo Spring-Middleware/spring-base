@@ -10,6 +10,9 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 public class CustomHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
@@ -19,43 +22,51 @@ public class CustomHttpServletRequestWrapper extends HttpServletRequestWrapper {
             throws IOException {
 
         super(request);
-        body = IOUtils.toByteArray(request.getReader(), "UTF-8");
+        this.body = request.getInputStream().readAllBytes();
     }
 
     @Override
-    public BufferedReader getReader() throws IOException {
-
-        return new BufferedReader(new InputStreamReader(getInputStream()));
+    public BufferedReader getReader() {
+        return new BufferedReader(
+                new InputStreamReader(getInputStream(), getRequestCharset())
+        );
     }
 
     @Override
-    public ServletInputStream getInputStream() throws IOException {
+    public ServletInputStream getInputStream() {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body);
 
-        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body);
         return new ServletInputStream() {
 
             @Override
-            public int read() throws IOException {
-
+            public int read() {
                 return byteArrayInputStream.read();
             }
 
             @Override
             public boolean isFinished() {
-
-                return false;
+                return byteArrayInputStream.available() == 0;
             }
 
             @Override
             public boolean isReady() {
-
-                return false;
+                return true;
             }
 
             @Override
-            public void setReadListener(ReadListener arg0) {
-
+            public void setReadListener(ReadListener readListener) {
+                // Synchronous wrapper.
             }
         };
+    }
+
+    public String getBodyAsString() {
+        return new String(body, getRequestCharset());
+    }
+
+    private Charset getRequestCharset() {
+        return Optional.ofNullable(getCharacterEncoding())
+                .map(Charset::forName)
+                .orElse(StandardCharsets.UTF_8);
     }
 }

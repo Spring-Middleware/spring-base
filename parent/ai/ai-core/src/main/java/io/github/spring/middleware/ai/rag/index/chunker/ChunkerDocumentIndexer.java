@@ -2,20 +2,20 @@ package io.github.spring.middleware.ai.rag.index.chunker;
 
 import io.github.spring.middleware.ai.client.EmbeddingClient;
 import io.github.spring.middleware.ai.rag.chunk.ChunkerOptions;
-import io.github.spring.middleware.ai.rag.chunk.registry.DocumentChunkerRegistry;
-import io.github.spring.middleware.ai.rag.utils.ChecksumUtils;
-import io.github.spring.middleware.ai.rag.chunk.deflt.ChunkOptions;
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunk;
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunker;
+import io.github.spring.middleware.ai.rag.chunk.registry.DocumentChunkerRegistry;
 import io.github.spring.middleware.ai.rag.index.DocumentIndexer;
 import io.github.spring.middleware.ai.rag.index.DocumentIndexerType;
 import io.github.spring.middleware.ai.rag.source.DocumentSource;
+import io.github.spring.middleware.ai.rag.utils.ChecksumUtils;
 import io.github.spring.middleware.ai.rag.vector.VectorStore;
 import io.github.spring.middleware.ai.rag.vector.VectorStoreRegistry;
 import io.github.spring.middleware.ai.request.DefaultEmbeddingRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -43,57 +43,72 @@ public class ChunkerDocumentIndexer implements DocumentIndexer<ChunkerDocumentIn
     }
 
     @Override
-    public <O extends ChunkerOptions> Mono<Void> index(DocumentSource source, ChunkerDocumentIndexerOptions documentIndexerOptions) {
+    public <O extends ChunkerOptions> Mono<Void> index(String sourceName, DocumentSource source, ChunkerDocumentIndexerOptions documentIndexerOptions) {
         O options = (O) documentIndexerOptions.getChunkOptions();
         VectorStore vectorStore = vectorStoreRegistry.findByType(documentIndexerOptions.getVectorType());
 
         Set<String> currentChecksums = ConcurrentHashMap.newKeySet();
-        DocumentChunker<O> documentChunker = documentChunkerRegistry.findBestDocumentChunker(source);
+        DocumentChunker<O> documentChunker =
+                (DocumentChunker<O>) documentChunkerRegistry.findByName(documentIndexerOptions.getChunkerName());
 
         return documentChunker.chunk(source, options)
                 .concatMap(chunk -> {
-                    Map metadataChecksum = new HashMap(chunk.metadata());
+                    Map<String, Object> metadataChecksum = new HashMap<>(chunk.metadata());
                     metadataChecksum.put("embeddingModel", documentIndexerOptions.getEmbeddingModel());
-                    String checksum = ChecksumUtils.checksum(chunk.getEmbeddingContent(), metadataChecksum);
+
+                    String checksum = ChecksumUtils.checksum(
+                            chunk.getEmbeddingContent(),
+                            metadataChecksum
+                    );
+
                     currentChecksums.add(checksum);
 
-                    if (vectorStore.exists(
-                            documentIndexerOptions.getVectorNamespace(),
-                            source.documentId(),
-                            documentIndexerOptions.getEmbeddingModel(),
-                            checksum
-                    )) {
-                        return Mono.empty();
-                    }
-
-                    return Mono.fromCallable(() -> embeddingClient.generate(
-                                    new DefaultEmbeddingRequest(
-                                            documentIndexerOptions.getEmbeddingModel(),
-                                            chunk.getEmbeddingContent()
-                                    )
-                            ))
-                            .map(response -> new DocumentChunk(
-                                    UUID.randomUUID(),
+                    return vectorStore.exists(
+                                    documentIndexerOptions.getVectorNamespace(),
                                     source.documentId(),
-                                    source.title(),
-                                    chunk.content(),
-                                    response.getEmbedding(),
                                     documentIndexerOptions.getEmbeddingModel(),
-                                    chunk.metadata(),
-                                    checksum,
-                                    Instant.now()
-                            ))
-                            .doOnNext(vectorChunk -> vectorStore.add(documentIndexerOptions.getVectorNamespace(), vectorChunk))
-                            .then();
+                                    checksum
+                            )
+                            .flatMap(exists -> {
+                                if (exists) {
+                                    return Mono.<Void>empty();
+                                }
+
+                                return embeddingClient.generate(
+                                                new DefaultEmbeddingRequest(
+                                                        documentIndexerOptions.getEmbeddingModel(),
+                                                        chunk.getEmbeddingContent()
+                                                )
+                                        )
+                                        .map(response -> new DocumentChunk(
+                                                UUID.randomUUID(),
+                                                source.documentId(),
+                                                source.title(),
+                                                chunk.content(),
+                                                response.getEmbedding(),
+                                                documentIndexerOptions.getEmbeddingModel(),
+                                                chunk.metadata(),
+                                                checksum,
+                                                Instant.now()
+                                        ))
+                                        .flatMap(vectorChunk ->
+                                                vectorStore.add(
+                                                        documentIndexerOptions.getVectorNamespace(),
+                                                        vectorChunk
+                                                )
+                                        );
+                            });
                 })
-                .then(Mono.fromRunnable(() ->
-                        vectorStore.deleteByDocumentIdAndEmbeddingModelExceptChecksums(
-                                documentIndexerOptions.getVectorNamespace(),
-                                source.documentId(),
-                                documentIndexerOptions.getEmbeddingModel(),
-                                currentChecksums
-                        )
-                )).and(_ -> log.info("Finished indexing document {} with id {}", source.title(), source.documentId()));
+                .then(Mono.defer(() ->
+                                vectorStore.deleteByDocumentIdAndEmbeddingModelExceptChecksums(
+                                        documentIndexerOptions.getVectorNamespace(),
+                                        source.documentId(),
+                                        documentIndexerOptions.getEmbeddingModel(),
+                                        currentChecksums
+                                ))
+                        .doOnSuccess(ignored ->
+                                log.info("Finished indexing document {} with id {}", source.title(), source.documentId())
+                        ));
     }
 
 

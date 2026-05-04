@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
 @Data
-@ConfigurationProperties(prefix = "middleware.ai.document-chunker.default")
 public class DefaultDocumentChunkerProperties {
 
     private Integer chunkSize = 800;

@@ -1,6 +1,7 @@
 package io.github.spring.middleware.ai.infrastructure.rag.vector;
 
 import io.github.spring.middleware.ai.rag.chunk.DocumentChunk;
+import io.github.spring.middleware.ai.rag.vector.SearchRequest;
 import io.github.spring.middleware.ai.rag.vector.VectorNamespace;
 import io.github.spring.middleware.ai.rag.vector.VectorStore;
 import io.github.spring.middleware.ai.rag.vector.VectorType;
@@ -9,13 +10,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static io.github.spring.middleware.ai.infrastructure.rag.vector.QdrantUtils.fieldAny;
 import static io.github.spring.middleware.ai.infrastructure.rag.vector.QdrantUtils.fieldMatch;
@@ -29,12 +35,15 @@ public class QdrantVectorStore implements VectorStore {
 
     private final WebClient webClient;
 
-    @Override
-    public void add(VectorNamespace namespace, DocumentChunk chunk) {
-        String collection = namespace.value();
+    private final ConcurrentMap<String, Mono<Void>> collectionCreationCache = new ConcurrentHashMap<>();
 
-        // 1. Ensure collection exists (dimensión del embedding)
-        ensureCollection(collection, chunk.embedding().size());
+    @Override
+    public Mono<Void> add(VectorNamespace namespace, DocumentChunk chunk) {
+        return ensureCollectionOnce(namespace.value(), chunk.embedding().size())
+                .then(upsertPoint(namespace.value(), chunk));
+    }
+
+    private Mono<Void> upsertPoint(String collection, DocumentChunk chunk) {
 
         // 2. Build payload
         Map<String, Object> payload = new HashMap<>();
@@ -56,44 +65,110 @@ public class QdrantVectorStore implements VectorStore {
         );
 
         // 4. Upsert
-        webClient.put()
+        return webClient.put()
                 .uri("/collections/{collection}/points", collection)
                 .bodyValue(body)
                 .retrieve()
-                .bodyToMono(Void.class)
-                .block();
+                .bodyToMono(Void.class);
     }
 
     @Override
-    public List<DocumentChunk> search(VectorNamespace namespace, List<Float> embedding, int topK) {
-        Map<String, Object> body = Map.of(
-                "vector", embedding,
-                "limit", topK,
-                "with_payload", true,
-                "with_vector", true
-        );
+    public Flux<DocumentChunk> search(SearchRequest request) {
+        Map<String, Object> filter = null;
 
-        Map<String, Object> response = webClient.post()
-                .uri("/collections/{collection}/points/search", namespace.value())
+        if (request.hasFilter()) {
+            List<String> values = request.filterValues().stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(v -> !v.isBlank())
+                    .distinct()
+                    .toList();
+            if (!values.isEmpty()) {
+                String qdrantField = request.filterField().startsWith("metadata.")
+                        ? request.filterField()
+                        : STR."metadata.\{request.filterField()}";
+
+                filter = switch (request.matchType()) {
+                    case MATCH_ANY -> Map.of(
+                            "must", List.of(
+                                    Map.of(
+                                            "key", qdrantField,
+                                            "match", Map.of("any", values)
+                                    )
+                            )
+                    );
+                    case MATCH_ALL -> Map.of(
+                            "must", values.stream()
+                                    .map(v -> Map.of(
+                                            "key", qdrantField,
+                                            "match", Map.of("value", v)
+                                    ))
+                                    .toList()
+                    );
+                };
+            }
+        }
+
+        Map<String, Object> body = new HashMap<>();
+
+        String uriPath;
+        if (request.embedding() != null && !request.embedding().isEmpty()) {
+            body.put("vector", request.embedding());
+            body.put("limit", request.topK());
+            body.put("with_payload", true);
+            body.put("with_vector", true);
+            if (filter != null) {
+                body.put("filter", filter);
+            }
+            uriPath = "/collections/{collection}/points/search";
+        } else {
+            if (filter != null) {
+                body.put("filter", filter);
+            }
+            body.put("limit", request.topK());
+            body.put("with_payload", true);
+            body.put("with_vector", false); // maybe we need vector? default false when just scrolling
+            uriPath = "/collections/{collection}/points/scroll";
+        }
+
+        log.debug("Searching in Qdrant collection '{}' with body: {}", request.namespace().value(), body);
+
+        return webClient.post()
+                .uri(uriPath, request.namespace().value())
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
                 })
-                .block();
+                .flatMapMany(response -> {
+                    if (response == null || response.get("result") == null) {
+                        return Flux.empty();
+                    }
 
-        if (response == null || response.get("result") == null) {
-            return List.of();
-        }
+                    List<Map<String, Object>> results;
 
-        List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("result");
+                    if (request.embedding() != null && !request.embedding().isEmpty()) {
+                        results = (List<Map<String, Object>>) response.get("result");
+                    } else {
+                        Map<String, Object> resultObj =
+                                (Map<String, Object>) response.get("result");
+                        results = (List<Map<String, Object>>) resultObj.get("points");
+                    }
 
-        return results.stream()
-                .map(this::toDocumentChunk)
-                .toList();
+                    if (results == null || results.isEmpty()) {
+                        return Flux.empty();
+                    }
+
+                    return Flux.fromIterable(results)
+                            .map(this::toDocumentChunk);
+                });
     }
 
     @Override
-    public boolean exists(VectorNamespace namespace, String documentId, String embeddingModel, String checksum) {
+    public Mono<Boolean> exists(VectorNamespace namespace,
+                                String documentId,
+                                String embeddingModel,
+                                String checksum) {
+
         Map<String, Object> body = Map.of(
                 "filter", must(
                         match("documentId", documentId),
@@ -105,31 +180,27 @@ public class QdrantVectorStore implements VectorStore {
                 "with_vector", false
         );
 
-        try {
+        return webClient.post()
+                .uri("/collections/{collection}/points/scroll", namespace.value())
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+                })
+                .map(response -> {
+                    if (response == null || response.get("result") == null) {
+                        return false;
+                    }
 
-            Map<String, Object> response = webClient.post()
-                    .uri("/collections/{collection}/points/scroll", namespace.value())
-                    .bodyValue(body)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
-                    })
-                    .block();
+                    Map<String, Object> result = (Map<String, Object>) response.get("result");
+                    List<?> points = (List<?>) result.get("points");
 
-            if (response == null || response.get("result") == null) {
-                return false;
-            }
-
-            Map<String, Object> result = (Map<String, Object>) response.get("result");
-            List<?> points = (List<?>) result.get("points");
-
-            return points != null && !points.isEmpty();
-        } catch (WebClientResponseException.NotFound e) {
-            return false;
-        }
+                    return points != null && !points.isEmpty();
+                })
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(false));
     }
 
     @Override
-    public void deleteByDocumentIdAndEmbeddingModelExceptChecksums(VectorNamespace namespace, String documentId, String embeddingModel, Set<String> checksums) {
+    public Mono<Void> deleteByDocumentIdAndEmbeddingModelExceptChecksums(VectorNamespace namespace, String documentId, String embeddingModel, Set<String> checksums) {
 
         Map<String, Object> filter = checksums == null || checksums.isEmpty()
                 ? Map.of(
@@ -152,18 +223,16 @@ public class QdrantVectorStore implements VectorStore {
                 "filter", filter
         );
 
-        try {
-            webClient.post()
-                    .uri("/collections/{collection}/points/delete", namespace.value())
-                    .bodyValue(body)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block();
+        return webClient.post()
+                .uri("/collections/{collection}/points/delete", namespace.value())
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.empty())
+                .then();
 
-        } catch (WebClientResponseException.NotFound ignored) {
-            log.warn("Collection {} not found when trying to delete points. Ignoring.", namespace.value());
-        }
     }
+
 
     @Override
     public VectorType getType() {
@@ -202,34 +271,38 @@ public class QdrantVectorStore implements VectorStore {
         );
     }
 
+    private Mono<Void> ensureCollectionOnce(String collection, int dimension) {
+        return collectionCreationCache.computeIfAbsent(collection, key ->
+                ensureCollection(collection, dimension).cache()
+        );
+    }
 
-    private void ensureCollection(String collection, int dimension) {
 
-        try {
-            webClient.get()
-                    .uri("/collections/{collection}", collection)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block();
+    private Mono<Void> ensureCollection(String collection, int dimension) {
+        return webClient.get()
+                .uri("/collections/{collection}", collection)
+                .retrieve()
+                .toBodilessEntity()
+                .then()
+                .onErrorResume(WebClientResponseException.NotFound.class, e -> createCollection(collection, dimension));
+    }
 
-        } catch (WebClientResponseException.NotFound e) {
+    private Mono<Void> createCollection(String collection, int dimension) {
+        Map<String, Object> body = Map.of(
+                "vectors", Map.of(
+                        "size", dimension,
+                        "distance", "Cosine"
+                )
+        );
 
-            Map<String, Object> vectors = Map.of(
-                    "size", dimension,
-                    "distance", "Cosine"
-            );
-
-            Map<String, Object> body = Map.of(
-                    "vectors", vectors
-            );
-
-            webClient.put()
-                    .uri("/collections/{collection}", collection)
-                    .bodyValue(body)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
-        }
+        return webClient.put()
+                .uri("/collections/{collection}", collection)
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .then()
+                // por si hay carrera y otro hilo la crea antes
+                .onErrorResume(WebClientResponseException.Conflict.class, e -> Mono.empty());
     }
 
 }

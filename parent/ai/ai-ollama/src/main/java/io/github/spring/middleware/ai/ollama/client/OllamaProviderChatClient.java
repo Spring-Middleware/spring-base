@@ -17,6 +17,7 @@ import io.github.spring.middleware.ai.response.DefaultChatResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Component
 public class OllamaProviderChatClient implements ProviderChatClient, ProviderHealthIndicator {
@@ -30,7 +31,7 @@ public class OllamaProviderChatClient implements ProviderChatClient, ProviderHea
     }
 
     @Override
-    public ChatResponse generate(ChatRequest request) {
+    public Mono<ChatResponse> generate(ChatRequest request) {
         if (request == null) {
             throw new AIException(
                     AIErrorCodes.INVALID_AI_REQUEST,
@@ -47,14 +48,16 @@ public class OllamaProviderChatClient implements ProviderChatClient, ProviderHea
 
         OllamaChatRequest ollamaRequest = toOllamaChatRequest(request);
 
-        OllamaChatResponse response = webClient.post()
+        return webClient.post()
                 .uri("/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(ollamaRequest)
                 .retrieve()
                 .bodyToMono(OllamaChatResponse.class)
-                .block();
+                .map(this::toChatResponse);
+    }
 
+    private ChatResponse toChatResponse(OllamaChatResponse response) {
         if (response == null) {
             throw new AIException(
                     AIErrorCodes.AI_RESPONSE_ERROR,
@@ -71,6 +74,7 @@ public class OllamaProviderChatClient implements ProviderChatClient, ProviderHea
 
         return new DefaultChatResponse(toAIMessage(response.message()));
     }
+
 
     private OllamaChatRequest toOllamaChatRequest(ChatRequest request) {
         return new OllamaChatRequest(

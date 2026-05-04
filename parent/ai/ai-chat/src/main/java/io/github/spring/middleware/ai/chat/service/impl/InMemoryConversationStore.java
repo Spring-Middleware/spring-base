@@ -1,8 +1,10 @@
-package io.github.spring.middleware.ai.service.impl;
+package io.github.spring.middleware.ai.chat.service.impl;
 
+import io.github.spring.middleware.ai.chat.exception.ConversationNotFondException;
+import io.github.spring.middleware.ai.chat.service.ConversationStore;
 import io.github.spring.middleware.ai.conversation.Conversation;
-import io.github.spring.middleware.ai.exception.ConversationNotFondException;
-import io.github.spring.middleware.ai.service.ConversationStore;
+
+
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

@@ -12,10 +12,14 @@ public class DocumentClassifierParameters<C extends ChunkerOptions> {
     private VectorType vectorType;
     private String vectorNamespace;
     private String embeddingModel;
+    private String sourceName;
+    private String chunkerName;
     private C chunkerOptions;
 
     public static <C extends ChunkerOptions> DocumentClassifierParameters<C> from(String sourceName, DocumentIndexingSourceProperties sourceProperties) {
         DocumentClassifierParameters<C> parameters = new DocumentClassifierParameters<>();
+        parameters.setSourceName(sourceName);
+        parameters.setChunkerName(sourceProperties.getChunker());
         parameters.setDocumentIndexerType(sourceProperties.getDocumentIndexerType());
         parameters.setVectorType(sourceProperties.getVectorType());
         parameters.setVectorNamespace(sourceProperties.getVectorNamespace());

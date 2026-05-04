@@ -11,7 +11,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DefaultDocumentChunker implements DocumentChunker<ChunkOptions> {
@@ -61,11 +64,34 @@ public class DefaultDocumentChunker implements DocumentChunker<ChunkOptions> {
         return ChunkOptions.class;
     }
 
+    @Override
+    public List<String> getMetadataFields(String sourceName) {
+
+        Set<String> fields = new LinkedHashSet<>();
+
+        // campos base del default chunker
+        fields.addAll(List.of(
+                "chunker",
+                "chunkSize",
+                "chunkOverlap"
+        ));
+
+
+        return List.copyOf(fields);
+    }
+
     private Map<String, Object> buildMetaData(DocumentSource source, ChunkOptions chunkOptions) {
-        Map metadata = new HashMap(source.metadata());
+
+        Map<String, Object> metadata = new HashMap<>();
+
+        if (source.metadata() != null) {
+            metadata.putAll(source.metadata());
+        }
+
         metadata.put("chunker", "default");
-        metadata.put("chunkSize", String.valueOf(chunkOptions.chunkSize()));
-        metadata.put("chunkOverlap", String.valueOf(chunkOptions.chunkOverlap()));
+        metadata.put("chunkSize", chunkOptions.chunkSize());
+        metadata.put("chunkOverlap", chunkOptions.chunkOverlap());
+
         return metadata;
     }
 
